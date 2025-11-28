@@ -1,0 +1,30 @@
+# LaTeX temporary and output files
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+*.dvi
+*.ps
+*.pdf
+*.ptd
+*.bak
+*.backup
+
+# Folders
+*/*.aux
+*/*.log
+*/*.toc
+*/*.lof
+*/*.lot
+*/*.out
+*/*.ptd
