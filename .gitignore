@@ -19,6 +19,7 @@
 *.ptd
 *.bak
 *.backup
+*.synctex(busy)
 
 # Folders
 */*.aux
@@ -28,3 +29,4 @@
 */*.lot
 */*.out
 */*.ptd
+*/*.synctex(busy)
