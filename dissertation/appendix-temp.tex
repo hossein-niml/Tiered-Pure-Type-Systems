@@ -1,0 +1,82 @@
+\linespread{1}
+\chapter*{پيوست: كدهاي \texttt{R}}
+\addcontentsline{toc}{chapter}{پيوست: كدهاي \texttt{R}}
+\begin{latin}
+\begin{lstlisting}[title={\large Nonparametric M-step}] 
+rm(list = ls())
+library(psych)
+library(cpr)
+library(MASS)
+nonpar_mstep = function (x, wt,
+ control = list(K = 5, lambda0 = 0.5)) 
+{
+  defcon <- list(K = 5, lambda0 = 0.5)
+  control <- modifyList(defcon, control)
+  K <- control$K
+  lambda0 <- control$lambda0
+  nstate <- ncol(wt)
+  emission <- list(coef = list())
+  lambda <- numeric(nstate)
+  d <- ncol(x)
+  n <- nrow(x)
+  tryCatch({
+    a <- matrix(0, nrow = n, ncol = K^d)
+    if (object.size(a) > 1.8e+09) 
+      warning("The dimension of the data or 
+              the degree of the spline is large!
+              \n\t\tThis will result in a very slow progress!")
+    rm(a)
+  }, error = function(cond) {
+    stop("The dimension of the data or
+         the degree of the spline is too large!
+         \n\t\tThere is no enough memory for fitting!
+         Try another emission distribution.")
+  })
+  basis = btensor(lapply(1:d, function(i) x[, i]), df = K, 
+                  bknots = lapply(1:d, function(i)
+                    c(min(x[, i]) - 0.01,
+                      max(x[, i]) + 0.01)))
+  for (j in 1:nstate) {
+    lambda[j] <- lambda0
+    mloglike_lambda0 <- function(beta) {
+      dbeta <- diff(beta, differences = 2)
+      omega <- exp(beta)/sum(exp(beta))
+      loglike <- t(wt[, j]) %*% log(basis %*% omega) - 
+        lambda0/2 * sum(dbeta^2)
+      return(-loglike)
+    }
+    start <- runif(K^d)
+    suppressWarnings(fit <- nlm(mloglike_lambda0, start, 
+                                hessian = T))
+    H_lambda0 <- -fit$hessian
+    difference <- 1
+    eps <- 1e-06
+    cntr <- 1
+    beta_hat <- list(rep(1, K))
+    while (difference > eps) {
+      mloglike <- function(beta) {
+        dbeta <- diff(beta, differences = 2)
+        omega <- exp(beta)/sum(exp(beta))
+        inf_index <- which(is.infinite(log(basis %*% 
+                                             omega)))
+        loglike <- t(wt[, j]) %*% log(basis %*% omega) - 
+          lambda[j]/2 * sum(dbeta^2)
+        return(-loglike)
+      }
+      start <- runif(K^d)
+      suppressWarnings(fit <- nlm(mloglike, start, hessian = T))
+      H <- -fit$hessian
+      beta_hat[[cntr + 1]] <- fit$estimate
+      df_lambda <- tr(ginv(H) %*% H_lambda0)
+      dbeta <- diff(beta_hat[[cntr + 1]], differences = 2)
+      lambda[j] <- (df_lambda - d)/(sum(dbeta^2))
+      difference <- sum(beta_hat[[cntr + 1]] - beta_hat[[cntr]])
+      cntr <- cntr + 1
+    }
+    emission$coef[[j]] <- exp(beta_hat[[cntr]])/
+      sum(exp(beta_hat[[cntr]]))
+  }
+  emission
+}
+\end{lstlisting}
+\end{latin}

@@ -1,0 +1,316 @@
+\documentclass[12pt]{report}
+
+%Packages-------------------------------------
+\usepackage[svgnames]{xcolor}
+\usepackage{amsmath, amsthm, amscd, amsfonts, amssymb}
+\usepackage{tikz}
+\usepackage{setspace}
+\usepackage{wasysym}
+\usepackage{framed}
+\usepackage{enumitem}
+\usepackage{graphics}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage[top=25mm, bottom=20mm, left=25mm, right=25mm]{geometry}
+%\usepackage[margin=10pt,font=scriprsize,labelfont=bf,labelsep=colon]{caption}
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+%\usepackage{xtocnic}
+\usepackage{mathtools}
+\usepackage{lipsum}
+\usepackage{perpage}
+
+
+\usepackage{listings}
+\lstset{language=R,                                     % set programming language
+    basicstyle=\small\ttfamily,                         % basic font style
+    stringstyle=\color{DarkGreen},
+    otherkeywords={0,1,2,3,4,5,6,7,8,9},
+    keywordstyle=\color{Blue},                          % keyword style
+    commentstyle=\ttfamily \color{DarkGreen},           % comment style
+    backgroundcolor=\color{AliceBlue},                  % background colour
+    numbers=left,                                       % display line numbers on the left side
+    numberstyle=\ttfamily\color{Gray}\footnotesize,     % line numbers
+}
+
+%\usepackage{fontspec}
+\tikzstyle{vertex}=[circle, draw, inner sep=0pt, minimum size=6pt]
+\newcommand{\vertex}{\node[vertex]}
+\usepackage{relsize}
+\usepackage[unicode,bookmarks=true,bookmarksopen=true,bookmarksnumbered=true,colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue,pagebackref=false]{hyperref}
+\usepackage{bookmark}
+\usepackage{xepersian}
+\settextfont[Scale=1.3]{XB Zar}
+\MakePerPage[1]{LTRfootnote}
+\linespread{1.3}
+%Layout---------------------------------------
+%\DefaultMathsDigits{}
+
+
+%Commands-------------------------------------
+\newcommand\persiangloss[2]{#1\dotfill\lr{#2}\\}
+
+
+%Theorems-------------------------------------
+\newtheorem{thm}{قضیه}[chapter]
+\newtheorem{cor}[thm]{نتیجه}
+\newtheorem{defn}[thm]{تعریف}
+\newtheorem{prop}[thm]{گزاره}
+\newtheorem{lmm}[thm]{لم}
+\newtheorem{conj}[thm]{حدس}
+\newtheorem{exm}[thm]{مثال}
+\newtheorem{rem}[thm]{تذکر}
+\newtheorem{note}[thm]{یادداشت}
+\newtheorem{alg}[thm]{الگوریتم}
+
+%\settextfont[Scale=1.2]{XB Niloofar}
+%\setlatintextfont[Scale=2]{Linux Libertine}
+%\setlatintextfont[Scale=1]{Times New Roman}
+% از revision 118 زی‌پرشین به بعد، وارد کردن دستور زیر لازم نیست. توجه داشته باشید که در صورت  غیرفعال کردن این دستور،
+% از فونت پیش‌فرض لاتک برای کلمات انگلیسی استفاده خواهد شد.
+%\setlatintextfont[ExternalLocation,BoldFont={lmroman10-bold},BoldItalicFont={lmroman10-bolditalic},ItalicFont={lmroman10-italic}]{lmroman10-regular}
+% چنانچه می‌خواهید اعداد در فرمول‌ها، فارسی باشد، خط زیر را نیز فعال کنید
+%\setdigitfont[Scale=1.2]{XB Zar}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% تعریف قلم‌های فارسی و انگلیسی برای استفاده در بعضی از قسمت‌های متن
+%\defpersianfont\titr[Scale=1.2]{XB Titre}
+\defpersianfont\nastaliq[Scale=2]{IranNastaliq}
+%\defpersianfont\traffic[Scale=1]{B Traffic}
+% چنانچه فونت B Traffic را ندارید، دستور بالا را غیرفعال کرده و دستور زیر را فعال کنید
+%\defpersianfont\traffic[Scale=1.3]{B Yas}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%تعریف و نحوه ظاهر شدن عنوان قضیه‌ها، تعریف‌ها، مثال‌ها و ...
+\renewcommand{\listfigurename}{فهرست شکل‌ها}
+%\includegraphics[scale=1]{fig_name}
+%\newcommand{\bR}{\mathbb{R}}
+%\newcommand{\bF}{\mathcal{F}}
+%\theoremstyle{definition}
+%\newtheorem{definition}{تعریف}[chapter]
+%\newtheorem{theorem}{قضیه}[chapter]
+%\newtheorem{lemma}{لم}[chapter]
+%\newtheorem{lemma}[definition]{لم}
+%\newtheorem{proposition}{گزاره}
+%\newtheorem{corollary}{نتیجه}[chapter]
+%\newtheorem{remark}{ملاحظه}
+%\newtheorem{Point}{نکته}
+%\newtheorem{example}{مثال}[chapter]
+%\newcommand{\bl}{\begin{lemma}}
+%\newcommand{\el}{\end{lemma}}
+%\newcommand{\iid}{\mbox{$\displaystyle \begin{array}{c}\mbox{\tiny\bf $i.i.d.$}\\ \mbox{\huge $\sim$}\vspace{0.3cm}\end{array}$}}
+%\newcommand{\p}{\mbox{$\displaystyle \begin{array}{c}\mbox{\tiny\bf $P$}\\ \mbox{\huge $\longrightarrow$}\vspace{0.3cm}\end{array}$}}
+%\newcommand{\dd}{\mbox{$\displaystyle \begin{array}{c}\mbox{\tiny\bf $d$}\\ \mbox{\huge $\longrightarrow$}\vspace{0.3cm}\end{array}$}}
+%\newcommand{\bp}{\begin{proof}}
+%\newcommand{\ep}{\end{proof}}
+%\newcommand{\Z}{\mathbb{Z}}
+%\newcommand{\R}{\mathbb{R}}
+%\newcommand{\integ}{\int_{-\infty}^{+\infty}}
+%\settextfont[Scale=1.14]{B Zar}
+%\setdigitfont[Scale=1.14]{B Zar}
+%دستوری برای تعریف واژه‌نامه
+\newcommand\gloss[2]{#2\dotfill\lr{#1}\\}
+% تغییر نام کلمه «اثبات» به «برهان»
+%\renewcommand\proofname{\textbf{برهان}}
+% دستوری برای تغییر نام کلمه «کتاب‌نامه» به «مراجع»
+%\renewcommand{\bibname}{مراجع}
+% دستوری برای تعریف واژه‌نامه انگلیسی به فارسی
+%\newcommand\persiangloss[2]{#2\dotfill\lr{#1}\\}
+% دستوری برای تعریف واژه‌نامه فارسی به انگلیسی
+%\newcommand\englishgloss[2]{#2\dotfill\lr{#1}\\}
+
+
+% دستورهایی برای ایجاد کادر (جعبه)
+%\newenvironment{fminipage}
+%{\begin{Sbox}\begin{minipage}}
+%{\end{minipage}\end{Sbox}\fbox{\TheSbox}}
+%\setlength\belowcaptionskip{0pt}
+%\setlength\abovecaptionskip{0pt}
+
+
+\begin{document}
+\thispagestyle{empty}
+\pagenumbering{adadi}
+\include{besmellah}
+%Title page ---------------------------------------------
+\thispagestyle{empty}
+\begin{figure}
+\centering
+\includegraphics[scale=0.1]{UT-Logo.png}
+\end{figure}
+
+\begin{center}
+{\small دانشکدگان علوم
+\\
+دانشکده ریاضی، آمار و علوم کامپیوتر}
+\end{center}
+
+\vfill
+
+\begin{center}
+
+\LARGE{\textbf{صوری‌سازی ترجمه حذف وابستگی در سیستم‌های نوع محض لایه‌ای}}
+\end{center}
+\vfill
+\begin{center}
+نگارش\\
+{\large
+\textbf{حسین مددی}}
+\end{center}
+\begin{center}
+استاد(های) راهنما \\
+
+{\large \textbf{نام و نام خانوادگی استاد(های) راهنما}}
+\end{center}
+\begin{center}
+استاد مشاور \\
+
+{\large \textbf{در صورت وجود}}
+\end{center}
+
+
+
+\vfill
+{\small
+\begin{center}
+ پایان‌نامه برای دریافت درجه کارشناسی ارشد
+\\
+در رشته ریاضیات و کاربردها / ریاضی کاربردی / آمار / علوم کامپیوتر
+\end{center}
+
+\begin{center}
+تاریخ 
+\end{center}
+}
+\pagestyle{empty}
+\pagenumbering{}
+
+
+%\pagestyle{headings}\input{taqdim_nameh}
+%\setcounter{page}{1}
+%\pagenumbering{roman}
+\pagestyle{plain}
+\setcounter{page}{1}
+\pagenumbering{adadi}
+%Abstract page-------------------------------
+
+%Dedication page-----------------------------
+
+\input{taqdim_nameh-temp}
+
+%Acknowledgement page------------------------
+\input{sepas-temp}
+
+%copyright + declaration page
+\chapter*{تعهدنامه اصالت اثر}
+%\section*{اصالت اثر}
+اينجانب  ..........................متعهد مي شوم كه مطالب مندرج در اين پايان نامه/رساله حاصل كار پژوهشي اينجانب است و به دستاوردهاي پژوهشي ديگران كه در اين پژوهش از آنها استفاده شده است، مطابق مقررات ارجاع و در فهرست منابع و مآخذ ذكر گرديده است. اين پايان نامه/رساله قبلاً براي احراز هيچ مدرك هم سطح يا بالاتر ارائه نشده است. در صورت اثبات تخلف (در هر زمان) مدرك تحصيلي صادر شده توسط دانشگاه از اعتبار ساقط خواهد شد. 
+كليه حقوق مادي و معنوي اين اثر متعلق به دانشكده ریاضی، آمار و علوم کامپیوتر دانشکدگان علوم دانشگاه تهران مي باشد. 
+\begin{flushleft}
+نام و نام خانوادگی
+امضا 
+\end{flushleft}
+
+\chapter*{حق مالکیت معنوی}
+%\section*{حق مالکیت معنوی}
+حق مالکیت معنوی این اثر متعلق به دانشگاه تهران می‌باشد. استفاده از مطالب این پایان‌نامه در فعالیت‌های تحقیقاتی با ذکر منبع بلامانع می‌باشد. در صورت استفاده تجاری، مانند چاپ این پایان‌نامه، هماهنگی لازم و اجازه کتبی از دانشگاه و نگارنده پایان‌نامه الزامی می‌باشد.
+%\listoffigures
+\chapter*{خروجی‌های پايان‌نامه}
+\begin{latin}
+\begin{enumerate}
+\item 
+paper1
+\item 
+paper2
+\end{enumerate}
+\end{latin}
+%-------------------------
+%\pagestyle{plain}
+%\setcounter{page}{1}
+%\pagenumbering{harfi}
+%-------------------------
+
+%\listoftables
+
+\input{chekide-temp}\addcontentsline{toc}{chapter}{چكيده}
+
+\input{pishgoftar-temp}\addcontentsline{toc}{chapter}{پيشگفتار}
+
+\tableofcontents\addcontentsline{toc}{chapter}{فهرست مطالب}
+
+\listoffigures\addcontentsline{toc}{chapter}{فهرست شكل‌ها}
+
+\listoftables\addcontentsline{toc}{chapter}{فهرست جداول}
+%---------------------
+
+%---------------------
+
+%\part{مفاهيم و تعاريف مقدماتي}
+\input{S1-temp}
+%\part{مدل‌هاي تبديل ماركوفي ناپارامتري}
+\input{S2-temp}
+\input{S3-temp}
+%\part{نتايج و پيشنهادات آينده}
+\input{S4-temp}
+\input{S5-temp}
+\input{maraje-temp}
+\input{appendix-temp}
+
+\input{vaje_fars-eng-temp}
+
+
+\begin{latin}
+\begin{abstract}
+The English abstract should match the persion one once traslated.\\[0.5cm]
+\textbf{Keywords: } The english keywords should match the persian ones once translated. 
+\end{abstract}
+\newpage
+
+%Title page ---------------------------------------------
+\pagenumbering{gobble}
+\begin{figure}
+\centering
+\includegraphics[scale=0.1]{UT-Logo.png}
+\end{figure}
+\begin{center}
+University of Tehran\\
+College of Science\\
+School of Mathematics, Statistics, and Computer Science
+\end{center}
+
+\vfill
+
+\begin{center}
+\LARGE{Insert the english title of the dissertation}
+\end{center}
+
+\vfill
+
+{\large \begin{center}
+\textbf{
+By\\
+} Insert your name and surname here 
+\end{center}
+
+\begin{center}
+\textbf{Supervisor(s)\\} Insert the name(s) of supervisor(s) here
+\end{center}
+
+\begin{center}
+\textbf{Advisor\\} Insert the name(s) of Advisor here
+\end{center}
+
+}
+\vfill
+\begin{center}
+{\small A thesis submitted to graduate studies office
+in partial fulfillment of the requirements for the degree of master of science in Mathematics and Applications / Applied Mathematics /
+Statistics / Computer Science}
+\end{center}
+
+\begin{center}
+Date
+\end{center}
+
+%\pagestyle{empty}
+%\pagenumbering{}
+
+\end{latin}
+\end{document}
