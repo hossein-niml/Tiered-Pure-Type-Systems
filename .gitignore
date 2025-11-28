@@ -20,6 +20,7 @@
 *.bak
 *.backup
 *.synctex(busy)
+*.xdv
 
 # Folders
 */*.aux
@@ -30,3 +31,4 @@
 */*.out
 */*.ptd
 */*.synctex(busy)
+*/*.xdv
