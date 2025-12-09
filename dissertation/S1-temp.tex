@@ -56,26 +56,48 @@ FV(MN)&=FV(M) \cup FV(N)
 \end{defn}
 
 \begin{defn}
-\item
 گوییم متغیر
 $x$
 در
 $M$
 آزاد است، هرگاه
-$x \in FV(M)$
-.
-
-\item
+$x \in FV(M)$.
 گوییم متغیر
 $x$
 در
 $M$
 بسته است، هرگاه
-$x \notin FV(M)$
-.
+$x \notin FV(M)$.
 \end{defn}
 
-\subsection{تبدیل $\alpha$ و جانشینی}
+\subsection{جانشینی}
+
+جانشینی با نماد
+$M[N/x]$
+نشان داده می‌شود و معنای آن جایگزینی همه رخدادهای آزاد
+$x$
+در
+$M$
+با عبارت
+$N$
+است.
+
+\begin{defn}
+جانشینی به صورت بازگشتی زیر تعریف می‌شود
+\begin{align}
+x[N/x] &= N\\
+y[N/x] &= y & (x \neq y) \\
+PQ[N/x]&=(P[N/x])(Q[N/x])\\
+(\lambda x.M)[N/x] &= \lambda x.M\\
+(\lambda y.M)[N/x] &= \lambda y.(M[N/x]) & (x \neq y)
+\end{align}
+\end{defn}
+
+\subsection{تبدیل $\alpha$}
+
+تبدیل
+$\alpha$
+به ما اجازه می‌دهد نام متغیرهای بسته را بدون تغییر معنای عبارت تغییر دهیم.
 
 \begin{defn}
 اگر
@@ -88,14 +110,52 @@ $\alpha$
 \begin{equation}
 \lambda x.M \equiv_{\alpha} \lambda y.M[y/x]
 \end{equation}
-که در آن
-$M[y/x]$
-جانشینی
-$y$
-به جای
-$x$
-در
-$M$
-است.
 \end{defn}
 
+\subsection{کاهش $\beta$}
+
+\begin{defn}
+کاهش
+$\beta$
+قاعده اصلی محاسبه در حساب لامبدا است و به صورت زیر تعریف می‌شود
+\begin{equation}
+(\lambda x.M)N \rightarrow_{\beta} M[N/x]
+\end{equation}
+که بستار بازتابی ترایا آن با نماد
+$\twoheadrightarrow_{\beta}$
+نشان داده می‌شود.
+\end{defn}
+
+\subsection{مسیرهای کاهش و فرم نرمال}
+
+\begin{defn}
+عبارت
+$M$
+در فرم نرمال است، اگر هیچ گامی از کاهش
+$\beta$
+بر آن قابل اعمال نباشد.
+یعنی
+$\nexists N. M \rightarrow_{\beta} N$.
+\end{defn}
+
+\begin{defn}
+یک مسیر کاهش، دنباله‌ای به شکل
+$M_0 \rightarrow_{\beta} M_1 \rightarrow_{\beta} ... \rightarrow_{\beta} M_n$
+است که می‌تواند متناهی یا نامتناهی باشد.
+\end{defn}
+
+\subsection{نرمال‌سازی ضعیف و قوی}
+
+\begin{defn}
+عبارت
+$M$
+دارای خاصیت نرمال‌سازی ضعیف است، اگر حداقل یک مسیر کاهش به یک فرم نرمال داشته باشد.
+یعنی
+$\exists N.\;(M \twoheadrightarrow_{\beta} N \land N \in \mathrm{NF})$
+\end{defn}
+
+\begin{defn}
+عبارت
+$M$
+دارای خاصیت نرمال‌سازی قوی است، اگر هیچ مسیر کاهش نامتناهی‌ای از آن آغاز نشود.
+\end{defn}
