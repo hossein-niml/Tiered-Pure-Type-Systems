@@ -121,7 +121,7 @@ $\beta$
 \begin{equation}
 (\lambda x.M)N \rightarrow_{\beta} M[N/x]
 \end{equation}
-که بستار بازتابی ترایا آن با نماد
+که بستار بازتابی تعدی آن با نماد
 $\twoheadrightarrow_{\beta}$
 نشان داده می‌شود.
 \end{defn}
@@ -159,3 +159,111 @@ $\exists N.\;(M \twoheadrightarrow_{\beta} N \land N \in \mathrm{NF})$
 $M$
 دارای خاصیت نرمال‌سازی قوی است، اگر هیچ مسیر کاهش نامتناهی‌ای از آن آغاز نشود.
 \end{defn}
+
+\section{سیستم‌های کاهش انتزاعی}
+
+سیستم‌های کاهش انتزاعی\footnote{\lr{Abstract Reduction Systems} یا به اختصار \lr{ARS}}
+چارچوبی ریاضی برای مطالعه روابط کاهش در سیستم‌های محاسباتی هستند.
+بسیاری از مفاهیم نظریه انواع
+(از جمله نرمال‌سازی ضعیف و قوی، همگرایی و یکتایی فرم نرمال)
+به‌طور طبیعی در این چارچوب بیان می‌شوند.
+در این بخش تعریف رسمی و ویژگی‌های بنیادی این چارچوب را بیان می‌کنیم.
+
+\subsection{تعریف سیستم کاهش انتزاعی}
+
+\begin{defn}
+یک سیستم کاهش انتزاعی، یک زوج
+$(A,\rightarrow)$
+است که در آن:
+\begin{itemize}
+\item 
+$A$
+مجموعه‌ای از اشیا است.
+\item
+$\rightarrow$
+یک رابطه دودویی روی
+$A$
+است که رابطه کاهش نام دارد.
+\end{itemize}
+\end{defn}
+
+برای مثال در حساب لامبدا، مجموع عبارات
+$\Lambda$
+همراه با رابطه کاهش
+$\beta$
+یک
+ARS
+را تشکیل می‌دهند.
+
+\subsection{دنباله و بستار کاهش}
+
+\begin{defn}
+دنباله کاهش، زنجیره‌ای از کاهش‌ها به شکل
+$a_0 \rightarrow a_1 \rightarrow ... \rightarrow a_n$
+است، که می‌تواند متناهی یا نامتناهی باشد.
+\end{defn}
+
+\begin{defn}
+بستار بازتابی-تعدی رابطه
+$\rightarrow$
+را با
+$b \rightarrow^* a$
+نشان می‌دهیم که یعنی
+$b = a$
+یا
+دنباله کاهشی از
+$b$
+به
+$a$
+وجود دارد.
+\end{defn}
+
+\subsection{فرم نرمال و نرمال‌سازی}
+
+\begin{defn}
+شی
+$a$
+یک فرم نرمال است اگر
+$\nexists b.\;a \rightarrow b$.
+\end{defn}
+
+\begin{defn}
+شی
+$a$
+دارای خاصیت نرمال‌سازی ضعیف است، اگر
+$\exists b.\;(a \rightarrow^* b \land b \in \mathrm{NF})$.
+\end{defn}
+
+\begin{defn}
+شی
+$a$
+دارای خاصیت نرمال‌سازی قوی است، اگر هیچ دنباله کاهش نامتناهی از آن آغاز نشود.
+\end{defn}
+
+\begin{rem}
+بدیهی است که
+\lr{$\text{Strong Normalization} \Rightarrow \text{Weak Normalization}$}،
+اما عکس آن همیشه برقرار نیست.
+\end{rem}
+
+\subsection{همگرایی و قضیه چرچ-راسر}
+
+\begin{defn}
+سیستم کاهش
+$(A,\rightarrow)$
+همگراست هرگاه
+\begin{equation*}
+a \rightarrow^* b_1,a \rightarrow^* b_2 \Rightarrow \exists c.\; b_1 \rightarrow^* c, b_2 \rightarrow^* c    
+\end{equation*}
+به بیان ساده؛ هر دو مسیر کاهش که از یک نقطه منشعب می‌شوند، دوباره به نقطه‌ای مشترک می‌رسند.
+\end{defn}
+
+\begin{thm}[قضیه چرچ-راسر]
+یک
+ARS
+همگراست اگر و تنها اگر دارای خاصیت چرچ-راسر باشد؛ یعنی
+\begin{equation*}
+b_1 \leftrightarrow^* b_2 \Rightarrow \exists c.\; b_1 \rightarrow^* c, b_2 \rightarrow^* c
+\end{equation*}
+نتایجی مانند یکتایی فرم نرمال از همین ویژگی حاصل می‌شوند.
+\end{thm}
