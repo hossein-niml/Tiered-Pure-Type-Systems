@@ -25,18 +25,18 @@
 \begin{defn}    
 مجموعه عبارات
 $\Lambda$
-با قواعد بازگشتی زیر تعریف می‌گردد:
+با قاعده بازگشتی زیر تعریف می‌گردد:
 
 \begin{equation}
-T::=x|\lambda x.M|MN
+M::=V|\lambda V.M|MM
 \end{equation}
 
 که در آن
-$x$
-متغیر،
-$\lambda x.M$
+$V=\{x,y,z,...\}$
+مجموعه متغیرها،
+$\lambda V.M$
 انتزاع و
-$MN$
+$MM$
 کاربرد است.
 \end{defn}
 
@@ -242,7 +242,7 @@ $a$
 
 \begin{rem}
 بدیهی است که
-\lr{$\text{Strong Normalization} \Rightarrow \text{Weak Normalization}$}،
+\lr{$\text{Strong Normalization} \implies \text{Weak Normalization}$}،
 اما عکس آن همیشه برقرار نیست.
 \end{rem}
 
@@ -253,7 +253,7 @@ $a$
 $(A,\rightarrow)$
 همگراست هرگاه
 \begin{equation*}
-\forall a,b_1,b_2.\;(a \rightarrow^* b_1 \land a \rightarrow^* b_2) \Rightarrow (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
+\forall a,b_1,b_2.\;(a \rightarrow^* b_1 \land a \rightarrow^* b_2) \implies (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
 \end{equation*}
 به بیان ساده؛ هر دو مسیر کاهش که از یک شی منشعب می‌شوند، دوباره به شی مشترکی می‌رسند.
 \end{defn}
@@ -265,7 +265,7 @@ $(A,\rightarrow)$
 $(A,\rightarrow)$
 همگراست اگر و تنها اگر دارای خاصیت چرچ-راسر باشد؛ یعنی
 \begin{equation*}
-\forall b_1,b_2.\;(b_1 = b_2) \Rightarrow (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
+\forall b_1,b_2.\;(b_1 = b_2) \implies (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
 \end{equation*}
 \end{thm}
 
@@ -276,11 +276,114 @@ $(A,\rightarrow)$
 $(A,\rightarrow)$
 همگرای محلی است اگر
 \begin{equation*}
-\forall a,b_1,b_2.\;(a \rightarrow b_1 \land a \rightarrow b_2) \Rightarrow (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
+\forall a,b_1,b_2.\;(a \rightarrow b_1 \land a \rightarrow b_2) \implies (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
 \end{equation*}
 \end{defn}
 
 \begin{lmm}[لم نیومن]
 اگر یک سیستم کاهش انتزاعی،همگرای محلی و دارای خاصیت نرمال‌سازی قوی باشد، آنگاه همگراست.
 \end{lmm}
+
+\section{حساب لامبدا نوع‌دار ساده}
+
+حساب لامبدا نوع‌دار ساده\footnote{\lr{Simply Typed Lambda Calculus} یا به اختصار \lr{STLC}}
+یکی از مهم‌ترین و کلاسیک‌ترین سیستم‌های نوع است.
+این سیستم پایه بسیاری از زبان‌های تابعی، سیستم‌های نوع پیشرفته و بخش مهمی از نظریه انواع به شمار می‌رود.
+همچنین ساده‌ترین نمونه از «سیستم‌های نوع محض» است و مقدمه‌ای طبیعی برای ورود به مباحث بخش بعدی به حساب می‌آید.
+
+در این بخش نحو، قضاوت‌ها و قواعد نوع STLC را معرفی می‌کنیم.
+
+\subsection{نحو}
+
+\begin{defn}[انواع]
+مجموعه انواع به صورت بازگشتی زیر تعریف می‌شود
+\begin{equation*}
+T ::= B | T \to T
+\end{equation*}
+که در آن،
+$B=\{\alpha,\beta,\gamma,...\}$
+مجموعه توابع پایه و
+$T \to T$
+سازنده نوع تابع است.
+\end{defn}
+
+\begin{defn}[عبارات]
+مجموعه عبارات به صورت بازگشتی زیر تعریف می‌شود
+\begin{equation*}
+M ::= V | \lambda V^T.M | MM
+\end{equation*}
+که در آن؛
+$V=\{x,y,z,...\}$
+مجموعه متغیرها،
+$T$
+مجموعه انواع،
+$\lambda V^T.M$
+انتزاع و
+$MM$
+کاربرد است.
+\end{defn}
+
+\subsection{متن و قضاوت نوع}
+
+\begin{defn}[متن]
+یک متن مانند
+$\Gamma$،
+دنباله‌ای متناهی از مفروضات به شکل زیر است
+\begin{equation*}
+x_1:A_1,...,x_n:A_n    
+\end{equation*}
+که در آن
+$x_i:A_i$
+به این معناست که
+"$x_i$
+از نوع
+$A_i$
+است".
+\end{defn}
+
+\begin{defn}[قضاوت نوع]
+یک قضاوت نوع، گزاره‌ای به شکل زیر است
+\begin{equation*}
+\Gamma \vdash M:A
+\end{equation*}
+که در آن
+$\Gamma$
+یک متن،
+$M$
+یک عبارت و
+$A$
+یک نوع است و معنای آن این است که
+"در متن
+$\Gamma$،
+عبارت
+$M$
+از نوع
+$A$
+است".
+\end{defn}
+
+\begin{defn}[قواعد قضاوت نوع]
+قواعد قضاوت نوع در
+$STLC$
+شامل سه قاعده زیر است:
+
+\begin{itemize}
+\item قاعده متغیر
+\begin{prooftree}
+\AxiomC{}
+\UnaryInfC{$\Gamma,x:A \vdash x:A$}
+\end{prooftree}
+\item قاعده انتزاع
+\begin{prooftree}
+\AxiomC{$\Gamma,x:A \vdash M:B$}
+\UnaryInfC{$\Gamma \vdash \lambda x^A.M:A \to B$}
+\end{prooftree}
+\item قاعده کاربرد
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash N:A$}
+\AxiomC{$\Gamma \vdash M:A \to B$}
+\BinaryInfC{$\Gamma \vdash MB:B$}
+\end{prooftree}
+\end{itemize}
+\end{defn}
 
