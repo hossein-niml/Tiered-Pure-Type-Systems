@@ -246,24 +246,41 @@ $a$
 اما عکس آن همیشه برقرار نیست.
 \end{rem}
 
-\subsection{همگرایی و قضیه چرچ-راسر}
+\subsection{همگرایی}
 
-\begin{defn}
-سیستم کاهش
+\begin{defn}[همگرایی]
+سیستم کاهش انتزاعی
 $(A,\rightarrow)$
 همگراست هرگاه
 \begin{equation*}
-a \rightarrow^* b_1,a \rightarrow^* b_2 \Rightarrow \exists c.\; b_1 \rightarrow^* c, b_2 \rightarrow^* c    
+\forall a,b_1,b_2.\;(a \rightarrow^* b_1 \land a \rightarrow^* b_2) \Rightarrow (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
 \end{equation*}
-به بیان ساده؛ هر دو مسیر کاهش که از یک نقطه منشعب می‌شوند، دوباره به نقطه‌ای مشترک می‌رسند.
+به بیان ساده؛ هر دو مسیر کاهش که از یک شی منشعب می‌شوند، دوباره به شی مشترکی می‌رسند.
 \end{defn}
 
+نتایجی مانند یکتایی فرم نرمال از قضیه پیش رو ثابت می‌شوند.
+
 \begin{thm}[قضیه چرچ-راسر]
-یک
-ARS
+سیستم کاهش انتزاعی
+$(A,\rightarrow)$
 همگراست اگر و تنها اگر دارای خاصیت چرچ-راسر باشد؛ یعنی
 \begin{equation*}
-b_1 \leftrightarrow^* b_2 \Rightarrow \exists c.\; b_1 \rightarrow^* c, b_2 \rightarrow^* c
+\forall b_1,b_2.\;(b_1 = b_2) \Rightarrow (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
 \end{equation*}
-نتایجی مانند یکتایی فرم نرمال از همین ویژگی حاصل می‌شوند.
 \end{thm}
+
+اثبات همگرایی معمولاً دشوار است، اما یک ویژگی محلی ساده‌تر وجود دارد.
+
+\begin{defn}[همگرایی محلی]
+سیستم کاهش انتزاعی
+$(A,\rightarrow)$
+همگرای محلی است اگر
+\begin{equation*}
+\forall a,b_1,b_2.\;(a \rightarrow b_1 \land a \rightarrow b_2) \Rightarrow (\exists c.\; (b_1 \rightarrow^* c \land b_2 \rightarrow^* c))
+\end{equation*}
+\end{defn}
+
+\begin{lmm}[لم نیومن]
+اگر یک سیستم کاهش انتزاعی،همگرای محلی و دارای خاصیت نرمال‌سازی قوی باشد، آنگاه همگراست.
+\end{lmm}
+
