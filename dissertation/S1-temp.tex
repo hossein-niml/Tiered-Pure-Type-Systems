@@ -28,11 +28,11 @@ $\Lambda$
 با قاعده بازگشتی زیر تعریف می‌گردد:
 
 \begin{equation}
-M::=V|\lambda V.M|MM
+M::=V \mid \lambda V.M \mid MM
 \end{equation}
 
 که در آن
-$V=\{x,y,z,...\}$
+$V=\{x,y,z,\dots\}$
 مجموعه متغیرها،
 $\lambda V.M$
 انتزاع و
@@ -140,7 +140,7 @@ $\nexists N. M \rightarrow_{\beta} N$.
 
 \begin{defn}
 یک مسیر کاهش، دنباله‌ای به شکل
-$M_0 \rightarrow_{\beta} M_1 \rightarrow_{\beta} ... \rightarrow_{\beta} M_n$
+$M_0 \rightarrow_{\beta} M_1 \rightarrow_{\beta} \dots \rightarrow_{\beta} M_n$
 است که می‌تواند متناهی یا نامتناهی باشد.
 \end{defn}
 
@@ -178,9 +178,9 @@ $(A,\rightarrow)$
 \begin{itemize}
 \item 
 $A$
-مجموعه‌ای از اشیا است.
+مجموعه‌ اشیا است.
 \item
-$\rightarrow$
+$\rightarrow \; \subseteq A \times A$
 یک رابطه دودویی روی
 $A$
 است که رابطه کاهش نام دارد.
@@ -190,7 +190,7 @@ $A$
 برای مثال در حساب لامبدا، مجموع عبارات
 $\Lambda$
 همراه با رابطه کاهش
-$\beta$
+$\beta$،
 یک
 ARS
 را تشکیل می‌دهند.
@@ -199,7 +199,7 @@ ARS
 
 \begin{defn}
 دنباله کاهش، زنجیره‌ای از کاهش‌ها به شکل
-$a_0 \rightarrow a_1 \rightarrow ... \rightarrow a_n$
+$a_0 \rightarrow a_1 \rightarrow \dots \rightarrow a_n$
 است، که می‌تواند متناهی یا نامتناهی باشد.
 \end{defn}
 
@@ -298,10 +298,10 @@ $(A,\rightarrow)$
 \begin{defn}[انواع]
 مجموعه انواع به صورت بازگشتی زیر تعریف می‌شود
 \begin{equation*}
-T ::= B | T \to T
+T ::= B \mid T \to T
 \end{equation*}
 که در آن،
-$B=\{\alpha,\beta,\gamma,...\}$
+$B=\{\alpha,\beta,\gamma,\dots\}$
 مجموعه توابع پایه و
 $T \to T$
 سازنده نوع تابع است.
@@ -310,10 +310,10 @@ $T \to T$
 \begin{defn}[عبارات]
 مجموعه عبارات به صورت بازگشتی زیر تعریف می‌شود
 \begin{equation*}
-M ::= V | \lambda V^T.M | MM
+M ::= V \mid \lambda V^T.M \mid MM
 \end{equation*}
 که در آن؛
-$V=\{x,y,z,...\}$
+$V=\{x,y,z,\dots\}$
 مجموعه متغیرها،
 $T$
 مجموعه انواع،
@@ -323,14 +323,14 @@ $MM$
 کاربرد است.
 \end{defn}
 
-\subsection{متن و قضاوت نوع}
+\subsection{زمینه و قضاوت نوع}
 
-\begin{defn}[متن]
-یک متن مانند
+\begin{defn}[زمینه]
+یک زمینه مانند
 $\Gamma$،
 دنباله‌ای متناهی از مفروضات به شکل زیر است
 \begin{equation*}
-x_1:A_1,...,x_n:A_n    
+x_1:A_1,\dots,x_n:A_n    
 \end{equation*}
 که در آن
 $x_i:A_i$
@@ -339,6 +339,14 @@ $x_i:A_i$
 از نوع
 $A_i$
 است".
+
+همچنین
+$\Gamma,x:A$
+به معنای افزودن فرض
+$x:A$
+به
+$\Gamma$
+است.
 \end{defn}
 
 \begin{defn}[قضاوت نوع]
@@ -348,12 +356,12 @@ $A_i$
 \end{equation*}
 که در آن
 $\Gamma$
-یک متن،
+یک زمینه،
 $M$
 یک عبارت و
 $A$
 یک نوع است و معنای آن این است که
-"در متن
+"در زمینه
 $\Gamma$،
 عبارت
 $M$
@@ -390,35 +398,182 @@ $STLC$
 \section{سیستم‌های نوع محض}
 
 سیستم‌های نوع محض\footnote{\lr{Pure Type Systems} یا به اختصار \lr{PTS}}
-یک چارچوب کلی و انتزاعی  برای تعریف خانواده‌های بزرگی از سیستم‌های نوع هستند.
-
-حساب لامبدا نوع‌دار ساده، خساب ساختمان‌ها و حتی کل مکعب لامبدا را می‌توان به عنوان نمونه‌ای از
+که نخستین بار توسط
+\cite{berardi1988} و \cite{terlouw1989}
+معرفی شدند و سپس توسط
+\cite{barendregt1991}
+تعمیم یافتند، یک چارچوب یکپارچه برای توصیف طیف وسیعی از سیستم‌های نوع مبتنی بر حساب لامبدا را فراهم می‌کنند.
+بسیاری از سیستم‌های مهم از جمله حساب لامبدا نوع‌دار ساده، سیستم‌های چندریخت و حساب ساختمان‌ها را می‌توان تنها با انتخاب مناسب مجموعه‌ای از "رده‌ها"، "اصول" و "روابط" در قالب یک
 PTS
-تفسیر کرد. از طرفی سیستمی که
+بیان کرد. این چارچوب به دلیل سادگی نحوی و هم‌چنین انعطاف بسیار بالا، نقش محوری در نظریه انواع دارد. از طرفی سیستمی که
 Mull
 در \cite{mull2023}
 معرفی می‌کند که اساس کار این پایان‌نامه است، نسخه‌ تغییر یافته همین سیستم است؛
-لذا مطالعه این سیستم برای ما ضروری است.
+لذا آشنایی با این سیستم برای ما ضروری است.
 
-\subsection{تعریف سیستم نوع محض}
+\subsection{مشخصه و نحو}
 
-\begin{defn}
+\begin{defn}[مشخصه سیستم نوع محض]
 یک سیستم نوع محض با سه تایی
-$(S,A,R)$
+$(\mathcal{S},\mathcal{A},\mathcal{R})$
 مشخص می‌شود که در آن
 \begin{itemize}
-\item $S$ مجموعه ترتیب‌ها
-\item $A$ مجموعه اصول به شکل
-$A = \{(s_i,s_j)|s_i,s_j \in S\}$
-\item $R$ مجموعه روابط به شکل
-$R = \{(s_i,s_j,s_k)|s_i,s_j,s_k \in S\}$
+\item $S=\{s_1,s_2,\dots\}$ مجموعه رده‌ها
+\item $A \subseteq S \times S$ مجموعه اصول
+\item $R \subseteq S \times S \times S$ مجموعه روابط
 \end{itemize}
 هستند.
 \end{defn}
 
-\subsection{نحو}
-
 عبارات و انواع در
 PTS
-از منظر نحو یکسان هستند؛ یعنی در این چارچوب، "نوع" و "عبارت" یک ساختار واحد دارند و فقط جایگاه آن‌ها در قضاوت نوع است که نقش متفاوتی به آن‌ها می‌دهد.
+از منظر نحو یکسان هستند؛یعنی در این چارچوب، "نوع" و "عبارت" یک ساختار واحد دارند و فقط جایگاه آن‌ها در قضاوت نوع است که نقش متفاوتی به آن‌ها می‌دهد.
 
+\begin{defn}[نحو سیستم نوع محض]
+نحو سیستم نوع محض به صورت بازگشتی زیر تعریف می‌شود
+\begin{equation*}
+T ::= \mathcal{S} \mid V \mid \lambda V:T.T \mid \Pi V:T.T \mid TT
+\end{equation*}
+که در آن
+\begin{itemize}
+\item $\mathcal{S}=\{s_1,s_2,\dots\}$ مجموعه رده‌ها
+\item $V=\{x,y,z,\dots\}$ مجموعه متغیرها
+\item $\lambda V:T.T$ انتزاع
+\item $\Pi V:T.T$ نوع تابع
+\item $TT$ کاربرد
+\end{itemize}
+هستند.
+\end{defn}
+
+در این پایان‌نامه، مطابق با
+\cite{mull2023}،
+متغیرها را با رده خودشان نشانه‌گذاری می‌شوند.
+
+\begin{defn}[نشانه گذاری متغیرها]
+برای هر
+$s \in \mathcal{S}$، 
+$V_s$
+را مجموعه شمارشی متغیرهای مربوط به رده
+$s$
+در نظر می‌گیریم.
+
+$^sv_i$
+به معنای
+$i$
+مین متغیر در
+$V_s$
+است و
+$V = \cup_{s \in \mathcal{S}}V_s$.
+\end{defn}
+
+\subsection{قضاوت نوع}
+
+\begin{defn}[زمینه]
+یک زمینه مانند
+$\Gamma$،
+دنباله‌ای متناهی از مفروضات به شکل زیر است
+\begin{equation*}
+x_1:A_1,\dots,x_n:A_n    
+\end{equation*}
+که در آن
+$x_i:A_i$
+به این معناست که
+"$x_i$
+از نوع
+$A_i$
+است".
+همچنین
+$\Gamma,x:A$
+به معنای افزودن فرض
+$x:A$
+به
+$\Gamma$
+است.
+\end{defn}
+
+\begin{defn}[قواعد قضاوت نوع در سیستم نوع محض]
+در یک سیستم نوع محض با مشخصه
+$(\mathcal{S},\mathcal{A},\mathcal{R})$
+قواعد زیر موجود است:
+
+\begin{itemize}
+\item قاصده اصل
+\begin{prooftree}
+\AxiomC{}
+\LeftLabel{\lr{if $(s,t) \in \mathcal{A}$}}
+\UnaryInfC{$\vdash s:t$}
+\end{prooftree}
+\item قاعده شروع
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash A:s$}
+\LeftLabel{\lr{if $x \notin \Gamma$}}
+\UnaryInfC{$\Gamma,x:A \vdash x:A$}
+\end{prooftree}
+\item قاعده تضعیف
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash B:s$}
+\AxiomC{$\Gamma \vdash M:A$}
+\LeftLabel{\lr{if $x \notin \Gamma$}}
+\BinaryInfC{$\Gamma,x:B \vdash M:A$}
+\end{prooftree}
+\item قاعده تولید
+\begin{prooftree}
+\AxiomC{$\Gamma,x:A \vdash B:s_2$}
+\AxiomC{$\Gamma \vdash A:s_1$}
+\LeftLabel{\lr{if $(s_1,s_2,s_3) \in \mathcal{R}$}}
+\BinaryInfC{$\Gamma \vdash (\Pi x:A.B):s_3$}
+\end{prooftree}
+\item قاعده انتزاع
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash \Pi x:A.B:s$}
+\AxiomC{$\Gamma,x:A \vdash M:B$}
+\BinaryInfC{$\Gamma \vdash (\lambda x:A.M):(\Pi x:A.B)$}
+\end{prooftree}
+\item قاعده کاربرد
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash N:A$}
+\AxiomC{$\Gamma \vdash M:(\Pi x:A.B)$}
+\BinaryInfC{$\Gamma \vdash MN:B[N/x]$}
+\end{prooftree}
+\item قاعده تبدیل
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash B:s$}
+\AxiomC{$A \equiv_\beta B$}
+\AxiomC{$\Gamma \vdash M:A$}
+\TrinaryInfC{$\Gamma \vdash M:B$}
+\end{prooftree}
+\end{itemize}
+\end{defn}
+
+\subsection{نمونه‌ها}
+
+حال با معرفی کامل
+PTS،
+بسیاری از سیستم‌های معروف تنها با انتخاب مناسب
+$(\mathcal{S},\mathcal{A},\mathcal{R})$
+قابل بیان‌اند.
+\\ \\
+\textbf{حساب لامبدا نوع‌دار ساده}
+\begin{align*}
+\mathcal{S} &= \{*\}\\
+\mathcal{A} &= \{(*,*)\}\\
+\mathcal{R} &= \{(*,*,*)\}
+\end{align*}
+\\
+\textbf{سیستم $\lambda2$}
+\begin{align*}
+\mathcal{S} &= \{*,\Box\}\\
+\mathcal{A} &= \{(*,\Box)\}\\
+\mathcal{R} &= \{(*,*,*),(*,*,\Box)\}
+\end{align*}
+\\
+\textbf{سیستم $\lambda_\omega$}
+\begin{align*}
+\mathcal{S} &= \{*,\Box\}\\
+\mathcal{A} &= \{(*,\Box)\}\\
+\mathcal{R} &= \{(*,*,*),(*,*,\Box),(\Box,\Box,\Box)\}
+\end{align*}
+
+\subsection{مکعب لامبدا}
+
+مکعب لامبدا توصیفی شهودی و هندسی از کلاس بزرگی از سیستم‌های نوع محض است.
