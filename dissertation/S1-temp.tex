@@ -6,69 +6,97 @@
 
 \section{مقدمه‌}
 
-در این فصل مفاهیم و تعاریف پایه‌ای که در ادامهٔ پایان‌نامه مورد نیاز هستند معرفی می‌شوند.
-هدف اصلی فراهم ساختن یک زمینه مفهومی و نمادشناسی واحد برای خواننده است
-تا مطالعهٔ فصل‌های بعدی که به توصیف سیستم‌های نوع محض لایه‌ای و صوری‌سازی آن‌ها در
+در این فصل، مفاهیم و تعاریف پایه‌ای مورد نیاز برای درک مباحث اصلی پایان‌نامه معرفی می‌شوند.
+این مفاهیم شامل حساب لامبدا بدون نوع، سیستم‌های کاهش انتزاعی، حساب لامبدا نوع‌دار ساده و سیستم‌های نوع محض هستند که به ترتیب از ساده به پیچیده ارائه می‌گردند.
+هدف از این فصل، ایجاد یک زبان مشترک و نمادگذاری واحد برای خواننده است تا زمینه لازم برای مطالعه فصل‌های بعدی، که به معرفی سیستم‌های نوع محض لایه‌ای، ترجمهٔ حذف وابستگی و صوری‌سازی آن‌ها در اثبات‌یار
 \lr{Coq}
-می‌پردازند، ممکن گردد.
-در این فصل تمرکز بر تعریف نحوها، روابط کاهش، قضایا و لم‌های کلاسیکِ مورد استفاده در این پایان‌نامه است؛
-اثبات‌های تفصیلی اغلب به منابع استاندارد مانند
+اختصاص دارد، فراهم آید.
+
+فصل با بررسی حساب لامبدا بدون نوع آغاز می‌شود که پایه تاریخی و مفهومی تمام سیستم‌های بعدی را تشکیل می‌دهد.
+سپس چارچوب کلی سیستم‌های کاهش انتزاعی معرفی می‌گردد که ابزار ریاضی برای مطالعه دقیق خواص نرمال‌سازی و همگرایی را فراهم می‌کند. این چارچوب به دلیل عمومیت خود، امکان بیان یکپارچه نتایج مربوط به نرمال‌سازی ضعیف، قوی و همگرایی را فراهم می‌کند.
+در ادامه، حساب لامبدا نوع‌دار ساده به عنوان نخستین سیستم نوع‌دار وابسته بررسی می‌شود. این سیستم نه تنها مقدمه‌ای طبیعی برای ورود به سیستم‌های پیچیده‌تر است، بلکه نمونه‌ای کلاسیک از چگونگی جلوگیری انواع از حلقه‌های محاسباتی را نشان می‌دهد.
+در نهایت، به سیستم‌های نوع محض می‌پردازیم که چارچوب کلی و یکپارچه‌ای را برای بیان طیف وسیعی از سیستم‌های نوع، از حساب لامبدا نوع‌دار ساده تا حساب ساختمان‌ها، ارائه می‌کنند.
+
+اثبات‌های تفصیلی بسیاری از قضایا و لم‌های این فصل به منابع استاندارد مانند
 \cite{barendregt} و \cite{geuvers1993}
-ارجاع داده خواهد شد.
+ارجاع داده شده و تنها صورت تعاریف و قضایای کلیدی همراه با توضیحات ضروری ارائه می‌گردد.
+این رویکرد از تکرار مطالب جلوگیری می‌کند و خواننده را به مطالعه منابع اصلی ترغیب می‌نماید.
+
+با پایان این فصل، خواننده با ابزارهای نظری لازم برای درک سیستم‌های نوع محض لایه‌ای و ترجمه حذف وابستگی آشنا خواهد شد و آماده ورود به مباحث تخصصی فصل‌های بعدی می‌شود.
 
 \section{حساب لامبدا بدون نوع}
 
+حساب لامبدا بدون نوع که نخستین بار توسط
+\lr{Alonzo Church}
+در
+\cite{church1932}
+معرفی شد، پایه تاریخی و مفهومی تمام سیستم‌های محاسباتی تابعی و نظریه انواع مدرن به شمار می‌رود.
+این دستگاه، محاسبه را به عنوان کاربرد توابع بر آرگومان‌ها مدل می‌کند و قدرت بیان معادلی با ماشین تورینگ دارد.
+این حساب، با وجود سادگی نحوی، مسائل عمیقی مانند حلقه‌های نامتناهی و تصمیم‌ناپذیری را نشان می‌دهد؛ که این موارد در سیستم‌های نوع‌دار با استفاده از انواع کنترل می‌شوند.
+
 \subsection{نحو}
 
-حساب لامبدا به عنوان یک دستگاه انتزاعی برای نمایش محاسبه و تبدیلِ عباراتِ تابعی تعریف می‌شود.
-
-\begin{defn}    
-مجموعه عبارات
+\begin{defn}[نحو عبارات در حساب لامبدا بدون نوع]    
+مجموعه عبارات حساب لامبدا بدون نوع، که معمولا با
 $\Lambda$
-با قاعده بازگشتی زیر تعریف می‌گردد:
+نشان داده می‌شود، به صورت بازگشتی زیر تعریف می‌گردد
 
-\begin{equation}
-M::=V \mid \lambda V.M \mid MM
-\end{equation}
+\begin{equation*}
+M ::= V \mid \lambda V.M \mid MM
+\end{equation*}
 
 که در آن
-$V=\{x,y,z,\dots\}$
-مجموعه متغیرها،
-$\lambda V.M$
-انتزاع و
-$MM$
-کاربرد است.
+
+\begin{itemize}
+\item $V=\{x,y,z,\dots\}$ مجموعه متغیرهاست.
+\item $\lambda V.M$ یک انتزاع و بیانگر تعریف یک تابع است.
+\item $MM$ یک کاربرد و بیانگر صدا زدن یک تابع است.
+\end{itemize}
 \end{defn}
 
 \subsection{متغیرهای آزاد و بسته}
 
-\begin{defn}
+برای درک دقیق مفاهیم جانشینی و کاهش، معرفی متغیرهای آزاد و بسته ضروری است.
+
+\begin{defn}[متغیرهای آزاد یک عبارت]
 برای یک عبارت
 $M$،
 مجموعه متغیرهای آزاد آن که با
 $FV(M)$
-نشان داده می‌شود، به صورت بازگشتی به شکل زیر تعریف می‌گردد
-\begin{align}
+نشان داده می‌شود، به صورت بازگشتی زیر تعریف می‌گردد
+\begin{align*}
 FV(x)&=\{x\}\\
 FV(\lambda x.M)&=FV(M)-\{x\}\\
 FV(MN)&=FV(M) \cup FV(N)
-\end{align}
+\end{align*}
 \end{defn}
 
-\begin{defn}
-گوییم متغیر
-$x$
-در
-$M$
-آزاد است، هرگاه
-$x \in FV(M)$.
-گوییم متغیر
-$x$
-در
-$M$
-بسته است، هرگاه
-$x \notin FV(M)$.
-\end{defn}
+\begin{prop}
+گزاره‌های زیر با یکدیگر معادل هستند:
+\begin{itemize}
+\item $x \in FV(M)$.
+\item متغیر $x$ در عبارت $M$ آزاد است.
+\item متغیر $x$ در عبارت $M$ دارای رخداد آزاد است.
+\end{itemize}
+\end{prop}
+
+\begin{prop}
+گزاره‌های زیر با یکدیگر معادل هستند:
+\begin{itemize}
+\item $x \notin FV(M)$.
+\item متغیر $x$ در عبارت $M$ بسته است.
+\item متغیر $x$ در عبارت $M$ دارای رخداد بسته است.
+\end{itemize}
+\end{prop}
+
+\begin{prop}
+گزاره‌های زیر با یکدیگر معادل هستند:
+\begin{itemize}
+\item $FV(M) = \emptyset$.
+\item عبارت $M$ بسته است.
+\item عبارت $M$ یک ترکیب‌گر است.
+\end{itemize}
+\end{prop}
 
 \subsection{جانشینی}
 
@@ -82,22 +110,37 @@ $M$
 $N$
 است.
 
+\begin{rem}
+در برخی منابع مانند
+\cite{barendregt}،
+جانشینی با نماد
+\begin{equation*}
+M[x:=N]
+\end{equation*}
+نشان داده می‌شود. ما در این پایان‌نامه از نماد متداول دیگری استفاده می‌کنیم که
+\lr{Mull}
+نیز در تز دکتری خود استفاده کرده است، یعنی
+\begin{equation*}
+M[N/x]   
+\end{equation*}
+\end{rem}
+
 \begin{defn}
 جانشینی به صورت بازگشتی زیر تعریف می‌شود
-\begin{align}
+\begin{align*}
 x[N/x] &= N\\
 y[N/x] &= y & (x \neq y) \\
 PQ[N/x]&=(P[N/x])(Q[N/x])\\
 (\lambda x.M)[N/x] &= \lambda x.M\\
 (\lambda y.M)[N/x] &= \lambda y.(M[N/x]) & (x \neq y)
-\end{align}
+\end{align*}
 \end{defn}
 
 \subsection{تبدیل $\alpha$}
 
 تبدیل
 $\alpha$
-به ما اجازه می‌دهد نام متغیرهای بسته را بدون تغییر معنای عبارت تغییر دهیم.
+به ما اجازه می‌دهد نام متغیرهای بسته را، بدون تغییر معنای عبارت، تغییر دهیم.
 
 \begin{defn}
 اگر
@@ -107,9 +150,9 @@ $x \notin FV(M)$،
 آنگاه تبدیل
 $\alpha$
 به صورت زیر بیان می‌شود
-\begin{equation}
+\begin{equation*}
 \lambda x.M \equiv_{\alpha} \lambda y.M[y/x]
-\end{equation}
+\end{equation*}
 \end{defn}
 
 \subsection{کاهش $\beta$}
@@ -118,47 +161,124 @@ $\alpha$
 کاهش
 $\beta$
 قاعده اصلی محاسبه در حساب لامبدا است و به صورت زیر تعریف می‌شود
-\begin{equation}
+\begin{equation*}
 (\lambda x.M)N \rightarrow_{\beta} M[N/x]
-\end{equation}
-که بستار بازتابی تعدی آن با نماد
+\end{equation*}
+که بستار بازتاب-تعدی آن با نماد
 $\twoheadrightarrow_{\beta}$
 نشان داده می‌شود.
 \end{defn}
 
+\subsubsection{مثال}
+\begin{enumerate}
+\item
+\begin{align*}
+\lambda x.(\lambda xy.y)x &\equiv_{\alpha} \lambda x.(\lambda ry.y)x\\
+&\rightarrow_{\beta} \lambda x.(\lambda y.y)[x/r]\\
+&= \lambda x.(\lambda y.y)\\
+\end{align*}
+\item \label{infinite_reduction} اگر $M \equiv \lambda x.xx$، آنگاه
+\begin{align*}
+MM &\equiv (\lambda x.xx)M\\
+&\rightarrow_{\beta} xx[M/x]\\
+&= MM\\
+&\equiv (\lambda x.xx)M\\
+&\rightarrow_{\beta} xx[M/x]\\
+&= \dots
+\end{align*}
+پس داریم
+\begin{equation*}
+MM \rightarrow_{\beta} MM \rightarrow_{\beta} MM \rightarrow_{\beta} \dots
+\end{equation*}
+\end{enumerate}
+
+همانطور که در مثال ۲ مشاهده می‌کنید، دنباله کاهش عبارت $MM$ نامتناهی است. این مثال ما را به مفاهیم بعدی سوق می‌دهد.
+
 \subsection{مسیرهای کاهش و فرم نرمال}
+
+\begin{defn}
+یک مسیر کاهش، دنباله‌ای به شکل زیر است که می‌تواند متناهی یا نامتناهی باشد.
+\begin{equation*}
+M_0 \rightarrow_{\beta} M_1 \rightarrow_{\beta} \dots \rightarrow_{\beta} M_n
+\end{equation*}
+\end{defn}
 
 \begin{defn}
 عبارت
 $M$
-در فرم نرمال است، اگر هیچ گامی از کاهش
+در فرم نرمال (یا یک فرم نرمال) است، اگر هیچ گامی از کاهش
 $\beta$
 بر آن قابل اعمال نباشد.
 یعنی
-$\nexists N. M \rightarrow_{\beta} N$.
+\begin{equation*}
+M \in \mathrm{NF} \iff \nexists N. M \rightarrow_{\beta} N
+\end{equation*}
 \end{defn}
 
-\begin{defn}
-یک مسیر کاهش، دنباله‌ای به شکل
-$M_0 \rightarrow_{\beta} M_1 \rightarrow_{\beta} \dots \rightarrow_{\beta} M_n$
-است که می‌تواند متناهی یا نامتناهی باشد.
-\end{defn}
+\subsubsection{مثال}
+عبارات زیر در فرم نرمال هستند:
+\begin{align*}
+&x\\
+&x(\lambda a.a)\\
+&\lambda x.x\\
+&\lambda y.x
+\end{align*}
+
+عبارات زیر در فرم نرمال نیستند:
+\begin{align*}
+&(\lambda x.x)x\\
+&(\lambda y.xy)(\lambda z.r)
+\end{align*}
+
+زیرا به ترتیب داریم:
+\begin{align*}
+&(\lambda x.x)x \equiv_{\alpha} (\lambda y.y)x \rightarrow_{\beta} y[x/y] = x\\
+&(\lambda y.xy)(\lambda z.r) \rightarrow_{\beta} xy[(\lambda z.r)/y] = x(\lambda z.r)
+\end{align*}
 
 \subsection{نرمال‌سازی ضعیف و قوی}
 
-\begin{defn}
+\begin{defn}[نرمال‌سازی ضعیف]
 عبارت
 $M$
 دارای خاصیت نرمال‌سازی ضعیف است، اگر حداقل یک مسیر کاهش به یک فرم نرمال داشته باشد.
 یعنی
-$\exists N.\;(M \twoheadrightarrow_{\beta} N \land N \in \mathrm{NF})$
+\begin{equation*}
+\exists N\in \mathrm{NF}.\;M \twoheadrightarrow_{\beta} N
+\end{equation*}
 \end{defn}
 
-\begin{defn}
+\begin{defn}[نرمال‌سازی قوی]
 عبارت
 $M$
 دارای خاصیت نرمال‌سازی قوی است، اگر هیچ مسیر کاهش نامتناهی‌ای از آن آغاز نشود.
 \end{defn}
+
+\begin{thm}
+اگر یک عبارت دارای خاصیت نرمال‌سازی قوی باشد، آنگاه دارای خاصیت نرمال‌سازی ضعیف نیز است.
+\end{thm}
+
+عکس قضیه فوق همان حدس
+\lr{BGK}
+است که برای سیستم‌های وابسته، هنوز اثبات نشده است.
+
+\begin{conj}[\lr{BGK}]\label{BGK}
+اگر یک عبارت دارای خاصیت نرمال‌سازی ضعیف باشد، آنگاه دارای خاصیت نرمال‌سازی قوی نیز است.
+\end{conj}
+
+\begin{thm}
+در حساب لامبدا بدون نوع، نرمال‌سازی ضعیف و قوی معادل‌ هستند؛ به بیان دیگر، حدس
+\ref{BGK}
+در حساب لامبدا بدون نوع، برقرار است.
+\end{thm}
+
+\subsubsection{مثال}
+همانطور که در
+\ref{infinite_reduction}
+دیدیم، عبارت زیر دارای خاصیت نرمال‌سازی قوی نیست
+\begin{equation*}
+(\lambda x.xx)(\lambda x.xx)
+\end{equation*}
 
 \section{سیستم‌های کاهش انتزاعی}
 
@@ -500,27 +620,27 @@ $(\mathcal{S},\mathcal{A},\mathcal{R})$
 \item قاصده اصل
 \begin{prooftree}
 \AxiomC{}
-\LeftLabel{\lr{if $(s,t) \in \mathcal{A}$}}
+\LeftLabel{$\quad (s,t) \in \mathcal{A}$}
 \UnaryInfC{$\vdash s:t$}
 \end{prooftree}
 \item قاعده شروع
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash A:s$}
-\LeftLabel{\lr{if $x \notin \Gamma$}}
+\LeftLabel{$\quad x \notin \Gamma$}
 \UnaryInfC{$\Gamma,x:A \vdash x:A$}
 \end{prooftree}
 \item قاعده تضعیف
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash B:s$}
 \AxiomC{$\Gamma \vdash M:A$}
-\LeftLabel{\lr{if $x \notin \Gamma$}}
+\LeftLabel{$\quad x \notin \Gamma$}
 \BinaryInfC{$\Gamma,x:B \vdash M:A$}
 \end{prooftree}
 \item قاعده تولید
 \begin{prooftree}
 \AxiomC{$\Gamma,x:A \vdash B:s_2$}
 \AxiomC{$\Gamma \vdash A:s_1$}
-\LeftLabel{\lr{if $(s_1,s_2,s_3) \in \mathcal{R}$}}
+\LeftLabel{$\quad (s_1,s_2,s_3) \in \mathcal{R}$}
 \BinaryInfC{$\Gamma \vdash (\Pi x:A.B):s_3$}
 \end{prooftree}
 \item قاعده انتزاع
