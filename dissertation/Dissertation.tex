@@ -213,12 +213,6 @@
 %\listoffigures
 \chapter*{خروجی‌های پايان‌نامه}
 \begin{latin}
-\begin{enumerate}
-\item 
-paper1
-\item 
-paper2
-\end{enumerate}
 \end{latin}
 %-------------------------
 %\pagestyle{plain}
@@ -257,8 +251,25 @@ paper2
 
 \begin{latin}
 \begin{abstract}
-The English abstract should match the persion one once traslated.\\[0.5cm]
-\textbf{Keywords: } The english keywords should match the persian ones once translated. 
+In this thesis, the dependency-erasure translation introduced by
+\lr{Nathan Mull}
+for \lr{Tiered Pure Type Systems} \cite{mull2023}
+is fully formalized and mechanically verified in the proof assistant
+\lr{Coq}.
+The translation functions, together with all intermediate lemmas—including the substitution lemma, preservation of reduction paths, and lemmas related to injectivity and image—are proved in a fully machine-checked manner.
+The main theorem of \lr{Mull}, stating that weak normalization implies strong normalization for all tiered pure type systems, is mechanically verified for the first time.
+
+As a result, an open and extensible library is developed, providing a solid foundation for extending this translation to more expressive dependent systems such as the \lr{Calculus of Constructions}.
+The results of this work constitute a significant step toward the proof of the
+\lr{BGK} conjecture\footnote{\lr{Barendregt–Geuvers–Klop}} \cite{geuvers1993}
+in dependent type systems.\\
+\textbf{Keywords: } type theory,
+tiered pure type systems,
+dependency-erasure translation,
+strong normalization,
+mechanized proof,
+\lr{Coq},
+\lr{BGK} conjecture
 \end{abstract}
 \newpage
 
