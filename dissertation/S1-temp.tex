@@ -835,28 +835,116 @@ $\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*:\Box)\}$&$\{(*,\Bo
 خودداری می‌کنیم.
 \end{rem}
 
-\begin{defn}[نرمال‌سازی ضعیف در سیستم]
-یک سیستم نوع محض دارای خاصیت نرمال‌سازی ضعیف است، هرگاه هر عبارت نوع‌پذیر در آن دارای این خاصیت باشد.
+\begin{defn}[نرمال‌سازی ضعیف و قوی در سیستم]
+یک سیستم نوع محض دارای خاصیت نرمال‌سازی ضعیف یا قوی است، هرگاه هر عبارت نوع‌پذیر در آن دارای این خاصیت باشد.
 \end{defn}
 
-\begin{defn}[نرمال‌سازی قوی در سیستم]
-یک سیستم نوع محض دارای خاصیت نرمال‌سازی قوی است، هرگاه هر عبارت نوع‌پذیر در آن دارای این خاصیت باشد.
-\end{defn}
+\begin{lmm}[تولید]
+\hfill
+\begin{itemize}
 
-\begin{defn}[یکتایی نوع]
-نوع هر عبارت نوع‌پذیر، یکتاست. یعنی
+\item \emph{رده:}
 \begin{equation*}
-\forall \Gamma, M, A, B.\; (\Gamma \vdash M : A \land \Gamma \vdash M : B) \implies A \equiv_\beta B
+\forall s \in \mathcal{S}.\quad \Gamma \vdash s : A \implies \exists s' \in \mathcal{S}.\; (A =_\beta s') \land ((s,s') \in \mathcal{A})    
 \end{equation*}
+
+\item \emph{متغیر:}
+\begin{equation*}
+\forall {}^sx \in V.\quad \Gamma \vdash {}^sx : A \implies \exists B.\; (A =_\beta B) \land ((^sx:B) \in \Gamma)
+\end{equation*}
+
+\item \emph{عبارت $\Pi$:}
+\begin{align*}
+\forall s \in \mathcal{S},B,C.\quad &\Gamma \vdash (\Pi ^sx:B.C):A \implies\\ 
+&\exists s',s'' \in \mathcal{S}.\; (\Gamma \vdash B:s) \land (\Gamma,^sx:B \vdash C:s') \land ((s,s',s'') \in \mathcal{R}) \land (A =_\beta s'')
+\end{align*}
+
+\item \emph{عبارت $\lambda$:}
+\begin{align*}
+\forall s \in \mathcal{S},B,M.\quad &\Gamma \vdash (\lambda ^sx:B.M):A \implies\\ 
+&\exists s' \in \mathcal{S},C.\; (\Gamma \vdash (\Pi ^sx:B.C):s') \land (\Gamma,^sx:B \vdash M:C) \land (A =_\beta \Pi ^sx:B.C)
+\end{align*}
+
+\item \emph{کاربرد:}
+\begin{align*}
+\forall M,N.\quad &\Gamma \vdash MN:A \implies\\ 
+&\exists s \in \mathcal{S},B,C.\; (\Gamma \vdash M:(\Pi ^sx:B.C)) \land (\Gamma \vdash N:B) \land (A =_\beta C[N/{}^sx])
+\end{align*}
+
+\end{itemize}
+\end{lmm}
+
+\begin{lmm}[جانشینی]
+\begin{align*}
+\forall \Gamma,\Delta,M,N,A,B.\quad (\Gamma, x:A, \Delta \vdash M:B) \land (\Gamma \vdash N:A) \implies \Gamma, \Delta[N/x] \vdash M[N/x] : B[N/x]
+\end{align*}
+\end{lmm}
+
+\begin{lmm}[صحت نوع]
+\begin{equation*}
+\forall \Gamma,M,A.\quad \Gamma \vdash M:A \implies (A \in \mathcal{S}) \lor (\exists s \in \mathcal{S}.\; \Gamma \vdash A:s)
+\end{equation*}
+\end{lmm}
+
+\begin{lmm}[تضعیف]
+\begin{equation*}
+\forall \Gamma,\Delta,M,A.\quad (\Gamma \subset \Delta) \land (\Gamma \vdash M : A) \implies \Delta \vdash M : A
+\end{equation*}
+\end{lmm}
+
+\begin{lmm}[جابه‌جایی]
+\begin{align*}
+\forall \Gamma,\Delta,x,y,A,B,C,M.\quad (x \notin FV(B)) \land (&\Gamma,x:A,y:B,\Delta \vdash M:C) \\
+\implies &\Gamma,y:B,x:A,\Delta \vdash M:C
+\end{align*}
+\end{lmm}
+
+\begin{defn}[سیستم نوع محض تابعی]
+یک سیستم نوع محض  را تابعی گوییم، هرگاه
+\begin{itemize}
+\item اگر $(s,t) \in \mathcal{A}$ و $(s,t') \in \mathcal{A}$ آنگاه $t=t'$.
+\item اگر $(s,t,u) \in \mathcal{R}$ و $(s,t,u') \in \mathcal{A}$ آنگاه $u=u'$.
+\end{itemize}
 \end{defn}
 
-\begin{defn}[سازگاری منطقی]
-از منظر تفسیر منطقی، یک سیستم نوع محض را سازگار می‌نامیم، هرگاه هیچ عبارتی از یک رده تهی
-(مانند $\bot$)
-قابل استنتاج نباشد. به بیان دیگر؛ در یک سیستم سازگار، نمی‌توان به طور صوری به تنافض دست یافت.
+\begin{lmm}[یکتایی نوع]
+در یک سیستم نوع محض تابعی، نوع هر عبارت نوع‌پذیر، یکتاست. یعنی
+\begin{equation*}
+\forall \Gamma, M, A, B.\quad (\Gamma \vdash M : A) \land (\Gamma \vdash M : B) \implies A =_\beta B
+\end{equation*}
+\end{lmm}
+
+\begin{defn}[رده‌های بالا و پایین]
+\hfill
+\begin{itemize}
+\item رده
+$s$
+یک رده بالا است هرگاه
+\begin{equation*}
+\nexists s' \in \mathcal{S}.\; (s,s') \in \mathcal{A}
+\end{equation*}
+\item رده
+$s$
+یک رده پایین است هرگاه
+\begin{equation*}
+\nexists s' \in \mathcal{S}.\; (s',s) \in \mathcal{A}
+\end{equation*}
+\end{itemize}
 \end{defn}
 
-مهم‌ترین عامل در رخداد خواص فرانظری یک سیستم نوع محض، به ویزه در سیستم‌های واقع در مکعب لامبدا، انتخاب مجموعه روابط
-$\mathcal{R}$
-است. در حالی که برخی سیستم‌های مکعب لامبدا دارای خاصیت نرمال‌سازی قوی هستند، این ویژگی به‌طور کلی برای همه سیستم‌های نوع محض برقرار نیست.
-
+\begin{lmm}[رده بالا]
+برای هر زمینه
+$\Gamma$،
+متغیر
+$x$،
+عبارات
+$A$ و $B$
+و رده بالا
+$s$،
+گزاره‌های زیر برقرار هستند:
+\begin{align*}
+&\Gamma \nvdash s:A\\
+&\Gamma \nvdash x:s\\
+&\Gamma \nvdash AB:s
+\end{align*}
+\end{lmm}
