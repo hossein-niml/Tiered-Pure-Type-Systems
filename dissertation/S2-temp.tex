@@ -57,7 +57,7 @@ $\beta$
 فرض کنید
 $n$
 یک عدد صحیح نامنفی باشد. یک سیستم نوع محض،
-\lr{n}-لایه‌ای
+$n$-لایه‌ای
 است؛ هرگاه مشخصات آن به شکل زیر باشد
 \begin{align*}
 \mathcal{S} &= \{ s_i \mid i \in [n] \}\\
@@ -439,3 +439,30 @@ deg(MN) &= deg(M)
 \end{align*}
 \end{defn}
 
+\begin{lmm}[طبقه‌بندی]
+فرض کنید
+$\lambda S$
+یک سیستم نوع محض
+$n$-لایه‌ای
+باشد.
+برای هر عبارت
+$A$،
+گزاره‌های زیر برقرارند:
+\begin{align*}
+deg(A) = n + 1 &\iff A = s_n\\
+deg(A) = n &\iff \exists \Gamma.\; \Gamma \vdash A : s_n\\
+\forall i \in [n-1]. \quad deg(A) = i &\iff \exists \Gamma,B.\; (\Gamma \vdash A:B) \land (\Gamma \vdash B:s_{i+1})
+\end{align*}
+\end{lmm}
+
+کاربرد خاص لم فوق چنین است که
+\begin{equation*}
+\forall \Gamma,M,A.\quad \Gamma \vdash M:A \implies deg(A) = deg(M) + 1
+\end{equation*}
+
+\begin{lmm}
+\begin{align*}
+deg(B) = j - 1 &\implies deg(A[B/^{s_j}x]) = deg(A)\\
+A \twoheadrightarrow_\beta B &\implies deg(A) = deg(B)
+\end{align*}
+\end{lmm}
