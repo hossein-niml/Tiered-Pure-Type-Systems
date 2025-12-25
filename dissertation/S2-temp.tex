@@ -330,3 +330,112 @@ s > s' > s'' > \dots
 به طور خاص، اگر برای همه سیستم‌های نوع محض غیروابسته، نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی باشد؛ آنگاه برای همه سیستم‌های نوع محض غیروابسته کراندار نیز چنین است.
 \end{prop}
 
+\subsection{گسترش سیستم}
+
+در این بخش می‌خواهیم گسترش‌هایی از سیستم‌های نوع محض لایه‌ای را مطالعه کنیم.
+
+\subsubsection{گسترش نامتناهی}
+
+\begin{defn}[سیستم نوع محض $\mathbb{Z}^+$-لایه‌ای]
+سیستم نوع محض $\mathbb{Z}^+$-لایه‌ای،
+یک سیستم نوع محض با مشخصات زیر است
+\begin{align*}
+\mathcal{S} &= \{ s_i \mid i \in \mathbb{Z}^+ \}\\
+\mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \in \mathbb{Z}^+ \}\\
+\mathcal{R} &\subset \{ (s,s',s') \mid (s,s') \in \mathcal{S} \times \mathcal{S} \}
+\end{align*}
+\end{defn}
+
+\begin{defn}[سیستم نوع محض $\mathbb{Z}^-$-لایه‌ای]
+سیستم نوع محض $\mathbb{Z}^-$-لایه‌ای،
+یک سیستم نوع محض با مشخصات زیر است
+\begin{align*}
+\mathcal{S} &= \{ s_i \mid i \in \mathbb{Z}^- \}\\
+\mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \leq -2 \}\\
+\mathcal{R} &\subset \{ (s,s',s') \mid (s,s') \in \mathcal{S} \times \mathcal{S} \}
+\end{align*}
+\end{defn}
+
+\begin{defn}[سیستم نوع محض $\mathbb{Z}$-لایه‌ای]
+سیستم نوع محض $\mathbb{Z}$-لایه‌ای،
+یک سیستم نوع محض با مشخصات زیر است
+\begin{align*}
+\mathcal{S} &= \{ s_i \mid i \in \mathbb{Z} \}\\
+\mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \in \mathbb{Z} \}\\
+\mathcal{R} &\subset \{ (s,s',s') \mid (s,s') \in \mathcal{S} \times \mathcal{S} \}
+\end{align*}
+\end{defn}
+
+\begin{prop}
+فرض کنید
+$C$
+مجموعه سیستم‌های نوع محض با ویژگی پیش‌رو باشد؛ اگر
+$\lambda S$
+یک سیستم نوع محض لایه‌ای نامتناهی در
+$C$
+باشد، برای هر زیرسیستم نوع محض لایه‌ای متناهی
+$\lambda S'$
+از
+$\lambda S$،
+یک زیرسیستم نوع محض لایه‌ای متناهی
+$\lambda S''$
+یافت می‌شود به طوری که
+\begin{equation*}
+(\lambda S'' \in C) \land (\lambda S' \subset \lambda S'' \subset \lambda S)
+\end{equation*}
+بنابراین هر سیستم در
+$C$
+دارای خاصیت نرمال‌سازی (قوی) است؛ اگر و تنها اگر هر سیستم متناهی در آن دارای این خاصیت باشد.
+\end{prop}
+
+\begin{cor}
+اگر برای همه سیستم‌های نوع محض لایه‌ای غیروابسته، نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی باشد؛ آنگاه برای همه سیستم‌های نوع محض غیروابسته تعمیم‌یافته نیز چنین است.
+\end{cor}
+
+\subsubsection{گسترش دوردار}
+
+\begin{defn}[سیستم نوع محض لایه‌ای دوردار]
+یک سیستم نوع محض لایه‌ای دوردار، یک سیستم نوع محض لایه‌ای با مشخصات زیر است
+\begin{align*}
+\mathcal{S} &= \{ s_i \mid i \in [n] \}\\
+\mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \in [n-1] \} \cup \{(s_n,s_1)\} \\
+\mathcal{R} &\subset \{ (s,s',s') \mid (s,s') \in \mathcal{S} \times \mathcal{S} \}
+\end{align*}
+در واقع اصل
+$(s_n,s_1)$
+به مجموعه اصول یک سیستم نوع محض لایه‌ای اضافه شده است و گراف
+$\mathcal{A}$
+به یک گراف دور‌دار تبدیل شده است.
+\end{defn}
+
+\begin{prop}
+اگر برای همه سیستم‌های نوع محض لایه‌ای متناهی بدون‌دور و دوردار، نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی باشد؛ آنگاه برای همه سیستم‌های نوع محض تفکیک‌پذیر پایدار نیز چنین است.
+\end{prop}
+
+\begin{rem}
+در ادامه این پایان‌نامه؛ منظور از لایه‌ای، حالت متناهی بدون‌دور است.
+\end{rem}
+
+\subsection{درجه}
+
+یکی از مزایای اصلی مطالعه سیستم‌های پایدار  (به طور خاص سیستم‌های لایه‌ای) این است که عبارات را می‌توان بر اساس سطحی در سیستم که در آن قابل‌دستیابی هستند، طبقه‌بندی کرد. این ویژگی با تعریف یک معیار درجه برای عبارات و طبقه‌بندی عبارات بر اساس درجه آنها نشان داده می‌شود.
+
+\begin{defn}[درجه عبارت]
+درجه یک عبارت با استفاده از تابع
+$deg: \mathrm{T} \to \mathbb{N}$ و به صورت زیر تعریف می‌شود
+\begin{align*}
+deg(s_i) &= i + 1\\
+deg(^{s_i}x) &= i - 1\\
+deg(\Pi x^A.B) &= deg(B)\\
+deg(\lambda x^A.M) &= deg(M)\\
+deg(MN) &= deg(M)
+\end{align*}
+\end{defn}
+
+\begin{defn}
+\begin{align*}
+\mathrm{T}_j &= \{M \in \mathrm{T} \mid deg(M) = j\}\\
+\mathrm{T}_{\ge j} &= \{M \in \mathrm{T} \mid deg(M) \ge j\}
+\end{align*}
+\end{defn}
+
