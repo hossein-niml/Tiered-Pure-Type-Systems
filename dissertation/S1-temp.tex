@@ -714,33 +714,33 @@ $(\mathcal{S},\mathcal{A},\mathcal{R})$
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash A:s$}
 \LeftLabel{$\quad ^sx \notin \Gamma$}
-\UnaryInfC{$\Gamma,^sx:A \vdash ^sx:A$}
+\UnaryInfC{$\Gamma,{}^sx:A \vdash ^sx:A$}
 \end{prooftree}
 \item قاعده تضعیف
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash B:s$}
 \AxiomC{$\Gamma \vdash M:A$}
 \LeftLabel{$\quad ^sx \notin \Gamma$}
-\BinaryInfC{$\Gamma,^sx:B \vdash M:A$}
+\BinaryInfC{$\Gamma,{}^sx:B \vdash M:A$}
 \end{prooftree}
 \item قاعده تولید
 \begin{prooftree}
 \AxiomC{$\Gamma,^{s_1}x:A \vdash B:s_2$}
 \AxiomC{$\Gamma \vdash A:s_1$}
 \LeftLabel{$\quad (s_1,s_2,s_3) \in \mathcal{R}$}
-\BinaryInfC{$\Gamma \vdash (\Pi ^{s_1}x:A.B):s_3$}
+\BinaryInfC{$\Gamma \vdash (\Pi ^{s_1}x^A.B):s_3$}
 \end{prooftree}
 \item قاعده انتزاع
 \begin{prooftree}
-\AxiomC{$\Gamma \vdash \Pi ^sx:A.B:s$}
-\AxiomC{$\Gamma,^sx:A \vdash M:B$}
-\BinaryInfC{$\Gamma \vdash (\lambda ^sx:A.M):(\Pi ^sx:A.B)$}
+\AxiomC{$\Gamma \vdash \Pi ^sx^A.B:s$}
+\AxiomC{$\Gamma,{}^sx:A \vdash M:B$}
+\BinaryInfC{$\Gamma \vdash (\lambda {}^sx^A.M):(\Pi {}^sx^A.B)$}
 \end{prooftree}
 \item قاعده کاربرد
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash N:A$}
-\AxiomC{$\Gamma \vdash M:(\Pi ^sx:A.B)$}
-\BinaryInfC{$\Gamma \vdash MN:B[N/^sx]$}
+\AxiomC{$\Gamma \vdash M:(\Pi {}^sx^A.B)$}
+\BinaryInfC{$\Gamma \vdash MN:B[N/{}^sx]$}
 \end{prooftree}
 \item قاعده تبدیل
 \begin{prooftree}
