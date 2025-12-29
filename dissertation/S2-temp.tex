@@ -630,3 +630,177 @@ $\rho_n(s_n) = s_n$
 \end{align*}
 \end{defn}
 
+توجه کنید که اگر
+$i < j$
+آنگاه
+$\rho_j(\Gamma) \subset \rho_i(\Gamma)$،
+این مورد اغلب در ترکیب با لم تضعیف
+\ref{thinning}
+استفاده می‌شود.
+
+سه لم زیر ویژگی‌های کلیدی ترجمه را توصیف می‌کنند.
+
+\begin{lmm}[ترجمه با جانشینی]
+برای هر
+$0 \le i \le n$
+و هر
+$1 \le j \le n$
+و هر عبارت
+$A$ و $B$،
+اگر
+$A \in \mathrm{T}_{\ge i+1}$ و $deg(B) = j-1$، آنگاه
+\begin{equation*}
+\rho_i(A[B/{}^{s_j}x]) = \rho_i(A)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+\end{equation*}
+\end{lmm}
+
+\begin{lmm}[حفظ مسیر کاهش]
+برای هر
+$0 \le i \le n$
+و هر عبارت
+$A$ و $B$،
+اگر
+$A \in \mathrm{T}_{\ge i+1}$ و $A \twoheadrightarrow_\beta B$، آنگاه
+\begin{equation*}
+\rho_i(A) \twoheadrightarrow_\beta \rho_i(B)
+\end{equation*}
+\end{lmm}
+
+\begin{lmm}[حفظ نوع]
+برای هر
+$0 \le i \le n$،
+اگر
+$\Gamma$ یک زمینه و
+$A$ و $B$ عباراتی باشند که
+$A \in \mathrm{T}_{\ge i+1}$ و $\Gamma \vdash_{\lambda S} A : B$، آنگاه
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_i(A) : \rho_{i+1}(B)
+\end{equation*}
+\end{lmm}
+
+\subsection{ترجمه سطح عبارت}
+
+در ادامه تابع ترجمه
+$\gamma : \mathrm{T} \to \mathrm{T}_0$
+را بر روی همه عبارات تعریف می‌کنیم.
+این امر مستلزم یکی از بزرگترین تفاوت‌ها با ترجمه
+\lr{Geuvers-Nederhof}
+است. در ترجمه آن‌ها، متغیرها گاهی از طریق افزودن عبارات
+$\bot$
+به زمینه، با عبارت‌های ساختگی جایگزین می‌شدند. مورد مذکور شدنی است، زیرا
+$(s_2,s_1) \in \mathcal{R}_{\lambda \omega}$.
+استفاده مستقیم از این تکنیک، به قوانین
+$(s_{i+1},s_i)$ برای $i \in [n-1]$ نیاز دارد.
+با این حال، به دلیل کامل بودن،
+$(s_j,s_k) \in \mathcal{R}_{\lambda S}$
+مستلزم این است که برای
+$l \in [k]$
+داشته باشیم
+$(s_l,s_1) \in \mathcal{R}_{\lambda S}$،
+که به ما اجازه استفاده از متغیر
+$prod : \Pi A^{s_1}.0 \to A \to 0$
+را که فقط نیازمند قانون
+$(s_2,s_1)$ است را می‌دهد.
+ما فرض می‌کنیم که این قانون در
+$\lambda S$ موجود است.
+
+\begin{defn}[تابع ترجمه سطح عبارت]
+تابع
+$\gamma : \mathrm{T} \to \mathrm{T}$
+به صورت استقرایی زیر تعریف می‌شود.
+\begin{align*}
+\gamma(s_i) &= \bullet\\
+\gamma({}^{s_i}x) &= {}^{s_1}x\\
+\gamma(\Pi x^A.B) &= prod(\Pi x^{\rho_{deg A - 1}(A)} \dots \Pi x^{\rho_{0}(A)}.0) \gamma(A) (\lambda x^{\rho_{deg A - 1}(A)} \dots \lambda x^{\rho_{0}(A)}.\gamma(B))\\
+\gamma(\lambda x^A.M) &= (\lambda z^0.\lambda x^{\rho_{deg A - 1}(A)} \dots \lambda x^{\rho_{0}(A)}.\gamma(M)) \gamma(A)\\
+\gamma(MN) &= \gamma(M) \rho_{degN-1}(N) \dots \rho_{0}(N) \gamma(N)
+\end{align*}
+که در آن
+$\{prod, \bullet, z\}$
+متغیرهای منحصر به فردی هستند.
+\end{defn}
+
+سه لمی که در بخش قبل بررسی کردیم، برای ترجمه سطح عبارت نیز قابل بیان هستند.
+
+\begin{lmm}[حفظ نوع]\label{preserve_type}
+برای هر عبارت
+$A$ و $B$،
+اگر $\Gamma \vdash_{\lambda S} A:B$، آنگاه
+\begin{equation*}
+0 : s_1,\; \bullet : 0,\; prod : \Pi A^{s_1}.0 \to A \to 0,\; \rho_0(\Gamma) \; \vdash_{\lambda S^*} \; \gamma(A) : \rho_0(B)
+\end{equation*}
+\end{lmm}
+
+\begin{lmm}[ترجمه با جانشینی]
+برای هر
+$1 \le j \le n$،
+و هر عبارت
+$A$ و $B$ که $deg(B) = j-1$، داریم
+\begin{equation*}
+\gamma(A[B/{}^{s_{j}}x]) = \gamma(A) [\rho_{j-2}(B)/{}^{s_{j}}x] \dots [\rho_{0}(B)/{}^{s_{2}}x] [\gamma(B)/{}^{s_{1}}x]
+\end{equation*}
+\end{lmm}
+
+\begin{lmm}[حفظ مسیر کاهش]\label{preserve_reduction}
+برای هر عبارت
+$A$ و $B$، اگر $A \to_\beta B$، آنگاه
+\begin{equation*}
+\gamma(A) \twoheadrightarrow^+_\beta \gamma(B)
+\end{equation*}
+\end{lmm}
+
+\subsection{نتیجه اصلی}
+
+\begin{thm}
+فرض کنید
+$\lambda S$
+یک سیستم نوع محض
+$n$-لایه‌ای
+است که تا یک مقدار
+$i$
+کامل است ($i<n$).
+$\lambda S$ دارای خاصیت نرمال‌سازی قوی است، اگر و تنها اگر $\lambda S^*$ چنین باشد.
+\end{thm}
+
+\begin{proof}
+از آنجایی که همه عبارات
+$\lambda S^*$، در $\lambda S$ نیز ساخته می‌شوند،
+اگر $\lambda S$ دارای خاصیت نرمال‌سازی قوی باشد آنگاه $\lambda S^*$ نیز دارای این خاصیت خواهد بود.\\
+حال فرض کنید
+$\lambda S$ دارای خاصیت نرمال‌سازی قوی نباشد. پس یک دنباله کاهش نامتناهی مانند
+\begin{equation*}
+M_1 \to_\beta M_2 \to_\beta \dots
+\end{equation*}
+در آن وجود دارد.
+طبق لم‌های \ref{preserve_type} و \ref{preserve_reduction}، می‌توان گفت دنباله کاهش نامتناهی
+\begin{equation*}
+\gamma(M_1) \twoheadrightarrow^+_\beta \gamma(M_2) \twoheadrightarrow^+_\beta \dots
+\end{equation*}
+در
+$\lambda S^*$
+یافت می‌شود، که با فرض آنکه
+$\lambda S^*$
+دارای خاصیت نرمال‌سازی قوی است، در تناقض است.
+\end{proof}
+
+در واقع قضیه فوق بیان می‌کند که خاصیت نرمال‌سازی قوی برای سیستم نوع محض
+$n$-لایه‌ای
+با قوانین
+\begin{equation*}
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}
+\end{equation*}
+معادل با خاصیت نرمال‌سازی قوی برای سیستمی است که دارای قوانین
+\begin{equation*}
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_2,s_2)\}
+\end{equation*}
+است.
+
+\begin{cor}
+در سیستم نوع محض
+$n$-لایه‌ای
+با قوانین
+\begin{equation*}
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}
+\end{equation*}
+نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی است.
+\end{cor}
