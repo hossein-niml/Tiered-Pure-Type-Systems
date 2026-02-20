@@ -1,0 +1,147 @@
+\documentclass[14pt, aspectratio=169]{beamer}
+
+\usetheme{Copenhagen}
+\setbeamertemplate{navigation symbols}{}
+% \setbeamertemplate{page number in head/foot}[totalframenumber]
+\setbeamertemplate{page number in head/foot}{
+  \usebeamerfont{page number in head/foot}
+  \usebeamercolor[fg]{page number in head/foot}
+  \LR{\insertframenumber\ /\ \inserttotalframenumber}
+}
+
+%Packages-------------------------------------
+% \usepackage[svgnames]{xcolor}
+\usepackage{amsmath, amsthm, amscd, amsfonts, amssymb}
+% \usepackage{tikz}
+% \usepackage{setspace}
+% \usepackage{wasysym}
+% \usepackage{framed}
+% \usepackage{enumitem}
+% \usepackage{graphics}
+% \usepackage{graphicx}
+% \usepackage{cite}
+% \DeclareGraphicsExtensions{.pdf,.png,.jpg}
+% \usepackage{mathtools}
+% \usepackage{lipsum}
+% \usepackage{perpage}
+% \usepackage{bussproofs}
+% \usepackage{listings}
+
+% \tikzstyle{vertex}=[circle, draw, inner sep=0pt, minimum size=6pt]
+% \newcommand{\vertex}{\node[vertex]}
+% \usepackage{relsize}
+% \usepackage{bookmark}
+\usepackage{xepersian}
+\settextfont{XB Zar}
+\setlatintextfont{Times New Roman}
+% \MakePerPage[1]{LTRfootnote}
+% \MakePerPage[1]{footnote}
+% \linespread{1.3}
+
+\title{صوری‌سازی ترجمه حذف وابستگی در سیستم‌های نوع محض لایه‌ای}
+
+\author{حسین مددی}
+
+\institute{
+  استاد راهنما\\
+  {\small دکتر مجید علی‌زاده}\\
+  {\hfil}\\
+  دانشکده ریاضی، آمار و علوم‌ کامپیوتر\\
+  دانشکدگان علوم\\
+  دانشگاه تهران
+}
+
+\date{\small زمستان ۱۴۰۴}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{مسئله اصلی}
+
+\textbf{مسئله نرمال‌سازی (حدس \lr{BGK}\footnote{\lr{Barendregt–Geuvers–Klop}})}\\
+در هر سیستم نوع محض\footnote{\lr{PTS}}؛
+نرمال‌سازی ضعیف
+$\overset{?}{\impliedby}$
+نرمال‌سازی قوی
+\hfil\\
+\hfil\\
+{\small
+  \begin{itemize}
+      \item \emph{فرم نرمال}: عبارتی که قابل کاهش نباشد.
+      \item \emph{نرمال‌سازی ضعیف}: وجود مسیر کاهش به فرم نرمال برای هر عبارت نوع‌پذیر.
+      \item \emph{نرمال‌سازی قوی}: عدم وجود دنباله کاهش نامتناهی برای هر عبارت نوع‌پذیر.
+  \end{itemize}
+}
+
+\end{frame}
+
+\begin{frame}{چرا این مسئله دشوار است؟}
+در سیستم‌های وابسته؛
+\begin{itemize}
+  \item انواع به عبارات وابسته‌اند.
+  \item کاهش روی نوع اثر می‌گذارد.
+  \item جانشینی بسیار ظریف و حساس می‌شود.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{ایده \lr{Nathan Mull}}
+
+\textbf{سیستم‌های نوع محض لایه‌ای\footnote{\lr{TPTS}}}\\
+\hfil{}\\
+ایده‌های کلیدی:
+{\small
+  \begin{itemize}
+    \item اختصاص درجه به انواع و عبارات
+    \item محدودسازی وابستگی بین درجات
+    \item تعریف ترجمه‌ای برای حذف وابستگی
+  \end{itemize}
+}
+
+\textbf{نتیجه}\\
+نرمال‌سازی قوی در سیستم مقصد
+$\impliedby$
+نرمال‌سازی قوی در سیستم مبدا
+
+\end{frame}
+
+\begin{frame}{هدف پایان‌نامه من}
+
+\textbf{صوری‌سازی سیستم، ترجمه و اثبات نرمال‌سازی در \lr{COQ}}\\
+چرا؟\\
+{\small
+  \begin{itemize}
+    \item ظرافت بالای اثبات‌های نرمال‌سازی
+    \item جلوگیری از شکاف‌های پنهان
+    \item رسیدن به کتاب‌خانه‌ای قابل توسعه و گسترش
+  \end{itemize}
+}
+
+\end{frame}
+
+\begin{frame}{کارهای انجام‌شده}
+
+\textbf{فصل‌های اول و دوم}\\
+\begin{itemize}
+  \item بیان مفاهیم و تعاریف اولیه پیش‌نیاز
+  \item صورت‌بندی سیستم‌های نوع محض لایه‌ای
+  \item تعریف دقیق ترجمه حذف وابستگی
+  \item ارائه اثبات ریاضی برای لم‌های اصلی
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{کارهای باقی‌مانده}
+
+\textbf{فصل‌‌های سوم و چهارم}\\
+پیاده‌سازی موارد زیر در \lr{COQ}:
+\begin{itemize}
+  \item سیستم نوع محض لایه‌ای
+  \item توابع ترجمه حذف وابستگی
+  \item صوری‌سازی خواص و لم‌ها
+  \item صوری‌سازی قضیه اصلی
+\end{itemize}
+
+\end{frame}
+
+\end{document}
