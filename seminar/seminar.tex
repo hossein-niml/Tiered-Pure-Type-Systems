@@ -13,6 +13,8 @@
 %Packages-------------------------------------
 \usepackage[svgnames]{xcolor}
 \usepackage{amsmath, amsthm, amscd, amsfonts, amssymb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
 % \usepackage{tikz}
 % \usepackage{setspace}
 % \usepackage{wasysym}
@@ -27,6 +29,26 @@
 % \usepackage{perpage}
 % \usepackage{bussproofs}
 % \usepackage{listings}
+
+\usepackage{listings}
+
+\lstdefinelanguage{Coq}{
+  keywords={Inductive, Type},
+  morekeywords=[2]{base, arrow},
+  sensitive=true,
+  morecomment=[s]{(*}{*)},
+  morestring=[b]"
+}
+
+\lstset{
+  language=Coq,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  keywordstyle=[2]\color{teal},
+  commentstyle=\color{gray},
+  frame=single,
+  columns=fullflexible
+}
 
 % \tikzstyle{vertex}=[circle, draw, inner sep=0pt, minimum size=6pt]
 % \newcommand{\vertex}{\node[vertex]}
@@ -47,6 +69,7 @@
   استاد راهنما\\
   {\small دکتر مجید علی‌زاده}\\
   {\hfil}\\
+  سمینار کارشناسی ارشد\\
   دانشکده ریاضی، آمار و علوم‌ کامپیوتر\\
   دانشکدگان علوم\\
   دانشگاه تهران
@@ -99,49 +122,69 @@
 \end{column}
 
 \begin{column}{0.5\textwidth}
+
 \begin{center}
-\includegraphics[scale=0.2]{type_to_term.png}
+\begin{tikzpicture}[
+    node distance=4cm,
+    every node/.style={draw, circle, minimum size=1.5cm},
+    >={Latex}
+]
+
+\node (terms) {terms};
+\node (types) [right of=terms] {types};
+
+% self loops
+\draw[->] (terms) edge[loop above] (terms);
+\draw[->] (types) edge[loop above] (types);
+
+% cross edges
+\draw[->] (terms) to[bend left=20] (types);
+\draw[->, red] (types) to[bend left=20] (terms);
+
+\end{tikzpicture}
 \end{center}
+
 \end{column}
 
 \end{columns}
 
 \end{frame}
 
-\begin{frame}{سیستم \lr{Nathan Mull}}
+\begin{frame}[t]{سیستم \lr{Nathan Mull}}
 
+\begin{columns}[T]
+  
+\begin{column}{0.83\textwidth}
+  
+\begin{flushright}
+  
 \textbf{سیستم‌های نوع محض لایه‌ای}\\
+
 \begin{align*}
 \mathrm{TPTS} \subset \mathrm{PTS}
 \end{align*}
 
-که در آن:
-
-\begin{columns}
-  
-\begin{column}{0.5\textwidth}
-\begin{center}
 {\small
   \begin{itemize}
     \item اختصاص درجه به انواع و عبارات
     \item محدودسازی وابستگی بین درجات
   \end{itemize}
 }
-\end{center}
+
+
+\begin{align*}
+\mathrm{TPTS} \in \mathrm{WN} \pmb{\overset{?}{\implies}} \mathrm{TPTS} \in \mathrm{SN}
+\end{align*}
+
+\end{flushright}
+
 \end{column}
 
-\begin{column}{0.5\textwidth}
-\begin{center}
+\begin{column}{0.17\textwidth}
 \includegraphics[scale=0.13]{mull.jpeg}
-\end{center}
 \end{column}
 
 \end{columns}
-
-پرسش: 
-\begin{align*}
-\mathrm{TPTS} \in \mathrm{WN} \overset{?}{\implies} \mathrm{TPTS} \in \mathrm{SN}
-\end{align*}
 
 \end{frame}
 
@@ -221,13 +264,14 @@
 
 \end{frame}
 
-\begin{frame}{کارهای باقی‌مانده}
+\begin{frame}[fragile]
+  \frametitle{کارهای باقی‌مانده}
 
 \textbf{فصل‌‌های سوم و چهارم}\\
 
 \begin{columns}
   
-\begin{column}{0.5\textwidth}
+\begin{column}{0.45\textwidth}
 \begin{RTL}
 پیاده‌سازی موارد زیر در \lr{COQ}:
 \end{RTL}
@@ -243,15 +287,17 @@
 \end{center}
 \end{column}
 
-\begin{column}{0.5\textwidth}
-\begin{center}
-\frame{\includegraphics[scale=0.17]{coq-code.png}}
-\end{center}
+\begin{column}{0.55\textwidth}
+\begin{LTR}  
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+Inductive type : Type :=
+         | base : type
+         | arrow : type -> type -> type.
+\end{lstlisting}
+\end{LTR}
 \end{column}
 
 \end{columns}
-
-
 
 \end{frame}
 
