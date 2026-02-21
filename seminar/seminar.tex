@@ -1,6 +1,7 @@
-\documentclass[14pt, aspectratio=169]{beamer}
+\documentclass[12pt, aspectratio=169]{beamer}
 
 \usetheme{Copenhagen}
+\usefonttheme{professionalfonts}
 \setbeamertemplate{navigation symbols}{}
 % \setbeamertemplate{page number in head/foot}[totalframenumber]
 \setbeamertemplate{page number in head/foot}{
@@ -10,7 +11,7 @@
 }
 
 %Packages-------------------------------------
-% \usepackage[svgnames]{xcolor}
+\usepackage[svgnames]{xcolor}
 \usepackage{amsmath, amsthm, amscd, amsfonts, amssymb}
 % \usepackage{tikz}
 % \usepackage{setspace}
@@ -21,7 +22,7 @@
 % \usepackage{graphicx}
 % \usepackage{cite}
 % \DeclareGraphicsExtensions{.pdf,.png,.jpg}
-% \usepackage{mathtools}
+\usepackage{mathtools}
 % \usepackage{lipsum}
 % \usepackage{perpage}
 % \usepackage{bussproofs}
@@ -62,15 +63,21 @@
 \textbf{مسئله نرمال‌سازی (حدس \lr{BGK}\footnote{\lr{Barendregt–Geuvers–Klop}})}\\
 در هر سیستم نوع محض\footnote{\lr{PTS}}؛
 نرمال‌سازی ضعیف
-$\overset{?}{\impliedby}$
+\pmb{$\overset{?}{\impliedby}$}
 نرمال‌سازی قوی
 \hfil\\
 \hfil\\
 {\small
   \begin{itemize}
-      \item \emph{فرم نرمال}: عبارتی که قابل کاهش نباشد.
-      \item \emph{نرمال‌سازی ضعیف}: وجود مسیر کاهش به فرم نرمال برای هر عبارت نوع‌پذیر.
-      \item \emph{نرمال‌سازی قوی}: عدم وجود دنباله کاهش نامتناهی برای هر عبارت نوع‌پذیر.
+      \item \textbf{فرم نرمال ($\mathrm{NF}$):} عبارتی که قابل کاهش نباشد.
+      \item \textbf{نرمال‌سازی ضعیف ($\mathrm{WN}$):} وجود مسیر کاهش به فرم نرمال برای هر عبارت نوع‌پذیر.\\
+      \begin{align*}
+        A \to \dots \to N
+      \end{align*}
+      \item \textbf{نرمال‌سازی قوی ($\mathrm{SN}$):} عدم وجود دنباله کاهش نامتناهی برای هر عبارت نوع‌پذیر.\\
+      \begin{align*}
+        \dots \to B \to \dots
+      \end{align*}
   \end{itemize}
 }
 
@@ -101,11 +108,14 @@ $\overset{?}{\impliedby}$
 
 \end{frame}
 
-\begin{frame}{ایده \lr{Nathan Mull}}
+\begin{frame}{سیستم \lr{Nathan Mull}}
 
-\textbf{سیستم‌های نوع محض لایه‌ای\footnote{\lr{TPTS}}}\\
-\hfil{}\\
-ایده‌های کلیدی:
+\textbf{سیستم‌های نوع محض لایه‌ای}\\
+\begin{align*}
+\mathrm{TPTS} \subset \mathrm{PTS}
+\end{align*}
+
+که در آن:
 
 \begin{columns}
   
@@ -115,7 +125,6 @@ $\overset{?}{\impliedby}$
   \begin{itemize}
     \item اختصاص درجه به انواع و عبارات
     \item محدودسازی وابستگی بین درجات
-    \item تعریف ترجمه‌ای برای حذف وابستگی
   \end{itemize}
 }
 \end{center}
@@ -129,10 +138,27 @@ $\overset{?}{\impliedby}$
 
 \end{columns}
 
+پرسش: 
+\begin{align*}
+\mathrm{TPTS} \in \mathrm{WN} \overset{?}{\implies} \mathrm{TPTS} \in \mathrm{SN}
+\end{align*}
+
+\end{frame}
+
+\begin{frame}{ترجمه \lr{Nathan Mull}}
+
+\textbf{ترجمه حذف وابستگی}
+
+تابعی که هر سیستم نوع محض لایه‌ای را به نسخه غیروابسته آن نگاشت می‌کند.
+
+\begin{align*}
+\lambda_S &\overset{f}{\longrightarrow} \lambda_{S^*} &\text{تابع ترجمه}\\
+\lambda_{S^*} \in \mathrm{SN} &\implies \lambda_S \in \mathrm{SN} &\text{لم}\\
+\lambda_S &\in \mathrm{SN} &\text{نتیجه}
+\end{align*}
+
 \textbf{نتیجه}\\
-نرمال‌سازی قوی در سیستم مقصد
-$\impliedby$
-نرمال‌سازی قوی در سیستم مبدا
+حدس \lr{BGK} برای سیستم‌های نوع محض لایه‌ای، برقرار است.
 
 \end{frame}
 
