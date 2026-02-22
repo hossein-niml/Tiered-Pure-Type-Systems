@@ -3,7 +3,6 @@
 \usetheme{Copenhagen}
 \usefonttheme{professionalfonts}
 \setbeamertemplate{navigation symbols}{}
-% \setbeamertemplate{page number in head/foot}[totalframenumber]
 \setbeamertemplate{page number in head/foot}{
   \usebeamerfont{page number in head/foot}
   \usebeamercolor[fg]{page number in head/foot}
@@ -108,7 +107,7 @@
 
 \begin{frame}{چرا این مسئله دشوار است؟}
 
-در سیستم‌های وابسته؛
+در سیستم‌های نوع محض وابسته؛
 
 \begin{columns}
 
@@ -117,7 +116,7 @@
 \begin{itemize}
   \item انواع به عبارات وابسته‌اند.
   \item کاهش روی نوع اثر می‌گذارد.
-  \item جانشینی بسیار ظریف و حساس می‌شود.
+  \item رفتار محاسباتی و ساختار منطقی در هم تنیده می‌شود.
 \end{itemize}   
 \end{column}
 
@@ -150,13 +149,28 @@
 
 \end{frame}
 
-\begin{frame}[t]{سیستم \lr{Nathan Mull}}
+\begin{frame}[t]{\lr{Nathan Mull}}
 
-\begin{columns}[T]
+\begin{columns}
   
-\begin{column}{0.83\textwidth}
-  
-\begin{flushright}
+\begin{column}{0.7\textwidth}
+\begin{center}
+\frame{\includegraphics[scale=0.2]{mull-thesis.png}}
+\end{center}
+\end{column}
+
+\begin{column}{0.3\textwidth}
+\begin{center}
+\includegraphics[scale=0.2]{mull.jpeg}
+\end{center}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+\begin{frame}{سیستم \lr{Nathan Mull}}
+
   
 \textbf{سیستم‌های نوع محض لایه‌ای}\\
 
@@ -175,16 +189,6 @@
 \begin{align*}
 \mathrm{TPTS} \in \mathrm{WN} \pmb{\overset{?}{\implies}} \mathrm{TPTS} \in \mathrm{SN}
 \end{align*}
-
-\end{flushright}
-
-\end{column}
-
-\begin{column}{0.17\textwidth}
-\includegraphics[scale=0.13]{mull.jpeg}
-\end{column}
-
-\end{columns}
 
 \end{frame}
 
@@ -208,30 +212,39 @@
 \begin{frame}{هدف پایان‌نامه من}
 
 \textbf{صوری‌سازی سیستم، ترجمه و اثبات نرمال‌سازی در \lr{COQ}}\\
-\hfil{}\\
-چرا؟\\
 
-\begin{columns}
-  
-\begin{column}{0.5\textwidth}
 \begin{center}
-{\small
-  \begin{itemize}
-    \item ظرافت بالای اثبات‌های نرمال‌سازی
-    \item جلوگیری از شکاف‌های پنهان
-    \item رسیدن به کتاب‌خانه‌ای قابل توسعه و گسترش
-  \end{itemize}
-}
+\frame{\includegraphics[scale=0.3]{trust.png}}
 \end{center}
-\end{column}
 
-\begin{column}{0.5\textwidth}
 \begin{center}
 \includegraphics[scale=0.1]{coq.png}
 \end{center}
-\end{column}
 
-\end{columns}
+% \hfil{}\\
+% چرا؟\\
+
+% \begin{columns}
+  
+% \begin{column}{0.5\textwidth}
+% \begin{center}
+% {\small
+%   \begin{itemize}
+%     \item ظرافت بالای اثبات‌های نرمال‌سازی
+%     \item جلوگیری از شکاف‌های پنهان
+%     \item رسیدن به کتاب‌خانه‌ای قابل توسعه و گسترش
+%   \end{itemize}
+% }
+% \end{center}
+% \end{column}
+
+% \begin{column}{0.5\textwidth}
+% \begin{center}
+% \includegraphics[scale=0.1]{coq.png}
+% \end{center}
+% \end{column}
+
+% \end{columns}
 
 \end{frame}
 
