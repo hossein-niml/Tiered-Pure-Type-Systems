@@ -1,4 +1,5 @@
 Require Import List.
+Require Import Classical.
 Import ListNotations.
 
 Module PTS.
@@ -124,5 +125,164 @@ Fixpoint subst_term (x : var) (N : term) (t : term) : term :=
       then t_lam y (subst_term x N A) M
       else t_lam y (subst_term x N A) (subst_term x N M)
   end. 
+
+
+Definition beta (M N : term) : Prop :=
+  exists x A Body Arg,
+    M = t_app (t_lam x A Body) Arg /\
+    N = subst_term x Arg Body.
+
+Reserved Notation "M ->b N" (at level 70, no associativity).
+
+Inductive beta_red : term -> term -> Prop :=
+
+  | beta_base : forall x A M N,
+      t_app (t_lam x A M) N ->b subst_term x N M
+
+  | beta_app_l : forall M M' N,
+      M ->b M' ->
+      t_app M N ->b t_app M' N
+
+  | beta_app_r : forall M N N',
+      N ->b N' ->
+      t_app M N ->b t_app M N'
+
+  | beta_lam_A : forall x A A' M,
+      A ->b A' ->
+      t_lam x A M ->b t_lam x A' M
+
+  | beta_lam_M : forall x A M M',
+      M ->b M' ->
+      t_lam x A M ->b t_lam x A M'
+
+  | beta_pi_A : forall x A A' B,
+      A ->b A' ->
+      t_pi x A B ->b t_pi x A' B
+
+  | beta_pi_B : forall x A B B',
+      B ->b B' ->
+      t_pi x A B ->b t_pi x A B'
+
+where "M ->b N" := (beta_red M N).
+
+Reserved Notation "M ->>+b N" (at level 70, no associativity).
+
+Inductive beta_trans : term -> term -> Prop :=
+  | bt_step : forall M N,
+      M ->b N ->
+      M ->>+b N
+
+  | bt_trans : forall M N P,
+      M ->>+b N ->
+      N ->>+b P ->
+      M ->>+b P
+
+where "M ->>+b N" := (beta_trans M N).
+
+Reserved Notation "M ->>b N" (at level 70, no associativity).
+
+Inductive beta_rtrans : term -> term -> Prop :=
+  | brt_refl : forall M,
+      M ->>b M
+
+  | brt_step : forall M N,
+      M ->b N ->
+      M ->>b N
+
+  | brt_trans : forall M N P,
+      M ->>b N ->
+      N ->>b P ->
+      M ->>b P
+
+where "M ->>b N" := (beta_rtrans M N).
+
+Reserved Notation "M =b N" (at level 70, no associativity).
+
+Inductive beta_eq : term -> term -> Prop :=
+  | beq_refl : forall M,
+      M =b M
+
+  | beq_step : forall M N,
+      M ->b N ->
+      M =b N
+
+  | beq_sym : forall M N,
+      M =b N ->
+      N =b M
+
+  | beq_trans : forall M N P,
+      M =b N ->
+      N =b P ->
+      M =b P
+
+where "M =b N" := (beta_eq M N).
+
+Lemma brt_from_trans : forall M N,
+  M ->>+b N -> M ->>b N.
+Proof.
+  intros M N H.
+  induction H.
+  - apply brt_step; auto.
+  - apply brt_trans with N; auto.
+Qed.
+
+Lemma beq_from_rtrans : forall M N,
+  M ->>b N -> M =b N.
+Proof.
+  intros M N H.
+  induction H.
+  - apply beq_refl.
+  - apply beq_step; auto.
+  - apply beq_trans with N; auto.
+Qed.
+
+Definition normal_form (M : term) : Prop :=
+  ~ exists N, M ->b N.
+
+Fixpoint has_redex (M : term) : Prop :=
+  match M with
+  | t_sort _    => False
+  | t_var _     => False
+  | t_app (t_lam _ _ _) _ => True
+  | t_app P Q   => has_redex P \/ has_redex Q
+  | t_lam _ A M => has_redex A \/ has_redex M
+  | t_pi  _ A B => has_redex A \/ has_redex B
+  end.
+
+Definition normal_form' (M : term) : Prop :=
+  ~ has_redex M.
+
+Definition weakly_normalizing (M : term) : Prop :=
+  exists N, M ->>b N /\ normal_form N.
+
+Definition strongly_normalizing (M : term) : Prop :=
+  Acc (fun N M => M ->b N) M.
+
+Lemma sn_implies_wn : forall M,
+  strongly_normalizing M -> weakly_normalizing M.
+Proof.
+  intros M Hacc.
+  induction Hacc as [M _ IH].
+  destruct (classic (exists N, M ->b N)) as [[N Hstep] | Hnf].
+  - destruct (IH N Hstep) as [P [HredP HnfP]].
+    exists P. split.
+    + apply brt_trans with N.
+      * apply brt_step; auto.
+      * auto.
+    + auto.
+  - exists M. split.
+    + apply brt_refl.
+    + unfold normal_form. auto.
+Qed.
+
+Lemma nf_is_sn : forall M,
+  normal_form M -> strongly_normalizing M.
+Proof.
+  intros M Hnf.
+  constructor.
+  intros N Hstep.
+  exfalso. apply Hnf.
+  exists N. auto.
+Qed.
 
 End PTS.
