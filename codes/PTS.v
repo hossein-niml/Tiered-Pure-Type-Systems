@@ -3,19 +3,19 @@ Import ListNotations.
 
 Module PTS.
 
-Parameter S : Type.
+Parameter Sort : Type.
 
-Parameter A : S -> S -> Prop.
+Parameter A : Sort -> Sort -> Prop.
 
-Parameter R : S -> S -> S -> Prop.
+Parameter R : Sort -> Sort -> Sort -> Prop.
 
 Record var := mkvar {
-  var_sort : S;
+  var_sort : Sort;
   var_idx  : nat
 }.
 
 Inductive term : Type :=
-    | t_sort : S -> term
+    | t_sort : Sort -> term
     | t_var  : var -> term
     | t_app  : term -> term -> term
     | t_lam  : var -> term -> term -> term
@@ -46,7 +46,7 @@ Fixpoint lookup (c : context) (x : var) : option term :=
 Definition in_ctx (x : var) (c : context) : Prop :=
   exists A, lookup c x = Some A.
 
-Definition fresh (x : var) (c : context) : Prop :=
+Definition is_fresh (x : var) (c : context) : Prop :=
   lookup c x = None.
 
 Fixpoint dom (c : context) : list var :=
@@ -107,5 +107,22 @@ Lemma alpha_refl : forall t, t =a t.
 Proof.
   induction t; constructor; auto.
 Qed.
+
+Fixpoint subst_term (x : var) (N : term) (t : term) : term :=
+  match t with
+  | t_sort s  => t_sort s
+  | t_var y   => if eq_var_dec y x then N else t_var y
+  | t_app P Q => t_app (subst_term x N P) (subst_term x N Q)
+
+  | t_pi y A B =>
+      if eq_var_dec y x
+      then t_pi y (subst_term x N A) B
+      else t_pi y (subst_term x N A) (subst_term x N B)
+
+  | t_lam y A M =>
+      if eq_var_dec y x
+      then t_lam y (subst_term x N A) M
+      else t_lam y (subst_term x N A) (subst_term x N M)
+  end. 
 
 End PTS.
