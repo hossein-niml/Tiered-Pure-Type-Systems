@@ -2,13 +2,11 @@ Require Import List.
 Require Import Classical.
 Import ListNotations.
 
-Module PTS.
+Require Import Thesis.PTSSignature.
 
-Parameter Sort : Type.
+Module PTS (Sig : PTS_SIGNATURE).
 
-Parameter A : Sort -> Sort -> Prop.
-
-Parameter R : Sort -> Sort -> Sort -> Prop.
+Import Sig.  
 
 Record var := mkvar {
   var_sort : Sort;

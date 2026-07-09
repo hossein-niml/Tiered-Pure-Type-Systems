@@ -1,0 +1,33 @@
+# Rocq / Coq compiled files
+*.vo
+*.vos
+*.vok
+*.vio
+
+# Dependency and global files
+*.glob
+
+# Rocq/Coq caches
+.lia.cache
+
+# Generated Makefiles
+*Makefile*
+
+# Native compilation artifacts
+*.cmx
+*.cmxa
+*.o
+*.a
+
+# Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*~
+*.swp
+*.swo
