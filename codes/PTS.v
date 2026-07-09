@@ -33,29 +33,6 @@ Fixpoint fv (t : term) : list var :=
     | t_app M N  => fv M ++ fv N
     end.
 
-Definition context := list (var * term).
-
-Fixpoint lookup (c : context) (x : var) : option term :=
-  match c with
-  | [] => None
-  | (y, A) :: c' =>
-      if eq_var_dec x y
-      then Some A
-      else lookup c' x
-  end.
-
-Definition in_ctx (x : var) (c : context) : Prop :=
-  exists A, lookup c x = Some A.
-
-Definition is_fresh (x : var) (c : context) : Prop :=
-  lookup c x = None.
-
-Fixpoint dom (c : context) : list var :=
-  match c with
-  | [] => []
-  | (x, _) :: c' => x :: dom c'
-  end.
-
 Fixpoint rename (x y : var) (t : term) : term :=
   match t with
   | t_sort s => t_sort s
@@ -284,5 +261,74 @@ Proof.
   exfalso. apply Hnf.
   exists N. auto.
 Qed.
+
+Definition context := list (var * term).
+
+Fixpoint lookup (c : context) (x : var) : option term :=
+  match c with
+  | [] => None
+  | (y, A) :: c' =>
+      if eq_var_dec x y
+      then Some A
+      else lookup c' x
+  end.
+
+Definition in_ctx (x : var) (c : context) : Prop :=
+  exists A, lookup c x = Some A.
+
+Definition is_fresh (x : var) (c : context) : Prop :=
+  lookup c x = None.
+
+Fixpoint dom (c : context) : list var :=
+  match c with
+  | [] => []
+  | (x, _) :: c' => x :: dom c'
+  end.
+
+
+Reserved Notation "Γ ⊢ M ∈ A" (at level 70, no associativity).
+
+Inductive typing : context -> term -> term -> Prop :=
+  | typing_axiom : forall Γ s s',
+      A s s' ->
+      Γ ⊢ (t_sort s) ∈ (t_sort s')
+
+  | typing_var : forall Γ x A s,
+      is_fresh x Γ ->
+      var_sort x = s ->
+      Γ ⊢ A ∈ t_sort s ->
+      (x, A) :: Γ ⊢ t_var x ∈ A
+
+  | typing_weak : forall Γ x B M A s,
+      is_fresh x Γ ->
+      var_sort x = s ->
+      Γ ⊢ M ∈ A ->
+      Γ ⊢ B ∈ t_sort s ->
+      (x, B) :: Γ ⊢ M ∈ A
+
+  | typing_pi : forall Γ x A B s1 s2 s',
+      var_sort x = s1 ->
+      Γ ⊢ A ∈ t_sort s1 ->
+      (x, A) :: Γ ⊢ B ∈ t_sort s2 ->
+      R s1 s2 s' ->
+      Γ ⊢ (t_pi x A B) ∈ (t_sort s')
+
+  | typing_lam : forall Γ x A M B s',
+      (x, A) :: Γ ⊢ M ∈ B ->
+      Γ ⊢ (t_pi x A B) ∈ (t_sort s') ->
+      Γ ⊢ (t_lam x A M) ∈ (t_pi x A B)
+
+  | typing_app : forall Γ M N A B x,
+      Γ ⊢ M ∈ t_pi x A B ->
+      Γ ⊢ N ∈ A ->
+      Γ ⊢ t_app M N ∈ (subst_term x N B)
+
+  | typing_conv : forall Γ M A B s,
+      Γ ⊢ M ∈ A ->
+      A =b B ->
+      Γ ⊢ B ∈ t_sort s ->
+      Γ ⊢ M ∈ B
+
+where "Γ ⊢ M ∈ A" := (typing Γ M A).
 
 End PTS.
