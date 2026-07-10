@@ -295,24 +295,24 @@ Inductive typing : context -> term -> term -> Prop :=
       is_fresh x Γ ->
       var_sort x = s ->
       Γ ⊢ A ∈ t_sort s ->
-      (x, A) :: Γ ⊢ t_var x ∈ A
+      Γ ++ [(x, A)] ⊢ t_var x ∈ A
 
   | typing_weak : forall Γ x B M A s,
       is_fresh x Γ ->
       var_sort x = s ->
       Γ ⊢ M ∈ A ->
       Γ ⊢ B ∈ t_sort s ->
-      (x, B) :: Γ ⊢ M ∈ A
+      Γ ++ [(x, B)] ⊢ M ∈ A
 
   | typing_pi : forall Γ x A B s1 s2 s',
       var_sort x = s1 ->
       Γ ⊢ A ∈ t_sort s1 ->
-      (x, A) :: Γ ⊢ B ∈ t_sort s2 ->
+      Γ ++ [(x, A)] ⊢ B ∈ t_sort s2 ->
       R s1 s2 s' ->
       Γ ⊢ (t_pi x A B) ∈ (t_sort s')
 
   | typing_lam : forall Γ x A M B s',
-      (x, A) :: Γ ⊢ M ∈ B ->
+      Γ ++ [(x, A)] ⊢ M ∈ B ->
       Γ ⊢ (t_pi x A B) ∈ (t_sort s') ->
       Γ ⊢ (t_lam x A M) ∈ (t_pi x A B)
 
