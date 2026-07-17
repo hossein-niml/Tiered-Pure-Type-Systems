@@ -329,4 +329,87 @@ Inductive typing : context -> term -> term -> Prop :=
 
 where "Γ ⊢ M ∈ A" := (typing Γ M A).
 
+Lemma generation_sort :
+  forall Γ s W,
+    Γ ⊢ t_sort s ∈ W ->
+    exists s',
+      W =b t_sort s' /\ Sig.A s s'.
+Proof.
+  intros Γ s W H.
+  remember (t_sort s) as T.
+  induction H; inversion HeqT; subst.
+  - exists s'. split.
+    + apply beq_refl.
+    + apply H.
+  - apply IHtyping1. reflexivity.
+  - destruct (IHtyping1 eq_refl) as [s' [HA HAx]]. exists s'. split.
+    + apply beq_trans with (N := A0).
+      * apply beq_sym. apply H0.
+      * apply HA.
+    + apply HAx.
+Qed.
+
+Lemma lookup_fresh :
+  forall C y N, is_fresh y C -> lookup (C ++ [(y, N)]) y = Some N.
+Proof.
+  intros C y N F. unfold is_fresh in F. induction C.
+  - simpl. destruct (eq_var_dec y y).
+    + reflexivity.
+    + contradiction.
+  - destruct a as (v, T). simpl in *. destruct (eq_var_dec y v) as [Heq | Hneq].
+    + discriminate F.
+    + apply IHC. apply F.
+Qed.
+
+Lemma lookup_extend :
+  forall C x y M N, (lookup C x = Some M) -> (lookup (C ++ [(y, N)]) x = Some M).
+Proof.
+  intros C x y M N H. induction C.
+  - simpl in H. discriminate H.
+  - destruct a as (v, T). simpl in *. destruct (eq_var_dec x v) as [Heq | Hneq].
+    + apply H.
+    + apply IHC. apply H.
+Qed.
+
+Lemma generation_var :
+  forall Γ x N,
+    Γ ⊢ t_var x ∈ N ->
+    exists B,
+      lookup Γ x = Some B /\
+      Γ ⊢ B ∈ t_sort (var_sort x) /\
+      N =b B.
+Proof.
+  intros Γ x N H.
+  remember (t_var x) as T.
+  induction H; inversion HeqT; subst.
+
+  - exists A0. split.
+    + apply lookup_fresh. apply H.
+    + split.
+      * apply typing_weak with (s := var_sort x).
+        ** apply H.
+        ** reflexivity.
+        ** apply H1.
+        ** apply H1.
+      * apply beq_refl.
+  
+  - apply IHtyping1 in H3. destruct H3 as [B' [Q1 [Q2 Q3]]]. exists B'. split.
+    + apply lookup_extend. apply Q1.
+    + split.
+      * apply typing_weak with (x := x0) (B := B) (s := var_sort x0).
+        ** apply H.
+        ** reflexivity.
+        ** apply Q2.
+        ** apply H2.
+      * apply Q3.
+
+  - apply IHtyping1 in H2. destruct H2 as [B' [Q1 [Q2 Q3]]]. exists B'. split.
+    + apply Q1.
+    + split.
+      * apply Q2.
+      * apply beq_trans with A0.
+        ** apply beq_sym. apply H0.
+        ** apply Q3.
+Qed.
+
 End PTS.
