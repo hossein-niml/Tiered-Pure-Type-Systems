@@ -660,6 +660,12 @@ Proof.
           *** apply subcontext_extend_r.
       * apply HC.
   
-  -
+  - exists s. exists s'. repeat split; auto. apply beq_refl.
+
+  - apply IHtyping1 in H2. destruct H2 as [s' [s'' [HB [HC [HR Heq]]]]].
+  exists s'. exists s''. repeat split; auto. apply beq_trans with A0; auto.
+  apply beq_sym; auto.
+
+Qed.
 
 End PTS.
