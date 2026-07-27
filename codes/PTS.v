@@ -668,4 +668,47 @@ Proof.
 
 Qed.
 
+Lemma generation_lam : 
+  forall Γ x B M T, 
+    Γ ⊢ t_lam x B M ∈ T ->
+    exists C s,
+      Γ ⊢ (t_pi x B C) ∈ t_sort s /\
+      (Γ ++ [(x,B)]) ⊢ M ∈ C /\
+      T =b t_pi x B C.
+Proof.
+  intros Γ x B M T H. 
+  remember (t_lam x B M) as W eqn:HW.
+  induction H; inversion HW; subst.
+
+  - apply IHtyping1 in H2. destruct H2 as [C [s [Q1 [Q2 Q3]]]].
+  exists C. exists s. repeat split; auto.
+
+    + apply thinning with Γ; auto.
+      * exists (t_var x0). exists B0. apply typing_var; auto.
+      * apply subcontext_extend_r.
+    + apply thinning with (Γ ++ [(x, B)]); auto.
+      * exists (t_var x0). exists B0. apply typing_weak.
+        ** apply thinning_fresh with (Γ:=Γ) (T:=B) (M:=M) (N:=C); auto.
+          *** exists (t_var x0). exists (B0). apply typing_var; auto.
+          *** apply subcontext_extend_r.
+        ** apply typing_var; auto.
+        ** apply thinning with Γ.
+          *** exists (t_var x0). exists (B0). apply typing_var; auto.
+          *** apply subcontext_extend_r.
+          *** apply generation_pi in Q1. destruct Q1 as [s' [s'' [Q1 _]]]. apply Q1.
+      * apply subcontext_extend.
+        ** apply subcontext_extend_r.
+        ** apply thinning_fresh with (Γ:=Γ) (T:=B) (M:=M) (N:=C); auto.
+          *** exists (t_var x0). exists (B0). apply typing_var; auto.
+          *** apply subcontext_extend_r.
+
+  - exists B0. exists s'. repeat split; auto. apply beq_refl.
+
+  - apply IHtyping1 in H2. destruct H2 as [C [s' [Q1 [Q2 Q3]]]].
+  exists C. exists s'. repeat split; auto. apply beq_trans with A0; auto.
+  apply beq_sym; auto.
+
+Qed.
+      
+
 End PTS.
