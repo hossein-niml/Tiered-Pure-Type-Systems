@@ -709,6 +709,35 @@ Proof.
   apply beq_sym; auto.
 
 Qed.
-      
+    
+Lemma generation_app:
+  forall Γ M N T,
+    Γ ⊢ (t_app M N) ∈ T ->
+    exists x B C,
+      Γ ⊢ M ∈ (t_pi x B C) /\
+      Γ ⊢ N ∈ B /\
+      T =b C⁅x ≔ N⁆.
+Proof.
+  intros Γ M N T H.
+  remember (t_app M N) as W eqn:HW.
+  induction H; inversion HW; subst.
+
+  - apply IHtyping1 in H2. destruct H2 as [y [B' [C' [Q1 [Q2 Q3]]]]].
+  exists y. exists B'. exists C'. repeat split; auto.
+    + apply thinning with Γ; auto.
+      * exists (t_var x). exists B. apply typing_var; auto.
+      * apply subcontext_extend_r.
+    + apply thinning with Γ; auto.
+      * exists (t_var x). exists B. apply typing_var; auto.
+      * apply subcontext_extend_r.
+  
+  - exists x. exists A0. exists B. repeat split; auto. apply beq_refl.
+
+  - apply IHtyping1 in H2. destruct H2 as [y [B' [C' [Q1 [Q2 Q3]]]]].
+  exists y. exists B'. exists C'. repeat split; auto.
+  apply beq_trans with A0; auto. apply beq_sym; auto.
+
+Qed.
+
 
 End PTS.
