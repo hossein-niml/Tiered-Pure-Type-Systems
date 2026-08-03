@@ -48,6 +48,30 @@ Fixpoint rename (x y : var) (t : term) : term :=
   | t_app M N => t_app (rename x y M) (rename x y N)
   end.
 
+Lemma rename_notin : forall M y z,
+  ~ In y (fv M) ->
+  rename y z M = M.
+Proof.
+  intros M y z H.
+  induction M; auto.
+  - simpl. destruct (eq_var_dec v y).
+    + subst. destruct H. simpl. left. reflexivity.
+    + reflexivity.
+  - simpl in *. f_equal.
+    + apply IHM1. intros Q. apply H. apply in_or_app. left. apply Q.
+    + apply IHM2. intros Q. apply H. apply in_or_app. right. apply Q.
+  - simpl in *. destruct (eq_var_dec v y).
+    + subst. f_equal. apply IHM1. intros Q. apply H. apply in_or_app. left. apply Q.
+    + f_equal.
+      * apply IHM1. intros Q. apply H. apply in_or_app. left. apply Q.
+      * apply IHM2. intros Q. apply H. apply in_or_app. right. apply in_in_remove; auto.
+  - simpl in *. destruct (eq_var_dec v y).
+    + subst. f_equal. apply IHM1. intros Q. apply H. apply in_or_app. left. apply Q.
+    + f_equal.
+      * apply IHM1. intros Q. apply H. apply in_or_app. left. apply Q.
+      * apply IHM2. intros Q. apply H. apply in_or_app. right. apply in_in_remove; auto.
+Qed.
+
 Reserved Notation "t1 =a t2" (at level 70, no associativity).
 
 Inductive alpha_eq : term -> term -> Prop :=
@@ -159,6 +183,23 @@ Qed.
 Next Obligation.
   rewrite rename_size. simpl. lia.
 Qed.
+
+Axiom subst_sort : forall s x N,
+  (t_sort s)⁅x ≔ N⁆ = t_sort s.
+
+Axiom subst_var : forall y x N,
+  (t_var y)⁅x ≔ N⁆ = if eq_var_dec y x then N else t_var y.
+
+Axiom subst_app : forall M1 M2 x N,
+  (t_app M1 M2)⁅x ≔ N⁆ = t_app (M1⁅x ≔ N⁆) (M2⁅x ≔ N⁆).
+
+Axiom subst_pi : forall y A B x N,
+  let z := fresh (var_sort y) (fv N ++ fv B) in
+  (t_pi y A B)⁅x ≔ N⁆ = t_pi z (A⁅x ≔ N⁆) ((rename y z B)⁅x ≔ N⁆).
+
+Axiom subst_lam : forall y A M x N,
+  let z := fresh (var_sort y) (fv N ++ fv M) in
+  (t_lam y A M)⁅x ≔ N⁆ = t_lam z (A⁅x ≔ N⁆) ((rename y z M)⁅x ≔ N⁆).
 
 Definition beta (M N : term) : Prop :=
   exists x A Body Arg,
@@ -736,8 +777,203 @@ Proof.
   - apply IHtyping1 in H2. destruct H2 as [y [B' [C' [Q1 [Q2 Q3]]]]].
   exists y. exists B'. exists C'. repeat split; auto.
   apply beq_trans with A0; auto. apply beq_sym; auto.
-
 Qed.
 
+Definition subst_decl (x : var) (N : term) '(y,T) : (var * term) := (y, T⁅x ≔ N⁆).
+
+Definition subst_context (x : var) (N : term) (Γ : context) := map (subst_decl x N) Γ.
+
+Notation "Γ ⌊ x ≔ N ⌋" := (subst_context x N Γ) (at level 20, left associativity).
+
+Lemma map_fst_subst_decl : forall x N Δ,
+  map fst (map (subst_decl x N) Δ) = map fst Δ.
+Proof.
+  intros x N Δ.
+  induction Δ as [| [v A] Δ_tl IH].
+  - reflexivity.
+  - cbn [map subst_decl fst]. f_equal. exact IH.
+Qed.
+
+Axiom subst_fresh : forall Γ M A x N,
+  is_fresh x Γ ->
+  Γ ⊢ M ∈ A ->
+  M ⁅ x ≔ N ⁆ = M /\ A ⁅ x ≔ N ⁆ = A.
+
+Axiom fresh_eq : forall s A B,
+  fresh (s) (A) = fresh (s) (B).
+
+Lemma substitution :
+  forall (Γ : context) (Δ : context) x C M B N,
+    Γ ++ [(x,C)] ++ Δ ⊢ M ∈ B ->
+    Γ ⊢ N ∈ C ->
+    Γ ++ (Δ⌊x ≔ N⌋) ⊢ M⁅x ≔ N⁆ ∈ B⁅x ≔ N⁆.
+Proof.
+  intros Γ Δ x C M B N H1 H2.
+  remember (Γ ++ [(x, C)] ++ Δ) as Z eqn: HZ.
+  generalize dependent Δ.
+  induction H1.
+
+  - destruct Γ.
+    + discriminate.
+    + discriminate.
+
+  - destruct Δ as [| (y, E) Δ1].
+    + intros HZ. rewrite app_nil_r in HZ. apply app_singleton_injective in HZ. 
+    destruct HZ as [HZ1 [HZ2 HZ3]]. subst.
+    simpl in *. rewrite app_nil_r. assert (HX : t_var x ⁅ x ≔ N ⁆ = N).
+      * cbn. destruct (eq_var_dec x x).
+        ** reflexivity.
+        ** destruct n. reflexivity.
+      * rewrite HX. destruct (subst_fresh Γ C (t_sort (var_sort x)) x N H H1) as [HC _]. rewrite HC; auto. 
+    + assert (Hnonempty : (y, E) :: Δ1 <> []) by discriminate.
+    destruct (exists_last Hnonempty) as [Δ1' [[y0 E0] Hlast]]. rewrite Hlast in *.
+    intros HZ. rewrite app_assoc in HZ. rewrite app_assoc in HZ.
+      apply app_singleton_injective in HZ. destruct HZ as [Q1 [Q2 Q3]]. subst.
+      unfold subst_context in *.
+      rewrite map_app in *.
+      simpl map in *.
+      rewrite subst_var. destruct (eq_var_dec y0 x).
+      * subst. destruct H. unfold dom. rewrite map_app. rewrite map_app. simpl.
+      apply in_or_app. left. apply in_or_app. right. simpl. left. reflexivity.
+      * rewrite app_assoc. apply typing_var.
+        ** unfold is_fresh in *. unfold dom in *. rewrite map_app in *.
+        rewrite map_app in *. simpl in *. intros Hin. apply H.
+        apply in_app_or in Hin. destruct Hin as [Hin|Hin].
+          *** apply in_or_app. left. apply in_or_app. left. apply Hin.
+          *** apply in_or_app. right. rewrite map_fst_subst_decl in Hin. apply Hin. 
+        ** rewrite subst_sort in IHtyping. apply IHtyping. rewrite app_assoc. reflexivity. 
+  
+  - intros Δ HZ. destruct Δ as [| (y, E) Δ1].
+    + rewrite app_nil_r in HZ. apply app_singleton_injective in HZ. 
+    destruct HZ as [HZ1 [HZ2 HZ3]]. subst.
+    simpl in *. rewrite app_nil_r.
+    destruct (subst_fresh Γ M A0 x N H H1_) as [HM HA0].
+    rewrite HM, HA0. apply H1_.
+    + assert (Hnonempty : (y, E) :: Δ1 <> []) by discriminate.
+      destruct (exists_last Hnonempty) as [Δ1' [[y1 E1] Hlast]].
+      rewrite Hlast in *.
+      rewrite app_assoc in HZ. rewrite app_assoc in HZ.
+      apply app_singleton_injective in HZ.
+      destruct HZ as [HΓ0 [Hy1 HE1]]. subst.
+      unfold subst_context in *. rewrite map_app. simpl map.
+      rewrite app_assoc.
+      apply typing_weak.
+      * unfold is_fresh in *. intro Hin. apply H.
+        unfold dom in *. rewrite map_app in *. rewrite map_app in *.
+        apply in_app_or in Hin. destruct Hin as [Hin | Hin].
+        ** apply in_or_app. left. apply in_or_app. left. exact Hin.
+        ** apply in_or_app. right. rewrite map_fst_subst_decl in Hin. apply Hin. 
+      * apply IHtyping1. rewrite <- app_assoc. reflexivity.
+      * rewrite subst_sort in IHtyping2. apply IHtyping2. rewrite <- app_assoc. reflexivity.
+
+  - intros Δ HZ. rewrite subst_sort in *. rewrite subst_pi.
+  remember (fresh (var_sort x0) (fv N ++ fv B)) as w eqn:Hw.
+  assert (Hsort: var_sort(w) = var_sort(x0)). rewrite Hw. reflexivity.
+  apply typing_pi with s.
+    * rewrite Hsort. apply IHtyping1; auto.
+    * admit. 
+    * rewrite Hsort. apply H.
+
+  - intros Δ HZ. rewrite subst_sort in *. rewrite subst_lam in *. rewrite subst_pi in *.
+  remember (fresh (var_sort x0) (fv N ++ fv M)) as w eqn:Hw.
+  remember (fresh (var_sort x0) (fv N ++ fv B)) as v eqn:Hv.
+  assert (Hvw : v = w). rewrite Hw. rewrite Hv. apply fresh_eq.
+  rewrite Hvw in *. apply typing_lam with s'; auto. admit.
+
+Admitted.
+
+Lemma type_correctness:
+  forall Γ M N,
+    Γ ⊢ M ∈ N ->
+    (exists s, N = t_sort s) \/
+    (exists s, Γ ⊢ N ∈ (t_sort s)) .
+Proof.
+  intros Γ M N Htyp.
+  induction Htyp.
+
+  - left. exists s'. reflexivity.
+
+  - right. exists (var_sort x). apply typing_weak; auto.
+  
+  - destruct IHHtyp1 as [[s Hs] | [s Hs]].
+    + left. exists s. apply Hs.
+    + right. exists s. apply thinning with (Γ); auto.
+      * exists (t_var x). exists (B). apply typing_var; auto.
+      * apply subcontext_extend_r.
+  
+  - left. exists s'. reflexivity.
+
+  - right. exists s'. apply Htyp2.
+
+  - induction B.
+    + left. exists s. rewrite subst_sort. reflexivity.
+    + rewrite subst_var. destruct (eq_var_dec v x).
+      * right. destruct IHHtyp2 as [[s Hs] | [s Hs]].
+        ** exists s. rewrite <- Hs. apply Htyp2.
+        ** exists s. destruct A0.
+          *** 
+Admitted.
+
+Axiom permutation : 
+  forall Γ Δ x y Tx Ty M C,
+  ~ In x (fv Ty) ->
+  Γ ++ [(x, Tx)] ++ [(y, Ty)] ++ Δ ⊢ M ∈ C ->
+  Γ ++ [(y, Ty)] ++ [(x, Tx)] ++ Δ ⊢ M ∈ C.
+
+Definition functional : Prop :=
+  (forall s t t', A s t -> A s t' -> t = t') /\ 
+  (forall s t u u', R s t u -> R s t u' -> u = u').
+
+Axiom type_unicity : 
+  functional -> 
+  forall Γ M T1 T2, 
+  Γ ⊢ M ∈ T1 ->
+  Γ ⊢ M ∈ T2 ->
+  T1 = T2.
+
+Definition top_sort (s : Sort) : Prop := ~ (exists s', A s s').
+
+Definition bottom_sort (s : Sort) : Prop := ~ (exists s', A s' s).
+
+Axiom top_sort_lemma : 
+  forall Γ x M N s,
+  top_sort s ->
+  (~ (Γ ⊢ t_sort s ∈ M)) /\ 
+  (~ (Γ ⊢ t_var x ∈ t_sort s)) /\ 
+  (~ (Γ ⊢ t_app M N ∈ t_sort s)).
+
+Definition persistent : Prop :=
+  functional /\
+  (forall s s' t , A s t -> A s' t -> s = s') /\ 
+  (forall s t u, R s t u -> t = u).
+
+Definition tiered (n : nat) : Prop :=
+  exists index_of : Sort -> nat,
+    (forall x : Sort, 0 < index_of x /\ index_of x < n + 1) /\
+    (forall x y : Sort, index_of x = index_of y -> x = y) /\
+    (forall i : nat, 0 < i /\ i < n + 1 -> exists x : Sort, index_of x = i) /\
+    (forall x y : Sort, A x y <-> index_of x < n /\ index_of y = S (index_of x)) /\
+    (forall x y z : Sort, R x y z -> y = z).
+
+Definition A_neighbor (s : Sort) (p : Sort * Sort) : Prop :=
+  A (fst p) (snd p) /\ (fst p = s \/ snd p = s).
+
+Lemma persistent_neighbor_bound :
+  persistent ->
+  forall s p1 p2 p3,
+    A_neighbor s p1 -> A_neighbor s p2 -> A_neighbor s p3 ->
+    p1 = p2 \/ p1 = p3 \/ p2 = p3.
+Proof.
+  intros [[Hfunc _] [Hpers _]] s [x1 y1] [x2 y2] [x3 y3]
+    [HA1 [Hx1|Hy1]] [HA2 [Hx2|Hy2]] [HA3 [Hx3|Hy3]].
+      - subst. simpl in *. subst. left. f_equal. eauto using Hfunc, Hpers.
+      - subst. simpl in *. subst. left. f_equal. eauto using Hfunc, Hpers.
+      - subst. simpl in *. subst. right. left. f_equal. eauto using Hfunc, Hpers.
+      - subst. simpl in *. subst. right. right. f_equal. eauto using Hfunc, Hpers.
+      - subst. simpl in *. subst. right. right. f_equal. eauto using Hfunc, Hpers.
+      - subst. simpl in *. subst. right. left. f_equal. eauto using Hfunc, Hpers.
+      - subst. simpl in *. subst. left. f_equal. eauto using Hfunc, Hpers.
+      - subst. simpl in *. subst. left. f_equal. eauto using Hfunc, Hpers.
+Qed.
 
 End PTS.
