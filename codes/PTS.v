@@ -947,14 +947,6 @@ Definition persistent : Prop :=
   (forall s s' t , A s t -> A s' t -> s = s') /\ 
   (forall s t u, R s t u -> t = u).
 
-Definition tiered (n : nat) : Prop :=
-  exists index_of : Sort -> nat,
-    (forall x : Sort, 0 < index_of x /\ index_of x < n + 1) /\
-    (forall x y : Sort, index_of x = index_of y -> x = y) /\
-    (forall i : nat, 0 < i /\ i < n + 1 -> exists x : Sort, index_of x = i) /\
-    (forall x y : Sort, A x y <-> index_of x < n /\ index_of y = S (index_of x)) /\
-    (forall x y z : Sort, R x y z -> y = z).
-
 Definition A_neighbor (s : Sort) (p : Sort * Sort) : Prop :=
   A (fst p) (snd p) /\ (fst p = s \/ snd p = s).
 

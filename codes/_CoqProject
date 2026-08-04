@@ -3,3 +3,5 @@
 PTSSignature.v
 PTSSignatureOps.v
 PTS.v
+TPTSSignature.v
+TPTS.v
