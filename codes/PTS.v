@@ -976,4 +976,43 @@ Proof.
       - subst. simpl in *. subst. left. f_equal. eauto using Hfunc, Hpers.
 Qed.
 
+Reserved Notation "s <A t" (at level 70, no associativity).
+
+Inductive A_lt : Sort -> Sort -> Prop :=
+  | A_lt_step  : forall s t, A s t -> s <A t
+  | A_lt_trans : forall s t u, A s t -> t <A u -> s <A u
+
+where "s <A t" := (A_lt s t). 
+
+Reserved Notation "s <=A t" (at level 70, no associativity).
+
+Inductive A_le : Sort -> Sort -> Prop :=
+  | A_le_refl : forall s, s <=A s
+  | A_le_step : forall s t u, A s t -> t <=A u -> s <=A u
+
+where "s <=A t" := (A_le s t).
+
+Reserved Notation "s =A t" (at level 70, no associativity).
+
+Inductive A_eq : Sort -> Sort -> Prop :=
+  | A_eq_refl : forall s, s =A s
+  | A_eq_step : forall s t, A s t -> s =A t
+  | A_eq_sym  : forall s t, s =A t -> t =A s
+  | A_eq_trans: forall s t u, s =A t -> t =A u -> s =A u
+
+where "s =A t" := (A_eq s t).
+
+Lemma A_le_of_lt : forall s t, s <A t -> s <=A t.
+Proof. induction 1; econstructor; eauto. apply A_le_refl. Qed.
+
+Lemma A_lt_trans' : forall s t u, s <A t -> t <A u -> s <A u.
+Proof.
+  intros s t u H1 H2.
+  induction H1.
+  - apply A_lt_trans with t; auto.
+  - apply IHA_lt in H2. apply A_lt_trans with t; auto.
+Qed.
+
+
+
 End PTS.
