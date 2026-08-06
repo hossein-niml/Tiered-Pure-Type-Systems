@@ -947,6 +947,14 @@ Definition persistent : Prop :=
   (forall s s' t , A s t -> A s' t -> s = s') /\ 
   (forall s t u, R s t u -> t = u).
 
+Definition tiered (n : nat) : Prop :=
+  exists index_of : Sort -> nat,
+    (forall x : Sort, 0 < index_of x /\ index_of x < n + 1) /\
+    (forall x y : Sort, index_of x = index_of y -> x = y) /\
+    (forall i : nat, 0 < i /\ i < n + 1 -> exists x : Sort, index_of x = i) /\
+    (forall x y : Sort, A x y <-> index_of x < n /\ index_of y = S (index_of x)) /\
+    (forall x y z : Sort, R x y z -> y = z).
+
 Definition A_neighbor (s : Sort) (p : Sort * Sort) : Prop :=
   A (fst p) (snd p) /\ (fst p = s \/ snd p = s).
 
@@ -976,25 +984,25 @@ Inductive A_lt : Sort -> Sort -> Prop :=
 
 where "s <A t" := (A_lt s t). 
 
-Reserved Notation "s <=A t" (at level 70, no associativity).
+Reserved Notation "s ≤A t" (at level 70, no associativity).
 
 Inductive A_le : Sort -> Sort -> Prop :=
-  | A_le_refl : forall s, s <=A s
-  | A_le_step : forall s t u, A s t -> t <=A u -> s <=A u
+  | A_le_refl : forall s, s ≤A s
+  | A_le_step : forall s t u, A s t -> t ≤A u -> s ≤A u
 
-where "s <=A t" := (A_le s t).
+where "s ≤A t" := (A_le s t).
 
-Reserved Notation "s =A t" (at level 70, no associativity).
+Reserved Notation "s ≈A t" (at level 70, no associativity).
 
 Inductive A_eq : Sort -> Sort -> Prop :=
-  | A_eq_refl : forall s, s =A s
-  | A_eq_step : forall s t, A s t -> s =A t
-  | A_eq_sym  : forall s t, s =A t -> t =A s
-  | A_eq_trans: forall s t u, s =A t -> t =A u -> s =A u
+  | A_eq_refl : forall s, s ≈A s
+  | A_eq_step : forall s t, A s t -> s ≈A t
+  | A_eq_sym  : forall s t, s ≈A t -> t ≈A s
+  | A_eq_trans: forall s t u, s ≈A t -> t ≈A u -> s ≈A u
 
-where "s =A t" := (A_eq s t).
+where "s ≈A t" := (A_eq s t).
 
-Lemma A_le_of_lt : forall s t, s <A t -> s <=A t.
+Lemma A_le_of_lt : forall s t, s <A t -> s ≤A t.
 Proof. induction 1; econstructor; eauto. apply A_le_refl. Qed.
 
 Lemma A_lt_trans' : forall s t u, s <A t -> t <A u -> s <A u.
@@ -1005,6 +1013,326 @@ Proof.
   - apply IHA_lt in H2. apply A_lt_trans with t; auto.
 Qed.
 
+Fixpoint chain (c : list Sort) : Prop :=
+  match c with
+  | [] | [_] => True
+  | t1 :: (t2 :: _) as rest => A t1 t2 /\ chain rest
+  end.
+
+Definition chain_from_to (s t : Sort) (c : list Sort) : Prop :=
+  chain c /\ hd_error c = Some s /\ List.last c s = t.
+
+Lemma last_default_irrelevant :
+  forall (c : list Sort) (d1 d2 : Sort),
+    c <> [] -> last c d1 = last c d2.
+Proof.
+  induction c as [| a c IH]; intros d1 d2 Hne.
+  - contradiction.
+  - destruct c as [| b c'].
+    + reflexivity.
+    + simpl. apply IH. discriminate.
+Qed.
+
+Lemma A_le_iff_chain : forall s t,
+  s ≤A t <-> exists c, chain_from_to s t c.
+Proof.
+  intros s t. repeat split.
+  - intros H. induction H as [| s t u H1 H2 [c IH]].
+    + exists [s]. repeat split.
+    + destruct IH as [Q1 [Q2 Q3]]. exists (s :: c). repeat split.
+      * destruct c.
+        ** reflexivity.
+        ** repeat split; auto. simpl in Q2. injection Q2 as Q2. subst. apply H1.
+      * destruct c as [| c0 c'] eqn:Hc.
+        ** discriminate.
+        ** simpl. simpl in Q3.
+           injection Q2 as Q2. subst c0.
+           destruct c' as [| c1 c''].
+           *** exact Q3.
+           *** rewrite (last_default_irrelevant (c1 :: c'') s t).
+              **** exact Q3.
+              **** discriminate.
+
+  - intros [c Hc0]. generalize dependent s.
+    induction c as [| a c IH]; intros s [H1 [H2 H3]].
+    + discriminate.
+    + injection H2 as H2. subst a.
+      destruct c as [| c0 c'].
+      * simpl in H3. subst t. apply A_le_refl.
+      * simpl in H1. destruct H1 as [HA Hchain]. apply A_le_step with (t := c0).
+        -- exact HA.
+        -- apply IH. repeat split.
+           ++ exact Hchain.
+           ++ destruct c' as [| c1 c''] eqn:E'.
+              ** simpl in H3 |- *. exact H3.
+              ** simpl in H3 |- *.
+                 destruct c'' as [| c2 c3].
+                 --- exact H3.
+                 --- rewrite (last_default_irrelevant (c2 :: c3) c0 s).
+                     +++ exact H3.
+                     +++ discriminate.
+Qed.
+
+Lemma persistent_chain_unique_from :
+  persistent ->
+  forall c1 c2 s,
+    chain c1 -> chain c2 ->
+    hd_error c1 = Some s -> hd_error c2 = Some s ->
+    length c1 = length c2 ->
+    c1 = c2.
+Proof.
+  intros Hpers c1.
+  induction c1 as [| a1 c1 IH]; intros c2 s H1 H2 Hh1 Hh2 Hlen.
+  - discriminate Hh1.
+  - injection Hh1 as Hh1. subst a1. destruct c2 as [| a2 c2].
+    + discriminate Hh2.
+    + injection Hh2 as Hh2. subst a2. destruct c1 as [| b1 c1'].
+      * destruct c2 as [| b2 c2']; auto. discriminate Hlen.
+      * destruct c2 as [| b2 c2'].
+        -- discriminate Hlen.
+        -- simpl in H1, H2.
+           destruct H1 as [HA1 Hc1'], H2 as [HA2 Hc2'].
+           assert (Hb : b1 = b2).
+           { destruct Hpers as [[Hfunc1 _] _].
+             eapply Hfunc1; eauto. }
+           subst b2.
+           f_equal.
+           apply IH with (s := b1); auto.
+Qed.
+
+Lemma chain_last :
+  forall c x y,
+    chain (c ++ [x;y]) ->
+    A x y.
+Proof.
+  induction c as [|a c IH].
+  - simpl. tauto.
+  - destruct c.
+    + simpl. tauto.
+    + intros. destruct H as [_ H]; auto.
+Qed.
+
+Lemma chain_prefix :
+  forall c x y,
+    chain (c ++ [x; y]) ->
+    chain (c ++ [x]).
+Proof.
+  induction c as [|a c IH].
+  - reflexivity.
+  - destruct c as [|b c].
+    + simpl. tauto.
+    + simpl. intros x y [Hab Hchain]. split; auto. apply IH with y; auto.
+Qed.
+
+Lemma chain_snoc_inv : forall l x,
+  chain (l ++ [x]) ->
+  chain l /\ (l <> [] -> A (last l x) x).
+Proof.
+  induction l as [| a l IH]; intros x Hc.
+  - simpl. split; [exact I | intros []; reflexivity].
+  - destruct l as [| b l'].
+    + simpl in Hc. destruct Hc as [HA _].
+      simpl. split; [exact I | intros _; simpl; exact HA].
+    + simpl in Hc. destruct Hc as [HAab Hc'].
+      destruct (IH x Hc') as [IHchain IHlast].
+      split.
+      * simpl. split; [exact HAab | exact IHchain].
+      * intros _.
+        specialize (IHlast ltac:(discriminate)).
+        simpl in IHlast.
+        simpl.
+        exact IHlast.
+Qed.
+
+Lemma persistent_chain_unique_to :
+  persistent ->
+  forall c1 t s1 c2 s2,
+    chain_from_to s1 t c1 -> chain_from_to s2 t c2 ->
+    length c1 = length c2 ->
+    c1 = c2.
+Proof.
+  intros Hpers c1.
+  induction c1 as [| x l IH] using rev_ind; intros t s1 c2 s2 H1 H2 Hlen.
+  - destruct H1 as [_ [Hh _]]. discriminate Hh.
+  - destruct H1 as [Hc1 [Hh1 Hlast1]].
+    rewrite last_last in Hlast1. subst x.
+    destruct c2 as [| c2h c2t].
+    + destruct H2 as [_ [Hh2 _]]. discriminate Hh2.
+    + assert (Hne2 : c2h :: c2t <> []) by discriminate.
+      destruct (exists_last Hne2) as [l2 [x2 Hl2eq]].
+      rewrite Hl2eq in H2.
+      destruct H2 as [Hc2 [Hh2 Hlast2]].
+      rewrite last_last in Hlast2. subst x2.
+      pose proof (chain_snoc_inv l t Hc1) as [Hcl Hal].
+      pose proof (chain_snoc_inv l2 t Hc2) as [Hcl2 Hal2].
+      destruct l as [| a l'].
+      ++ destruct l2 as [| b l2'].
+        * rewrite Hl2eq. reflexivity.
+        * exfalso.
+          assert (Hlen2 : length (c2h :: c2t) = length ((b :: l2') ++ [t])).
+          { rewrite Hl2eq. reflexivity. }
+          rewrite length_app in Hlen2.
+          simpl in Hlen2, Hlen.
+          lia.
+      ++ destruct l2 as [| b l2'].
+        * exfalso.
+          assert (Hlen2 : length (c2h :: c2t) = length ([] ++ [t])).
+          { rewrite Hl2eq. reflexivity. }
+          simpl in Hlen2.
+          rewrite length_app in Hlen.
+          simpl in Hlen.
+          lia.
+        * assert (Hne : a :: l' <> []) by discriminate.
+          assert (Hne2' : b :: l2' <> []) by discriminate.
+          specialize (Hal Hne). specialize (Hal2 Hne2').
+          assert (Ht' : last (a :: l') t = last (b :: l2') t).
+          { destruct Hpers as [_ [Hpred _]]. exact (Hpred _ _ t Hal Hal2). }
+          assert (Hlen' : length (a :: l') = length (b :: l2')).
+          { simpl. rewrite Hl2eq, !length_app in Hlen. simpl in Hlen. lia. }
+          assert (Heq : a :: l' = b :: l2').
+          { apply (IH (last (a :: l') t) a (b :: l2') b).
+            - split; [exact Hcl|]. split; [reflexivity|].
+              apply (last_default_irrelevant (a :: l') a t). discriminate.
+            - split; [exact Hcl2|]. split; [reflexivity|].
+              rewrite Ht'.
+              apply (last_default_irrelevant (b :: l2') b t). discriminate.
+            - exact Hlen'. }
+          rewrite Hl2eq. f_equal. exact Heq.
+Qed.
+
+Definition separable : Prop := 
+  forall s s', R s s' s' -> s ≈A s'.
+
+Definition atomic : Prop := 
+  forall s s', s ≈A s'.
+
+Definition ascending_chain_condition : Prop :=
+  forall s : Sort, Acc (fun u v => u <A v) s.
+
+Definition descending_chain_condition : Prop :=
+  forall s : Sort, Acc (fun u v => v <A u) s.
+
+Definition bounded : Prop := 
+  ascending_chain_condition /\ descending_chain_condition.
+
+Definition weakly_non_dependent : Prop :=
+  forall s t u, R s t u -> u ≤A t /\ t ≤A s.
+
+Definition stratified : Prop :=
+  ascending_chain_condition /\ weakly_non_dependent.
+
+Definition generalized_non_dependent : Prop :=
+  stratified /\ persistent.
+
+Definition bounded_non_dependent : Prop :=
+  generalized_non_dependent /\ bounded.
+
+Lemma wf_by_measure :
+  forall (T : Type) (Rel : T -> T -> Prop) (f : T -> nat),
+    (forall u v, Rel u v -> f u < f v) ->
+    forall s, Acc (fun u v => Rel u v) s.
+Proof.
+  intros T Rel f Hmono s.
+  remember (f s) as k eqn:Hk.
+  generalize dependent s.
+  induction k as [k IH] using (well_founded_induction Wf_nat.lt_wf).
+  intros s Hk.
+  constructor.
+  intros y Hy.
+  apply (IH (f y)).
+  - rewrite Hk. apply Hmono. exact Hy.
+  - reflexivity.
+Qed.
+
+Axiom A_lt_irrefl : persistent -> bounded -> forall s, ~ (s <A s).
+
+Lemma tiered_iff_persistent_bounded_atomic :
+  (exists n, tiered n) <-> persistent /\ bounded /\ atomic.
+Proof.
+  split.
+
+  - intros [n [index_of [index_r [index_i [index_t [HA HR]]]]]]. split.
+    + repeat split; auto.
+      * intros s t u HA1 HA2. 
+      apply HA in HA1 as [_ HA1].
+      apply HA in HA2 as [_ HA2].
+      apply index_i. rewrite HA1, HA2. reflexivity.
+      * intros s t u v HR1 HR2.
+      apply HR in HR1. apply HR in HR2. rewrite <- HR1. exact HR2.
+      * intros s t u HA1 HA2.
+      apply HA in HA1 as [_ HA1].
+      apply HA in HA2 as [_ HA2].
+      apply index_i. apply eq_add_S. rewrite <- HA1. exact HA2.
+    
+    + split. 
+
+      * unfold bounded. 
+      assert (A_lt_index_1 : forall s t, s <A t -> index_of s < index_of t).
+      intros s t H. induction H as [s t Hst | s t u Hst _ IH].
+        apply HA in Hst as [_ Heq]. lia.
+        apply HA in Hst as [_ Heq]. lia.
+      assert (A_lt_index_2 : forall s t, t <A s -> n - index_of s < n - index_of t).
+      intros t s H. 
+      induction H as [s t Hst | s t u Hst _ IH].
+        apply HA in Hst as [_ Heq]. destruct (index_r s) as [_ Hsn], (index_r t) as [_ Htn]. lia.
+        apply HA in Hst as [_ Heq]. destruct (index_r s) as [_ Hsn], (index_r t) as [_ Htn]. lia.
+      split. 
+        ** unfold ascending_chain_condition. intros s.
+        apply (wf_by_measure Sort (fun u v => u <A v) index_of A_lt_index_1).
+        ** unfold descending_chain_condition. intros s.
+        apply (wf_by_measure Sort (fun u v => v <A u) (fun s => n - index_of s) A_lt_index_2).
+      
+      * assert (chain_eq : forall k i, i + k < n + 1 -> 0 < i ->
+                forall x y, index_of x = i -> index_of y = i + k -> x ≈A y).
+      { induction k as [| k IH]; intros i Hbound Hipos x y Hx Hy.
+        - assert (Hy0 : index_of y = i) by lia.
+          assert (Heq : index_of x = index_of y) by lia.
+          apply index_i in Heq. subst y. apply A_eq_refl.
+        - assert (Hrange : 0 < i + k /\ i + k < n + 1) by lia.
+          destruct (index_t (i + k) Hrange) as [z Hz].
+          assert (Hxz : x ≈A z).
+          { apply IH with i; auto; lia. }
+          assert (Hzy : z ≈A y).
+          { apply A_eq_step. apply HA. split.
+            - rewrite Hz. lia.
+            - rewrite Hz, Hy. lia. }
+          apply A_eq_trans with z; auto. }
+      
+      intros s s'.
+      pose proof (index_r s) as [Hs1 Hs2].
+      pose proof (index_r s') as [Hs1' Hs2'].
+      assert (Hcase : index_of s <= index_of s' \/ index_of s' <= index_of s) by lia.
+      destruct Hcase as [Hle | Hge].
+        ** assert (Hk : index_of s' = index_of s + (index_of s' - index_of s)) by lia.
+        apply (chain_eq (index_of s' - index_of s) (index_of s)); lia || auto.
+        
+        ** apply A_eq_sym.
+        assert (Hk : index_of s = index_of s' + (index_of s - index_of s')) by lia.
+        apply (chain_eq (index_of s - index_of s') (index_of s')); lia || auto.
+  
+  - intros [Hpers [Hbnd Hato]].
+  destruct (classic (exists s : Sort, True)) as [[s0 _] | Hempty].
+  + destruct (classic (exists s1 s2 : Sort, s1 <> s2)) as [[s1 [s2 Hne]] | Hone].
+    * (* |S| >= 2 *)
+      admit.
+    * (* |S| = 1 *)
+      exists 1, (fun _ => 1). 
+      split. lia.
+      split. intros x y _. destruct (classic (x = y)) as [|Hxy]; [auto|].
+         exfalso. apply Hone. exists x, y. exact Hxy. 
+      split. intros i [Hi1 Hi2]. exists s0. lia.
+      split. intros x y. split. 
+        ** intros HAxy. exfalso. assert (Hxy : x = y). 
+        { destruct (classic (x = y)) as [|Hxy]; [auto|]. 
+              exfalso. apply Hone. exists x, y. exact Hxy. }
+          subst y. apply (A_lt_irrefl Hpers Hbnd x). apply A_lt_step. exact HAxy.
+        ** intros [Hlt _]. lia.
+        ** intros x y z HR. destruct Hpers as [_ [_ Hshape]]. eauto.
+  + (* |S| = 0 *)
+    exists 0, (fun _ => 1).
+    split. 
+    * intros.
+Admitted.
 
 
 End PTS.
