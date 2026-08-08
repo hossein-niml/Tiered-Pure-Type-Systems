@@ -1,8 +1,10 @@
 Require Import List.
 Require Import Classical.
+From Stdlib Require Import Logic.IndefiniteDescription.
 Import ListNotations.
 From Stdlib.Program Require Import Program Wf.
-Require Import Lia.
+From Stdlib Require Import Lia.
+Require Import Coq.Arith.Arith.
 
 Require Import Thesis.PTSSignature.
 
@@ -1244,7 +1246,706 @@ Proof.
   - reflexivity.
 Qed.
 
-Axiom A_lt_irrefl : persistent -> bounded -> forall s, ~ (s <A s).
+Lemma acc_irrefl : 
+  forall (T : Type) (Rel : T -> T -> Prop) (x : T), 
+  Acc Rel x -> ~ Rel x x.
+Proof.
+  intros T Rel x Hacc.
+  induction Hacc as [x _ IH].
+  intro Hxx.
+  exact (IH x Hxx Hxx).
+Qed.
+
+Lemma A_lt_irrefl : bounded -> forall s, ~ (s <A s).
+Proof.
+  intros Hbnd s Hlt.
+  destruct Hbnd as [Hasc _].
+  exact (acc_irrefl Sort (fun u v => u <A v) s (Hasc s) Hlt).
+Qed.
+
+Lemma chain_skipn : forall c k, chain c -> chain (skipn k c).
+Proof.
+  induction c as [| a c IH]; intros k Hc.
+  - destruct k; simpl; exact I.
+  - destruct k as [| k].
+    + simpl. exact Hc.
+    + simpl. apply IH.
+      destruct c as [| b c']; simpl in Hc.
+      * exact I.
+      * destruct Hc as [_ Hc]. exact Hc.
+Qed.
+
+Lemma chain_firstn : forall c k, chain c -> chain (firstn k c).
+Proof.
+  induction c as [| a c IH]; intros k Hc.
+  - destruct k; simpl; exact I.
+  - destruct k as [| k].
+    + simpl. exact I.
+    + destruct c as [| b c'].
+      * simpl. destruct k; exact I.
+      * simpl in Hc |- *. destruct Hc as [HAab Hc'].
+        assert (Hfk : chain (firstn k (b :: c'))) by (apply IH; simpl; assumption).
+        destruct (firstn k (b :: c')) as [| t2 rest] eqn:Efk.
+        -- exact I.
+        -- split.
+           ++ destruct k as [| k'].
+              ** simpl in Efk. discriminate Efk.
+              ** simpl in Efk. injection Efk as Ht2. subst t2. exact HAab.
+           ++ exact Hfk.
+Qed.
+
+Lemma hd_error_skipn : forall c k a,
+  nth_error c k = Some a -> hd_error (skipn k c : list Sort) = Some a.
+Proof.
+  induction c as [| x c IH]; intros k a Hnth.
+  - destruct k; discriminate.
+  - destruct k as [| k].
+    + simpl in Hnth |- *. exact Hnth.
+    + simpl in Hnth |- *. apply IH. exact Hnth.
+Qed.
+
+Lemma last_skipn : forall c k d,
+  k < length c -> last (skipn k c : list Sort) d = last c d.
+Proof.
+  induction c as [| x c IH]; intros k d Hk.
+  - simpl in Hk. lia.
+  - destruct k as [| k].
+    + reflexivity.
+    + simpl. destruct c as [| y c'].
+      * simpl in Hk. lia.
+      * apply IH. simpl in *. lia.
+Qed.
+
+Lemma hd_error_firstn : forall c k a,
+  hd_error c = Some a -> 0 < k -> hd_error (firstn k c : list Sort) = Some a.
+Proof.
+  intros c k a Hhd Hk.
+  destruct c as [| x c]; [discriminate |].
+  simpl in Hhd. injection Hhd as Hhd. subst x.
+  destruct k as [| k]; [lia |]. reflexivity.
+Qed.
+
+Lemma last_firstn_nth : forall c k a d,
+  nth_error c k = Some a -> last (firstn (S k) c : list Sort) d = a.
+Proof.
+  induction c as [| x c IH]; intros k a d Hnth.
+  - destruct k as [| k']; simpl in Hnth; discriminate Hnth.
+  - destruct k as [| k].
+    + simpl in Hnth. injection Hnth as Hnth. subst a. simpl.
+      destruct c; reflexivity.
+    + simpl in Hnth. simpl.
+      destruct c as [| y c'].
+      * destruct k as [| k'']; simpl in Hnth; discriminate Hnth.
+      * apply (IH k a d Hnth).
+Qed.
+
+Lemma length_skipn : forall (c : list Sort) k, 
+  k <= length c -> length (skipn k c) = length c - k.
+Proof. intros c k Hk. apply length_skipn. Qed.
+
+Lemma length_firstn_le : forall (c : list Sort) k, 
+  k <= length c -> length (firstn k c) = k.
+Proof. intros c k Hk. rewrite length_firstn. lia. Qed.
+
+Lemma chain_pos_length_A_lt :
+  forall c a b, chain_from_to a b c -> 2 <= length c -> a <A b.
+Proof.
+  induction c as [| x l IH] using rev_ind; intros a b [Hc [Hh Hl]] Hlen.
+  - simpl in Hlen. lia.
+  - rewrite last_last in Hl. subst x.
+    destruct l as [| y l'].
+    + simpl in Hlen. lia.
+    + destruct (chain_snoc_inv (y :: l') b Hc) as [Hcl Hal].
+      specialize (Hal ltac:(discriminate)).
+      destruct l' as [| z l''].
+      * simpl in Hh. injection Hh as Hh. subst y.
+        apply A_lt_step. exact Hal.
+      * apply A_lt_trans' with (last (y :: z :: l'') b).
+        -- apply IH.
+           ++ split; [exact Hcl |]. split; [exact Hh |].
+              apply last_default_irrelevant. discriminate.
+           ++ simpl. lia.
+        -- apply A_lt_step. exact Hal.
+Qed.
+
+Lemma nth_error_exists : forall (c : list Sort) k, 
+  k < length c -> exists a, nth_error c k = Some a.
+Proof.
+  induction c as [| x c IH]; intros k Hk.
+  - simpl in Hk. lia.
+  - destruct k as [| k'].
+    + exists x. reflexivity.
+    + simpl. apply IH. simpl in Hk. lia.
+Qed.
+
+Lemma chain_same_end_relates :
+  persistent ->
+  forall s u t c1 c2,
+    chain_from_to s t c1 -> chain_from_to u t c2 ->
+    s <A u \/ s = u \/ u <A s.
+Proof.
+  intros Hpers s u t c1 c2 H1 H2.
+  assert (Htri : length c1 < length c2 \/ length c1 = length c2 \/ length c2 < length c1) by lia.
+  destruct Htri as [Hlt | [Heq | Hgt]].
+
+  - (* c1 shorter: u <A s *)
+    right. right.
+    destruct H1 as [Hc1 [Hh1 Hl1]].
+    destruct H2 as [Hc2 [Hh2 Hl2]].
+    remember (length c2 - length c1) as k eqn:Hkeq.
+    assert (Hc1ne : 1 <= length c1).
+    { destruct c1 as [| ? ?]; simpl.
+      - discriminate Hh1.
+      - lia. }
+    assert (Hk1 : 0 < k) by lia.
+    assert (Hklt : k < length c2) by lia.
+    destruct (nth_error_exists c2 k Hklt) as [a Hnth].
+    pose proof (hd_error_skipn c2 k a Hnth) as Hheadskip.
+    pose proof (chain_skipn c2 k Hc2) as Hchainskip.
+    pose proof (last_skipn c2 k a Hklt) as Hlastskip.
+    assert (Hlast_a_u : last c2 a = last c2 u).
+    { apply last_default_irrelevant. destruct c2; [discriminate Hh2 | discriminate]. }
+    assert (Hlastskip' : last (skipn k c2) a = t).
+    { rewrite Hlastskip, Hlast_a_u. exact Hl2. }
+    assert (Hsuffix : chain_from_to a t (skipn k c2)).
+    { split; [exact Hchainskip | split; [exact Hheadskip | exact Hlastskip']]. }
+    assert (Hlensuf : length (skipn k c2) = length c1).
+    { rewrite (length_skipn c2 k ltac:(lia)). lia. }
+    assert (Heqc : c1 = skipn k c2).
+    { apply (persistent_chain_unique_to Hpers c1 t s (skipn k c2) a).
+      - split; [exact Hc1 | split; [exact Hh1 | exact Hl1]].
+      - exact Hsuffix.
+      - symmetry. exact Hlensuf. }
+    assert (Hsa : s = a).
+    { assert (Hh1' : hd_error c1 = Some s) by exact Hh1.
+      rewrite Heqc in Hh1'. rewrite Hheadskip in Hh1'. injection Hh1' as Hh1'. symmetry. exact Hh1'. }
+    assert (Hprefix : chain_from_to u s (firstn (S k) c2)).
+    { split.
+      - apply chain_firstn. exact Hc2.
+      - split.
+        + apply hd_error_firstn; [exact Hh2 | lia].
+        + pose proof (last_firstn_nth c2 k a u Hnth) as Hlf.
+          rewrite Hsa. exact Hlf. }
+    assert (Hlenpref : length (firstn (S k) c2) = S k).
+    { apply length_firstn_le. lia. }
+    apply (chain_pos_length_A_lt (firstn (S k) c2) u s Hprefix).
+    rewrite Hlenpref. lia.
+
+  - (* equal length: s = u *)
+    right. left.
+    destruct H1 as [Hc1 [Hh1 Hl1]].
+    destruct H2 as [Hc2 [Hh2 Hl2]].
+    assert (Heqc : c1 = c2).
+    { apply (persistent_chain_unique_to Hpers c1 t s c2 u).
+      - split; [exact Hc1 | split; [exact Hh1 | exact Hl1]].
+      - split; [exact Hc2 | split; [exact Hh2 | exact Hl2]].
+      - exact Heq. }
+    rewrite Heqc in Hh1. rewrite Hh1 in Hh2. injection Hh2 as Hh2. exact Hh2.
+
+  - (* c2 shorter: s <A u, mirror of the first case *)
+    left.
+    destruct H1 as [Hc1 [Hh1 Hl1]].
+    destruct H2 as [Hc2 [Hh2 Hl2]].
+    remember (length c1 - length c2) as k eqn:Hkeq.
+    assert (Hc2ne : 1 <= length c2).
+    { destruct c2 as [| ? ?]; simpl.
+      - discriminate Hh2.
+      - lia. }
+    assert (Hk1 : 0 < k) by lia.
+    assert (Hklt : k < length c1) by lia.
+    destruct (nth_error_exists c1 k Hklt) as [a Hnth].
+    pose proof (hd_error_skipn c1 k a Hnth) as Hheadskip.
+    pose proof (chain_skipn c1 k Hc1) as Hchainskip.
+    pose proof (last_skipn c1 k a Hklt) as Hlastskip.
+    assert (Hlast_a_s : last c1 a = last c1 s).
+    { apply last_default_irrelevant. destruct c1; [discriminate Hh1 | discriminate]. }
+    assert (Hlastskip' : last (skipn k c1) a = t).
+    { rewrite Hlastskip, Hlast_a_s. exact Hl1. }
+    assert (Hsuffix : chain_from_to a t (skipn k c1)).
+    { split; [exact Hchainskip | split; [exact Hheadskip | exact Hlastskip']]. }
+    assert (Hlensuf : length (skipn k c1) = length c2).
+    { rewrite (length_skipn c1 k ltac:(lia)). lia. }
+    assert (Heqc : c2 = skipn k c1).
+    { apply (persistent_chain_unique_to Hpers c2 t u (skipn k c1) a).
+      - split; [exact Hc2 | split; [exact Hh2 | exact Hl2]].
+      - exact Hsuffix.
+      - symmetry. exact Hlensuf. }
+    assert (Hua : u = a).
+    { assert (Hh2' : hd_error c2 = Some u) by exact Hh2.
+      rewrite Heqc in Hh2'. rewrite Hheadskip in Hh2'. injection Hh2' as Hh2'. symmetry. exact Hh2'. }
+    assert (Hprefix : chain_from_to s u (firstn (S k) c1)).
+    { split.
+      - apply chain_firstn. exact Hc1.
+      - split.
+        + apply hd_error_firstn; [exact Hh1 | lia].
+        + pose proof (last_firstn_nth c1 k a s Hnth) as Hlf.
+          rewrite Hua. exact Hlf. }
+    assert (Hlenpref : length (firstn (S k) c1) = S k).
+    { apply length_firstn_le. lia. }
+    apply (chain_pos_length_A_lt (firstn (S k) c1) s u Hprefix).
+    rewrite Hlenpref. lia.
+Qed.
+
+Lemma chain_same_start_relates :
+  persistent ->
+  forall s t u c1 c2,
+    chain_from_to s t c1 -> chain_from_to s u c2 ->
+    t <A u \/ t = u \/ u <A t.
+Proof.
+  intros Hpers s t u c1 c2 H1 H2.
+  assert (Htri : length c1 < length c2 \/ length c1 = length c2 \/ length c2 < length c1) by lia.
+  destruct Htri as [Hlt | [Heq | Hgt]].
+
+  - (* c1 shorter: t <A u *)
+    left.
+    destruct H1 as [Hc1 [Hh1 Hl1]].
+    destruct H2 as [Hc2 [Hh2 Hl2]].
+    assert (Hc1ne : 1 <= length c1).
+    { destruct c1 as [| ? ?]; simpl.
+      - discriminate Hh1.
+      - lia. }
+    remember (length c1 - 1) as j eqn:Hjeq.
+    assert (Hjlt : j < length c2) by lia.
+    destruct (nth_error_exists c2 j Hjlt) as [a Hnth].
+    assert (Hlenpref : length (firstn (length c1) c2) = length c1).
+    { apply length_firstn_le. lia. }
+    assert (Hchainpref : chain (firstn (length c1) c2)).
+    { apply chain_firstn. exact Hc2. }
+    assert (Hheadpref : hd_error (firstn (length c1) c2) = Some s).
+    { apply hd_error_firstn; [exact Hh2 | lia]. }
+    assert (Heqc : c1 = firstn (length c1) c2).
+    { apply (persistent_chain_unique_from Hpers c1 (firstn (length c1) c2) s).
+      - exact Hc1.
+      - exact Hchainpref.
+      - exact Hh1.
+      - exact Hheadpref.
+      - symmetry. exact Hlenpref. }
+    assert (Hat : a = t).
+    { pose proof (last_firstn_nth c2 j a s Hnth) as Hlf.
+      assert (HSj : S j = length c1) by lia.
+      rewrite HSj in Hlf.
+      rewrite <- Heqc in Hlf.
+      rewrite Hl1 in Hlf.
+      symmetry. exact Hlf. }
+    pose proof (hd_error_skipn c2 j a Hnth) as Hheadskip.
+    pose proof (chain_skipn c2 j Hc2) as Hchainskip.
+    pose proof (last_skipn c2 j a Hjlt) as Hlastskip.
+    assert (Hlast_a_s : last c2 a = last c2 s).
+    { apply last_default_irrelevant. destruct c2; [discriminate Hh2 | discriminate]. }
+    assert (Hlastskip' : last (skipn j c2) a = u).
+    { rewrite Hlastskip, Hlast_a_s. exact Hl2. }
+    assert (Hsuffix : chain_from_to t u (skipn j c2)).
+    { rewrite <- Hat.
+      split; [exact Hchainskip | split; [exact Hheadskip | exact Hlastskip']]. }
+    assert (Hlensuf : length (skipn j c2) = length c2 - j).
+    { apply length_skipn. lia. }
+    apply (chain_pos_length_A_lt (skipn j c2) t u Hsuffix).
+    rewrite Hlensuf. lia.
+
+  - (* equal length: t = u *)
+    right. left.
+    destruct H1 as [Hc1 [Hh1 Hl1]].
+    destruct H2 as [Hc2 [Hh2 Hl2]].
+    assert (Heqc : c1 = c2).
+    { apply (persistent_chain_unique_from Hpers c1 c2 s).
+      - exact Hc1.
+      - exact Hc2.
+      - exact Hh1.
+      - exact Hh2.
+      - exact Heq. }
+    rewrite Heqc in Hl1.
+    rewrite Hl1 in Hl2.
+    exact Hl2.
+
+  - (* c2 shorter: u <A t, mirror of first case *)
+    right. right.
+    destruct H1 as [Hc1 [Hh1 Hl1]].
+    destruct H2 as [Hc2 [Hh2 Hl2]].
+    assert (Hc2ne : 1 <= length c2).
+    { destruct c2 as [| ? ?]; simpl.
+      - discriminate Hh2.
+      - lia. }
+    remember (length c2 - 1) as j eqn:Hjeq.
+    assert (Hjlt : j < length c1) by lia.
+    destruct (nth_error_exists c1 j Hjlt) as [a Hnth].
+    assert (Hlenpref : length (firstn (length c2) c1) = length c2).
+    { apply length_firstn_le. lia. }
+    assert (Hchainpref : chain (firstn (length c2) c1)).
+    { apply chain_firstn. exact Hc1. }
+    assert (Hheadpref : hd_error (firstn (length c2) c1) = Some s).
+    { apply hd_error_firstn; [exact Hh1 | lia]. }
+    assert (Heqc : c2 = firstn (length c2) c1).
+    { apply (persistent_chain_unique_from Hpers c2 (firstn (length c2) c1) s).
+      - exact Hc2.
+      - exact Hchainpref.
+      - exact Hh2.
+      - exact Hheadpref.
+      - symmetry. exact Hlenpref. }
+    assert (Hau : a = u).
+    { pose proof (last_firstn_nth c1 j a s Hnth) as Hlf.
+      assert (HSj : S j = length c2) by lia.
+      rewrite HSj in Hlf.
+      rewrite <- Heqc in Hlf.
+      rewrite Hl2 in Hlf.
+      symmetry. exact Hlf. }
+    pose proof (hd_error_skipn c1 j a Hnth) as Hheadskip.
+    pose proof (chain_skipn c1 j Hc1) as Hchainskip.
+    pose proof (last_skipn c1 j a Hjlt) as Hlastskip.
+    assert (Hlast_a_s : last c1 a = last c1 s).
+    { apply last_default_irrelevant. destruct c1; [discriminate Hh1 | discriminate]. }
+    assert (Hlastskip' : last (skipn j c1) a = t).
+    { rewrite Hlastskip, Hlast_a_s. exact Hl1. }
+    assert (Hsuffix : chain_from_to u t (skipn j c1)).
+    { rewrite <- Hau.
+      split; [exact Hchainskip | split; [exact Hheadskip | exact Hlastskip']]. }
+    assert (Hlensuf : length (skipn j c1) = length c1 - j).
+    { apply length_skipn. lia. }
+    apply (chain_pos_length_A_lt (skipn j c1) u t Hsuffix).
+    rewrite Hlensuf. lia.
+Qed.
+
+Lemma A_eq_lt_case :
+  persistent -> bounded ->
+  forall s t, s ≈A t -> s <A t \/ s = t \/ t <A s.
+Proof.
+  intros Hpers Hbnd s t Heq.
+  induction Heq as
+    [ s
+    | s t Hst
+    | s t Heq IH
+    | s t u Heq1 IH1 Heq2 IH2 ].
+
+  - right. left. reflexivity.
+
+  - left. apply A_lt_step. exact Hst.
+
+  - destruct IH as [IH | [IH | IH]].
+    + right. right. exact IH.
+    + right. left. symmetry. exact IH.
+    + left. exact IH.
+
+  - destruct IH1 as [Hst | [Hst | Hst]]; destruct IH2 as [Htu | [Htu | Htu]].
+    + left. apply A_lt_trans' with t; auto.
+    + subst u. left. exact Hst.
+    + destruct (A_le_iff_chain s t) as [Hfwd1 _].
+      destruct (A_le_iff_chain u t) as [Hfwd2 _].
+      assert (Hc1 : exists c, chain_from_to s t c) by (apply Hfwd1; apply A_le_of_lt; exact Hst).
+      assert (Hc2 : exists c, chain_from_to u t c) by (apply Hfwd2; apply A_le_of_lt; exact Htu).
+      destruct Hc1 as [c1 Hc1]. destruct Hc2 as [c2 Hc2].
+      apply (chain_same_end_relates Hpers s u t c1 c2 Hc1 Hc2).
+    + subst t. left. exact Htu.
+    + subst t. subst u. right. left. reflexivity.
+    + subst t. right. right. exact Htu.
+    + destruct (A_le_iff_chain t s) as [Hfwd1 _].
+      destruct (A_le_iff_chain t u) as [Hfwd2 _].
+      assert (Hc1 : exists c, chain_from_to t s c) by (apply Hfwd1; apply A_le_of_lt; exact Hst).
+      assert (Hc2 : exists c, chain_from_to t u c) by (apply Hfwd2; apply A_le_of_lt; exact Htu).
+      destruct Hc1 as [c1 Hc1]. destruct Hc2 as [c2 Hc2].
+      apply (chain_same_start_relates Hpers t s u c1 c2 Hc1 Hc2).
+    + subst u. right. right. exact Hst.
+    + right. right. apply A_lt_trans' with t; auto.
+Qed.
+
+Lemma A_lt_total :
+  persistent -> bounded -> atomic ->
+  forall s t, s <A t \/ s = t \/ t <A s.
+Proof.
+  intros Hpers Hbnd Hato s t.
+  apply (A_eq_lt_case Hpers Hbnd s t (Hato s t)).
+Qed.
+
+Axiom exists_top :
+  bounded -> 
+  forall s0 : Sort, exists top, s0 ≤A top /\ ~ exists t, top <A t.
+
+Axiom exists_bottom :
+  bounded -> 
+  forall s0 : Sort, exists bottom, bottom ≤A s0 /\ ~ exists t, t <A bottom.
+
+Lemma A_le_split : forall s t, s ≤A t -> s = t \/ s <A t.
+Proof.
+  intros s t H. induction H as [s | s t u Hst H IH].
+  - left. reflexivity.
+  - destruct IH as [IH | IH].
+    + subst. right. apply A_lt_step. exact Hst.
+    + right. apply A_lt_trans' with t; [apply A_lt_step; exact Hst | exact IH].
+Qed.
+
+Lemma A_le_lt_antisym :
+  bounded ->
+  forall s t, s ≤A t -> t <A s -> False.
+Proof.
+  intros Hbnd s t Hle Hlt.
+  destruct (A_le_split s t Hle) as [Heq | Hlt2].
+  - subst. exact (A_lt_irrefl Hbnd t Hlt).
+  - exact (A_lt_irrefl Hbnd s (A_lt_trans' s t s Hlt2 Hlt)).
+Qed.
+
+Lemma top_unique :
+  persistent -> bounded -> atomic ->
+  forall top1 top2, 
+  (forall s, s ≤A top1) -> 
+  (forall s, s ≤A top2) -> 
+  top1 = top2.
+Proof.
+  intros Hpers Hbnd Hato top1 top2 H1 H2.
+  destruct (A_lt_total Hpers Hbnd Hato top1 top2) as [Hlt | [Heq | Hgt]].
+  - exfalso. apply (A_le_lt_antisym Hbnd top2 top1 (H1 top2) Hlt).
+  - exact Heq.
+  - exfalso. apply (A_le_lt_antisym Hbnd top1 top2 (H2 top1) Hgt).
+Qed.
+
+Lemma bottom_unique :
+  persistent -> bounded -> atomic ->
+  forall bottom1 bottom2, 
+  (forall s, bottom1 ≤A s) -> 
+  (forall s, bottom2 ≤A s) -> 
+  bottom1 = bottom2.
+Proof.
+  intros Hpers Hbnd Hato bottom1 bottom2 H1 H2.
+  destruct (A_lt_total Hpers Hbnd Hato bottom1 bottom2) as [Hlt | [Heq | Hgt]].
+  - exfalso. apply (A_le_lt_antisym Hbnd bottom2 bottom1 (H2 bottom1) Hlt).
+  - exact Heq.
+  - exfalso. apply (A_le_lt_antisym Hbnd bottom1 bottom2 (H1 bottom2) Hgt).
+Qed.
+
+Lemma nth_error_lt_length : forall (l : list Sort) i a,
+  nth_error l i = Some a -> i < length l.
+Proof.
+  induction l as [| x l IH]; intros i a H.
+  - destruct i; discriminate.
+  - destruct i as [| i].
+    + simpl. lia.
+    + simpl in H. simpl. specialize (IH i a H). lia.
+Qed.
+
+Lemma chain_nth_A : forall c i a b,
+  chain c -> nth_error c i = Some a -> nth_error c (S i) = Some b -> A a b.
+Proof.
+  induction c as [| x c IH]; intros i a b Hc Ha Hb.
+  - destruct i as [| i]; simpl in Ha; discriminate Ha.
+  - destruct i as [| i].
+    + simpl in Ha. injection Ha as Ha. subst a.
+      simpl in Hb.
+      destruct c as [| y c'].
+      * discriminate Hb.
+      * simpl in Hc. destruct Hc as [HAxy _].
+        injection Hb as Hb. subst b.
+        exact HAxy.
+    + simpl in Ha, Hb.
+      destruct c as [| y c'].
+      * destruct i as [| i']; simpl in Ha; discriminate Ha.
+      * simpl in Hc. destruct Hc as [_ Hc'].
+        apply (IH i a b Hc' Ha Hb).
+Qed.
+
+Lemma last_nth_error : forall (l : list Sort) d,
+  l <> [] -> nth_error l (length l - 1) = Some (last l d).
+Proof.
+  induction l as [| x l IH]; intros d Hne.
+  - contradiction.
+  - destruct l as [| y l'].
+    + reflexivity.
+    + simpl. specialize (IH d ltac:(discriminate)). simpl in IH. rewrite <- IH. f_equal. lia.
+Qed.
+
+Lemma chain_lt_A : forall c i j a b,
+  chain c -> i < j -> nth_error c i = Some a -> nth_error c j = Some b -> a <A b.
+Proof.
+  intros c i j a b Hc Hij.
+  revert a b.
+  induction j as [j IH] using (well_founded_induction Wf_nat.lt_wf).
+  intros a b Ha Hb.
+  destruct j as [| j'].
+  - lia.
+  - destruct (Nat.eq_dec i j') as [Heq | Hneq].
+    + subst i. apply A_lt_step.
+      apply (chain_nth_A c j' a b Hc Ha Hb).
+    + assert (Hij' : i < j') by lia.
+      destruct (nth_error_exists c j' ltac:(apply (nth_error_lt_length c (S j') b) in Hb; lia)) as [m Hm].
+      apply A_lt_trans' with m.
+      * apply (IH j' ltac:(lia) ltac:(lia) a m Ha Hm).
+      * apply A_lt_step. apply (chain_nth_A c j' m b Hc Hm Hb).
+Qed.
+
+Lemma chain_pos_unique :
+  persistent -> bounded ->
+  forall c i j s, chain c -> nth_error c i = Some s -> nth_error c j = Some s -> i = j.
+Proof.
+  intros Hpers Hbnd c i j s Hc Hi Hj.
+  destruct (Nat.lt_trichotomy i j) as [Hlt | [Heq | Hgt]]; auto.
+  - exfalso. apply (A_lt_irrefl Hbnd s).
+    apply (chain_lt_A c i j s s Hc Hlt Hi Hj).
+  - exfalso. apply (A_lt_irrefl Hbnd s).
+    apply (chain_lt_A c j i s s Hc Hgt Hj Hi).
+Qed.
+
+Lemma persistent_chain_prefix :
+  persistent ->
+  forall c1 c2 s,
+    chain c1 -> chain c2 ->
+    hd_error c1 = Some s -> hd_error c2 = Some s ->
+    length c1 <= length c2 ->
+    c1 = firstn (length c1) c2.
+Proof.
+  intros Hpers c1 c2 s Hc1 Hc2 Hh1 Hh2 Hlen.
+  apply (persistent_chain_unique_from Hpers c1 (firstn (length c1) c2) s).
+  - exact Hc1.
+  - apply chain_firstn. exact Hc2.
+  - exact Hh1.
+  - apply hd_error_firstn; [exact Hh2 |].
+    destruct c1; [discriminate Hh1 | simpl; lia].
+  - symmetry. apply length_firstn_le. exact Hlen.
+Qed.
+
+Lemma app_nonempty_r : forall (l1 l2 : list Sort), l2 <> [] -> l1 ++ l2 <> [].
+Proof.
+  intros l1 l2 Hne Heq.
+  apply Hne. destruct l1; simpl in Heq; auto; discriminate.
+Qed.
+
+Lemma last_app_r : forall (l1 l2 : list Sort) d, l2 <> [] -> last (l1 ++ l2) d = last l2 d.
+Proof.
+  induction l1 as [| x l1 IH]; intros l2 d Hne.
+  - reflexivity.
+  - simpl. destruct (l1 ++ l2) as [| y ys] eqn:E.
+    + exfalso. apply (app_nonempty_r l1 l2 Hne). exact E.
+    + rewrite <- E. apply IH. exact Hne.
+Qed.
+
+Lemma hd_error_app_l : forall (l1 l2 : list Sort) a,
+  hd_error l1 = Some a -> hd_error (l1 ++ l2) = Some a.
+Proof.
+  intros l1 l2 a H. destruct l1; simpl in H; [discriminate | simpl; exact H].
+Qed.
+
+Lemma nth_error_app_l : forall (l1 l2 : list Sort) n,
+  n < length l1 -> nth_error (l1 ++ l2) n = nth_error l1 n.
+Proof.
+  induction l1 as [| x l1 IH]; intros l2 n Hn.
+  - simpl in Hn. lia.
+  - destruct n as [| n'].
+    + reflexivity.
+    + simpl. apply IH. simpl in Hn. lia.
+Qed.
+
+Lemma nth_error_firstn : forall (l : list Sort) k i,
+  i < k -> nth_error (firstn k l) i = nth_error l i.
+Proof.
+  induction l as [| x l IH]; intros k i Hik.
+  - destruct k; simpl; destruct i; reflexivity.
+  - destruct k as [| k'].
+    + lia.
+    + destruct i as [| i'].
+      * reflexivity.
+      * simpl. apply IH. lia.
+Qed.
+
+Lemma chain_app_general : forall (l1 l2 : list Sort) (m : Sort),
+  chain (l1 ++ [m]) ->
+  chain (m :: l2) ->
+  chain (l1 ++ m :: l2).
+Proof.
+  induction l1 as [| x l1 IH]; intros l2 m H1 H2.
+  - simpl. exact H2.
+  - simpl in H1 |- *.
+    destruct l1 as [| y l1'].
+    + simpl in H1. destruct H1 as [HAxm _].
+      simpl. split; [exact HAxm | exact H2].
+    + simpl in H1. destruct H1 as [HAxy Hrest].
+      simpl. split; [exact HAxy | apply IH; [exact Hrest | exact H2]].
+Qed.
+
+Lemma chain_from_to_app :
+  forall c1 c2 b s t,
+    chain_from_to b s c1 ->
+    chain_from_to s t c2 ->
+    chain_from_to b t (c1 ++ tl c2).
+Proof.
+  intros c1 c2 b s t [Hc1 [Hh1 Hl1]] [Hc2 [Hh2 Hl2]].
+  destruct c2 as [| x2 c2'].
+  - discriminate Hh2.
+  - simpl in Hh2. injection Hh2 as Hh2. subst x2.
+    simpl.
+    assert (Hc1ne : c1 <> []).
+    { destruct c1; [discriminate Hh1 | discriminate]. }
+    destruct (exists_last Hc1ne) as [l1 [e Hc1eq]].
+    assert (He : e = s).
+    { assert (H1 : last c1 b = e).
+      { rewrite Hc1eq. rewrite last_last. reflexivity. }
+      rewrite Hl1 in H1. symmetry. exact H1. }
+    subst e.
+    destruct c2' as [| x2' c2''].
+    + assert (Ht : t = s).
+      { simpl in Hl2. symmetry. exact Hl2. }
+      subst t.
+      rewrite app_nil_r.
+      split; [exact Hc1 | split; [exact Hh1 | exact Hl1]].
+    + set (c2' := x2' :: c2'') in *.
+      assert (Hc2'ne : c2' <> []) by (subst c2'; discriminate).
+      split.
+      * rewrite Hc1eq.
+        rewrite <- app_assoc. simpl.
+        apply (chain_app_general l1 c2' s).
+        -- rewrite <- Hc1eq. exact Hc1.
+        -- exact Hc2.
+      * split.
+        -- apply (hd_error_app_l c1 c2' b Hh1).
+        -- rewrite (last_app_r c1 c2' b Hc2'ne).
+           assert (Hl2' : last c2' s = t).
+           { simpl in Hl2. exact Hl2. }
+           rewrite <- Hl2'.
+           apply last_default_irrelevant.
+           exact Hc2'ne.
+Qed.
+
+Lemma chain_length_eq_of_same_ends :
+  persistent -> bounded ->
+  forall e c b t,
+    chain_from_to b t e -> chain_from_to b t c ->
+    length e = length c.
+Proof.
+  intros Hpers Hbnd e c b t He Hc.
+  destruct He as [Hce [Hhe Hle]].
+  destruct Hc as [Hcc [Hhc Hlc]].
+  assert (Hene : e <> []) by (destruct e; [discriminate Hhe | discriminate]).
+  assert (Hcne : c <> []) by (destruct c; [discriminate Hhc | discriminate]).
+  assert (Hene1 : 1 <= length e) by (destruct e; [contradiction Hene; reflexivity | simpl; lia]).
+  assert (Hcne1 : 1 <= length c) by (destruct c; [contradiction Hcne; reflexivity | simpl; lia]).
+  destruct (Nat.lt_trichotomy (length e) (length c)) as [Hlt | [Heq | Hgt]]; auto.
+  - exfalso.
+    assert (Hpre : e = firstn (length e) c).
+    { apply (persistent_chain_prefix Hpers e c b); [exact Hce | exact Hcc | exact Hhe | exact Hhc | lia]. }
+    assert (Hte : nth_error e (length e - 1) = Some t).
+    { rewrite (last_nth_error e b Hene). rewrite Hle. reflexivity. }
+    assert (Htc : nth_error c (length c - 1) = Some t).
+    { rewrite (last_nth_error c b Hcne). rewrite Hlc. reflexivity. }
+    assert (Hte'' : nth_error (firstn (length e) c) (length e - 1) = Some t).
+    { rewrite <- Hpre. exact Hte. }
+    assert (Hte' : nth_error c (length e - 1) = Some t).
+    { rewrite (nth_error_firstn c (length e) (length e - 1)) in Hte''.
+      - exact Hte''.
+      - lia. }
+    assert (Heq2 : length e - 1 = length c - 1).
+    { apply (chain_pos_unique Hpers Hbnd c (length e - 1) (length c - 1) t Hcc Hte' Htc). }
+    lia.
+  - exfalso.
+    assert (Hpre : c = firstn (length c) e).
+    { apply (persistent_chain_prefix Hpers c e b); [exact Hcc | exact Hce | exact Hhc | exact Hhe | lia]. }
+    assert (Hte : nth_error e (length e - 1) = Some t).
+    { rewrite (last_nth_error e b Hene). rewrite Hle. reflexivity. }
+    assert (Htc : nth_error c (length c - 1) = Some t).
+    { rewrite (last_nth_error c b Hcne). rewrite Hlc. reflexivity. }
+    assert (Htc'' : nth_error (firstn (length c) e) (length c - 1) = Some t).
+    { rewrite <- Hpre. exact Htc. }
+    assert (Htc' : nth_error e (length c - 1) = Some t).
+    { rewrite (nth_error_firstn e (length c) (length c - 1)) in Htc''.
+      - exact Htc''.
+      - lia. }
+    assert (Heq2 : length c - 1 = length e - 1).
+    { apply (chain_pos_unique Hpers Hbnd e (length c - 1) (length e - 1) t Hce Htc' Hte). }
+    lia.
+Qed.
 
 Lemma tiered_iff_persistent_bounded_atomic :
   (exists n, tiered n) <-> persistent /\ bounded /\ atomic.
@@ -1314,7 +2015,177 @@ Proof.
   destruct (classic (exists s : Sort, True)) as [[s0 _] | Hempty].
   + destruct (classic (exists s1 s2 : Sort, s1 <> s2)) as [[s1 [s2 Hne]] | Hone].
     * (* |S| >= 2 *)
-      admit.
+      destruct (exists_top Hbnd s1) as [top [_ Htopmax]].
+      destruct (exists_bottom Hbnd s1) as [bot [_ Hbotmin]].
+      assert (Htop : forall s, s ≤A top).
+      { intros s. destruct (A_lt_total Hpers Hbnd Hato s top) as [H|[H|H]].
+        - apply A_le_of_lt; exact H.
+        - subst; apply A_le_refl.
+        - exfalso; apply Htopmax; exists s; exact H. }
+      assert (Hbot : forall s, bot ≤A s).
+      { intros s. destruct (A_lt_total Hpers Hbnd Hato s bot) as [H|[H|H]].
+        - exfalso; apply Hbotmin; exists s; exact H.
+        - subst; apply A_le_refl.
+        - apply A_le_of_lt; exact H. }
+      destruct (A_le_iff_chain bot top) as [Hfwd _].
+      destruct (Hfwd (Hbot top)) as [c Hc].
+      exists (length c).
+
+      assert (Hpos : forall s : Sort, exists! i, nth_error c i = Some s).
+      { intros s.
+        pose proof (Hbot s) as Hbs.
+        pose proof (Htop s) as Hst.
+        destruct (proj1 (A_le_iff_chain bot s) Hbs) as [c1 Hc1].
+        destruct (proj1 (A_le_iff_chain s top) Hst) as [c2 Hc2].
+        assert (He : chain_from_to bot top (c1 ++ tl c2)).
+        { apply (chain_from_to_app c1 c2 bot s top Hc1 Hc2). }
+        assert (Hlen : length (c1 ++ tl c2) = length c).
+        { apply (chain_length_eq_of_same_ends Hpers Hbnd (c1 ++ tl c2) c bot top He Hc). }
+        assert (Heqec : c1 ++ tl c2 = c).
+        { apply (persistent_chain_unique_from Hpers (c1 ++ tl c2) c bot).
+          - destruct He as [Hce _]. exact Hce.
+          - destruct Hc as [Hcc _]. exact Hcc.
+          - destruct He as [_ [Hhe _]]. exact Hhe.
+          - destruct Hc as [_ [Hhc _]]. exact Hhc.
+          - exact Hlen. }
+        destruct Hc1 as [Hcc1 [Hhc1 Hlc1]].
+        assert (Hc1ne : c1 <> []) by (destruct c1; [discriminate Hhc1 | discriminate]).
+        assert (Hpos_s : nth_error c1 (length c1 - 1) = Some s).
+        { rewrite (last_nth_error c1 bot Hc1ne). rewrite Hlc1. reflexivity. }
+        assert (Hc1ge1 : 1 <= length c1)
+          by (destruct c1; [contradiction Hc1ne; reflexivity | simpl; lia]).
+        assert (Hpos_e : nth_error (c1 ++ tl c2) (length c1 - 1) = Some s).
+        { rewrite (nth_error_app_l c1 (tl c2) (length c1 - 1)).
+          - exact Hpos_s.
+          - lia. }
+        rewrite Heqec in Hpos_e.
+        exists (length c1 - 1).
+        split.
+        - exact Hpos_e.
+        - intros i' Hi'. symmetry.
+          apply (chain_pos_unique Hpers Hbnd c i' (length c1 - 1) s).
+          + destruct Hc as [Hcc _]; exact Hcc.
+          + exact Hi'.
+          + exact Hpos_e. }
+      assert (Hchoice : forall s, {i | nth_error c i = Some s}).
+      { intros s. apply constructive_indefinite_description.
+        destruct (Hpos s) as [i [Hi _]]. exists i. exact Hi. }
+      set (index_of := fun s => S (proj1_sig (Hchoice s))).
+      exists index_of. 
+      
+      split.
+
+      (* range *)
+      intros x. unfold index_of.
+      pose proof (proj2_sig (Hchoice x)) as Hnth.
+      pose proof (nth_error_lt_length c (proj1_sig (Hchoice x)) x Hnth) as Hlt.
+      lia.
+
+      split.
+
+      (* injectivity *)
+      intros x y Heq. unfold index_of in Heq.
+      assert (Hixy : proj1_sig (Hchoice x) = proj1_sig (Hchoice y)) by lia.
+      pose proof (proj2_sig (Hchoice x)) as Hx.
+      pose proof (proj2_sig (Hchoice y)) as Hy.
+      rewrite Hixy in Hx.
+      assert (Hsome : Some x = Some y) by (rewrite <- Hx; exact Hy).
+      injection Hsome as Hsome. exact Hsome.
+
+      split.
+
+      (* surjectivity *)
+      intros i [Hi1 Hi2].
+      assert (Hilt : i - 1 < length c) by lia.
+      destruct (nth_error_exists c (i - 1) Hilt) as [x Hx].
+      exists x.
+      destruct (Hpos x) as [i0 [Hi0 Huniq]].
+      assert (Heq0 : i0 = i - 1) by (apply Huniq; exact Hx).
+      assert (Heqchoice : proj1_sig (Hchoice x) = i0).
+      { symmetry. apply Huniq. exact (proj2_sig (Hchoice x)). }
+      unfold index_of. rewrite Heqchoice. lia.
+
+      split.
+
+      (* A clause *)
+      intros x y. split.
+
+      assert (Hcne : c <> []).
+      { destruct Hc as [_ [Hh _]]. destruct c; [discriminate Hh | discriminate]. }
+
+      (* -> *)
+      intro HAxy.
+      assert (Hxlt : x <A y) by (apply A_lt_step; exact HAxy).
+      assert (Hxnetop : x <> top).
+      { intro Heq. subst x. apply Htopmax. exists y. exact Hxlt. }
+
+      destruct (Hchoice x) as [ix Hix] eqn:Ex.
+      assert (Hix_index : index_of x = S ix).
+      { unfold index_of. simpl. rewrite Ex. reflexivity. }
+      assert (Hixlt : ix < length c) by (apply (nth_error_lt_length c ix x); exact Hix).
+
+      assert (Hixne : ix <> length c - 1).
+      { intro Heq.
+        apply Hxnetop.
+        assert (Hlast : nth_error c (length c - 1) = Some top).
+        { destruct Hc as [_ [_ Hl]].
+          rewrite (last_nth_error c bot Hcne). rewrite Hl. reflexivity. }
+        clear Ex.
+        rewrite Heq in Hix.
+        rewrite Hix in Hlast.
+        injection Hlast as Hlast.
+        exact Hlast. }
+
+      assert (Hsix : S ix < length c) by lia.
+      destruct (nth_error_exists c (S ix) Hsix) as [z Hz].
+      assert (HAxz : A x z).
+      { apply (chain_nth_A c ix x z);
+          [destruct Hc as [Hcc _]; exact Hcc | exact Hix | exact Hz]. }
+      assert (Hzy : z = y).
+      { destruct Hpers as [[Hfunc1 _] _]. apply (Hfunc1 x); [exact HAxz | exact HAxy]. }
+      subst z.
+
+      destruct (Hchoice y) as [iy Hiy] eqn:Ey.
+      assert (Hiy_index : index_of y = S iy).
+      { unfold index_of. simpl. rewrite Ey. reflexivity. }
+      assert (Hiyeq : iy = S ix).
+      { destruct (Hpos y) as [i0 [Hi0 Huniq0]].
+        assert (E1 : i0 = iy) by (apply Huniq0; exact Hiy).
+        assert (E2 : i0 = S ix) by (apply Huniq0; exact Hz).
+        lia. }
+
+      split; lia.
+
+      (* <- *)
+      intros [Hlt Heqsucc].
+      destruct (Hchoice x) as [ix Hix] eqn:Ex.
+      assert (Hix_index : index_of x = S ix).
+      { unfold index_of. simpl. rewrite Ex. reflexivity. }
+      assert (Hsix : S ix < length c).
+      { rewrite Hix_index in Hlt. exact Hlt. }
+      destruct (nth_error_exists c (S ix) Hsix) as [z Hz].
+      assert (HAxz : A x z).
+      { apply (chain_nth_A c ix x z);
+          [destruct Hc as [Hcc _]; exact Hcc | exact Hix | exact Hz]. }
+
+      destruct (Hchoice y) as [iy Hiy] eqn:Ey.
+      assert (Hiy_index : index_of y = S iy).
+      { unfold index_of. simpl. rewrite Ey. reflexivity. }
+      assert (Hiyeq : iy = S ix).
+      { rewrite Hix_index, Hiy_index in Heqsucc. lia. }
+      assert (Hzy : z = y).
+      { assert (Hiy' : nth_error c (S ix) = Some y).
+        { rewrite <- Hiyeq. exact Hiy. }
+        rewrite Hz in Hiy'.
+        injection Hiy' as Hiy'.
+        exact Hiy'. }
+      subst z.
+      exact HAxz.
+
+      (* R shape *)
+      intros x y z HR. destruct Hpers as [_ [_ Hshape]]. eauto.
+
+
     * (* |S| = 1 *)
       exists 1, (fun _ => 1). 
       split. lia.
@@ -1325,14 +2196,19 @@ Proof.
         ** intros HAxy. exfalso. assert (Hxy : x = y). 
         { destruct (classic (x = y)) as [|Hxy]; [auto|]. 
               exfalso. apply Hone. exists x, y. exact Hxy. }
-          subst y. apply (A_lt_irrefl Hpers Hbnd x). apply A_lt_step. exact HAxy.
+          subst y. apply (A_lt_irrefl Hbnd x). apply A_lt_step. exact HAxy.
         ** intros [Hlt _]. lia.
         ** intros x y z HR. destruct Hpers as [_ [_ Hshape]]. eauto.
   + (* |S| = 0 *)
-    exists 0, (fun _ => 1).
-    split. 
-    * intros.
-Admitted.
+    exists 0, (fun _ => 0). split. 
+    intros x. exfalso. apply Hempty. exists x. apply I. split. 
+    intros x y _. exfalso. apply Hempty. exists x. apply I. split. 
+    intros i [Hi1 Hi2]. lia. split. 
+    intros x y. split. 
+    intro HAxy. exfalso. apply Hempty. exists x. apply I. 
+    intros [Hlt _]. lia.
+    intros x y z HR. destruct Hpers as [_ [_ Hshape]]. eauto.
+Qed.
 
 
 End PTS.
