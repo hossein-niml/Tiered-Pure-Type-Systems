@@ -2210,5 +2210,572 @@ Proof.
     intros x y z HR. destruct Hpers as [_ [_ Hshape]]. eauto.
 Qed.
 
+Definition disjoint_union_of_tiered : Prop :=
+  exists (n_of : Sort -> nat) (index_of : Sort -> nat),
+    (forall s t, A s t -> s ≈A t) /\
+    (forall s t u, R s t u -> s ≈A t) /\
+    (forall s t, s ≈A t -> n_of s = n_of t) /\
+    (forall s, 0 < index_of s /\ index_of s < n_of s + 1) /\
+    (forall s t, s ≈A t -> index_of s = index_of t -> s = t) /\
+    (forall s i, 0 < i -> i <= n_of s -> exists t, t ≈A s /\ index_of t = i) /\
+    (forall s t, A s t <-> (s ≈A t /\ index_of s < n_of s /\ index_of t = S (index_of s))) /\
+    (forall s t u, R s t u -> t = u).
+
+Lemma A_lt_in_class :
+  forall (HAclass : forall s t, A s t -> s ≈A t),
+  forall u v, u <A v -> u ≈A v.
+Proof.
+  intros HAclass u v Huv.
+  induction Huv as [u v Huv | u v w Huv _ IH].
+  - apply A_eq_step. exact Huv.
+  - apply A_eq_trans with v.
+    + apply A_eq_step. exact Huv.
+    + exact IH.
+Qed.
+
+Lemma A_lt_index_incr :
+  forall (index_of : Sort -> nat) (n_of : Sort -> nat),
+  forall (HA : forall s t, A s t <-> (s ≈A t /\ index_of s < n_of s /\ index_of t = S (index_of s))),
+  forall u v, u <A v -> index_of u < index_of v.
+Proof.
+  intros index_of n_of HA u v Huv.
+  induction Huv as [u v Huv | u v w Huv _ IH].
+  - apply HA in Huv as [_ [_ Heq]]. lia.
+  - apply HA in Huv as [_ [_ Heq]]. lia.
+Qed.
+
+Lemma A_lt_n_of_const :
+  forall (n_of : Sort -> nat),
+  forall (HAclass : forall s t, A s t -> s ≈A t)
+         (Hnconst : forall s t, s ≈A t -> n_of s = n_of t),
+  forall u v, u <A v -> n_of u = n_of v.
+Proof.
+  intros n_of HAclass Hnconst u v Huv.
+  apply Hnconst.
+  apply (A_lt_in_class HAclass u v Huv).
+Qed.
+
+Lemma A_le_in_class : forall s t, s ≤A t -> s ≈A t.
+Proof.
+  intros s t H. induction H as [s | s t u Hst H IH].
+  - apply A_eq_refl.
+  - apply A_eq_trans with t; [apply A_eq_step; exact Hst | exact IH].
+Qed.
+
+Lemma chain_elem_in_class : forall c a,
+  chain (a :: c) -> forall i x, nth_error (a :: c) i = Some x -> x ≈A a.
+Proof.
+  induction c as [| y c IH]; intros a Hc i x Hn.
+  - destruct i as [| i'].
+    + simpl in Hn. injection Hn as Hn. subst x. apply A_eq_refl.
+    + destruct i' as [| i'']; simpl in Hn; discriminate Hn.
+  - simpl in Hc. destruct Hc as [HAay Hc'].
+    destruct i as [| i'].
+    + simpl in Hn. injection Hn as Hn. subst x. apply A_eq_refl.
+    + simpl in Hn.
+      assert (Hxy : x ≈A y) by (apply (IH y Hc' i' x Hn)).
+      apply A_eq_trans with y. exact Hxy. apply A_eq_sym. apply A_eq_step. exact HAay. 
+Qed.
+
+Lemma chain_pos_in_class : forall c s0 bot,
+  chain c -> hd_error c = Some bot -> bot ≈A s0 ->
+  forall i a, nth_error c i = Some a -> a ≈A s0.
+Proof.
+  intros c s0 bot Hc Hh Hbs i a Hn.
+  destruct c as [| x c'].
+  - discriminate Hh.
+  - simpl in Hh. injection Hh as Hh. subst x.
+    assert (Ha_bot : a ≈A bot) by (apply (chain_elem_in_class c' bot Hc i a Hn)).
+    apply A_eq_trans with bot; [exact Ha_bot | exact Hbs].
+Qed.
+
+Lemma class_tiered :
+  persistent -> bounded ->
+  forall s0 : Sort,
+  exists n index_of,
+    (forall t, t ≈A s0 -> 0 < index_of t /\ index_of t < n + 1) /\
+    (forall t u, t ≈A s0 -> u ≈A s0 -> index_of t = index_of u -> t = u) /\
+    (forall i, 0 < i -> i < n + 1 -> exists t, t ≈A s0 /\ index_of t = i) /\
+    (forall t u, t ≈A s0 -> (A t u <-> (index_of t < n /\ index_of u = S (index_of t)))).
+Proof.
+  intros Hpers Hbnd s0.
+  destruct (exists_top Hbnd s0) as [top [Hs0top Htopmax]].
+  destruct (exists_bottom Hbnd s0) as [bot [Hbots0 Hbotmin]].
+  assert (Htops0 : top ≈A s0) by (apply A_eq_sym; apply A_le_in_class; exact Hs0top).
+  assert (Hbots0' : bot ≈A s0) by (apply A_le_in_class; exact Hbots0).
+
+  assert (Htop : forall s, s ≈A s0 -> s ≤A top).
+  { intros s Hs.
+    assert (Hstop : s ≈A top) by (apply A_eq_trans with s0; [exact Hs | apply A_eq_sym; exact Htops0]).
+    destruct (A_eq_lt_case Hpers Hbnd s top Hstop) as [Hlt | [Heq | Hgt]].
+    - apply A_le_of_lt; exact Hlt.
+    - subst; apply A_le_refl.
+    - exfalso; apply Htopmax; exists s; exact Hgt. }
+
+  assert (Hbot : forall s, s ≈A s0 -> bot ≤A s).
+  { intros s Hs.
+    assert (Hsbot : s ≈A bot) by (apply A_eq_trans with s0; [exact Hs | apply A_eq_sym; exact Hbots0']).
+    destruct (A_eq_lt_case Hpers Hbnd s bot Hsbot) as [Hlt | [Heq | Hgt]].
+    - exfalso; apply Hbotmin; exists s; exact Hlt.
+    - subst; apply A_le_refl.
+    - apply A_le_of_lt; exact Hgt. }
+
+  destruct (A_le_iff_chain bot top) as [Hfwd _].
+  assert (Hbotop : bot ≤A top) by (apply Hbot; exact Htops0).
+  destruct (Hfwd Hbotop) as [c Hc].
+
+  assert (Hcne : c <> []).
+  { destruct Hc as [_ [Hh _]]. destruct c; [discriminate Hh | discriminate]. }
+
+  assert (Hpos : forall s : Sort, s ≈A s0 -> exists! i, nth_error c i = Some s).
+  { intros s Hs.
+    pose proof (Hbot s Hs) as Hbs.
+    pose proof (Htop s Hs) as Hst.
+    destruct (proj1 (A_le_iff_chain bot s) Hbs) as [c1 Hc1].
+    destruct (proj1 (A_le_iff_chain s top) Hst) as [c2 Hc2].
+    assert (He : chain_from_to bot top (c1 ++ tl c2)) by (apply (chain_from_to_app c1 c2 bot s top Hc1 Hc2)).
+    assert (Hlen : length (c1 ++ tl c2) = length c)
+      by (apply (chain_length_eq_of_same_ends Hpers Hbnd (c1 ++ tl c2) c bot top He Hc)).
+    assert (Heqec : c1 ++ tl c2 = c).
+    { apply (persistent_chain_unique_from Hpers (c1 ++ tl c2) c bot).
+      - destruct He as [Hce _]; exact Hce.
+      - destruct Hc as [Hcc _]; exact Hcc.
+      - destruct He as [_ [Hhe _]]; exact Hhe.
+      - destruct Hc as [_ [Hhc _]]; exact Hhc.
+      - exact Hlen. }
+    destruct Hc1 as [Hcc1 [Hhc1 Hlc1]].
+    assert (Hc1ne : c1 <> []) by (destruct c1; [discriminate Hhc1 | discriminate]).
+    assert (Hpos_s : nth_error c1 (length c1 - 1) = Some s)
+      by (rewrite (last_nth_error c1 bot Hc1ne); rewrite Hlc1; reflexivity).
+    assert (Hc1ge1 : 1 <= length c1) by (destruct c1; [contradiction Hc1ne; reflexivity | simpl; lia]).
+    assert (Hpos_e : nth_error (c1 ++ tl c2) (length c1 - 1) = Some s).
+    { rewrite (nth_error_app_l c1 (tl c2) (length c1 - 1)); [exact Hpos_s | lia]. }
+    rewrite Heqec in Hpos_e.
+    exists (length c1 - 1). split.
+    - exact Hpos_e.
+    - intros i' Hi'. symmetry.
+      apply (chain_pos_unique Hpers Hbnd c i' (length c1 - 1) s).
+      + destruct Hc as [Hcc _]; exact Hcc.
+      + exact Hi'.
+      + exact Hpos_e. }
+
+  assert (Hchoice : forall s, {i : nat |
+    (s ≈A s0 -> nth_error c i = Some s) /\ (~ s ≈A s0 -> i = 0)}).
+  { intros s.
+    apply constructive_indefinite_description.
+    destruct (classic (s ≈A s0)) as [Hs | Hs].
+    - destruct (Hpos s Hs) as [i [Hi _]]. exists i.
+      split; [intros _; exact Hi | intros Hcontra; contradiction].
+    - exists 0. split; [intros Hcontra; contradiction | intros _; reflexivity]. }
+
+  set (index_of := fun s => S (proj1_sig (Hchoice s))).
+  exists (length c), index_of.
+  split.
+
+  - (* range *)
+    intros t Ht. unfold index_of.
+    destruct (Hchoice t) as [it Hit] eqn:E. simpl.
+    pose proof (proj1 Hit Ht) as Hnth.
+    pose proof (nth_error_lt_length c it t Hnth) as Hlt.
+    lia.
+
+  - split. (* injectivity *)
+    intros t u Ht Hu Heq. unfold index_of in Heq.
+    destruct (Hchoice t) as [it Hit] eqn:Et.
+    destruct (Hchoice u) as [iu Hiu] eqn:Eu.
+    simpl in Heq.
+    assert (Hitu : it = iu) by lia.
+    pose proof (proj1 Hit Ht) as Hntht.
+    pose proof (proj1 Hiu Hu) as Hnthu.
+    rewrite Hitu in Hntht.
+    rewrite Hntht in Hnthu.
+    injection Hnthu as Hnthu. exact Hnthu.
+    split.
+
+    (* surjectivity *)
+    intros i Hi1 Hi2.
+    assert (Hilt : i - 1 < length c) by lia.
+    destruct (nth_error_exists c (i - 1) Hilt) as [t Ht].
+    assert (Hclass : t ≈A s0).
+    { destruct Hc as [Hcc [Hhc _]].
+      apply (chain_pos_in_class c s0 bot Hcc Hhc Hbots0' (i - 1) t Ht). }
+    exists t. split; [exact Hclass |].
+    unfold index_of.
+    destruct (Hchoice t) as [it Hit] eqn:E. simpl.
+    destruct (Hpos t Hclass) as [i0 [Hi0 Huniq0]].
+    assert (Heqchoice : it = i0) by (symmetry; apply Huniq0; exact (proj1 Hit Hclass)).
+    assert (Heq2 : i - 1 = i0) by (symmetry; apply Huniq0; exact Ht).
+    lia.
+
+    (* A-iff *)
+    intros t u Ht. split.
+    + intro HAtu.
+      assert (Htlt : t <A u) by (apply A_lt_step; exact HAtu).
+      assert (Htnetop : t <> top).
+      { intro Heq. subst t. apply Htopmax. exists u. exact Htlt. }
+      destruct (Hchoice t) as [it Hit] eqn:Et.
+      assert (Hit_index : index_of t = S it) by (unfold index_of; rewrite Et; reflexivity).
+      pose proof (proj1 Hit Ht) as Hntht.
+      assert (Hitlt : it < length c) by (apply (nth_error_lt_length c it t); exact Hntht).
+      assert (Hitne : it <> length c - 1).
+      { intro Heq. apply Htnetop.
+        assert (Hlast : nth_error c (length c - 1) = Some top).
+        { destruct Hc as [_ [_ Hl]]; rewrite (last_nth_error c bot Hcne); rewrite Hl; reflexivity. }
+        assert (Hit' : nth_error c (length c - 1) = Some t) by (rewrite <- Heq; exact Hntht).
+        rewrite Hit' in Hlast. injection Hlast as Hlast. exact Hlast. }
+      assert (Hsit : S it < length c) by lia.
+      destruct (nth_error_exists c (S it) Hsit) as [z Hz].
+      assert (HAtz : A t z).
+      { apply (chain_nth_A c it t z); [destruct Hc as [Hcc _]; exact Hcc | exact Hntht | exact Hz]. }
+      assert (Hzu : z = u).
+      { destruct Hpers as [[Hfunc1 _] _]. apply (Hfunc1 t); [exact HAtz | exact HAtu]. }
+      subst z.
+      assert (Hu0 : u ≈A s0).
+      { apply A_eq_trans with t; [apply A_eq_sym; apply A_eq_step; exact HAtu | exact Ht]. }
+      destruct (Hchoice u) as [iu Hiu] eqn:Eu.
+      assert (Hiu_index : index_of u = S iu) by (unfold index_of; rewrite Eu; reflexivity).
+      assert (Hiueq : iu = S it).
+      { destruct (Hpos u Hu0) as [i0 [Hi0 Huniq0]].
+        assert (E1 : i0 = iu) by (apply Huniq0; exact (proj1 Hiu Hu0)).
+        assert (E2 : i0 = S it) by (apply Huniq0; exact Hz).
+        lia. }
+      split; lia.
+    + intros [Hlt Heqsucc].
+      destruct (Hchoice t) as [it Hit] eqn:Et.
+      assert (Hit_index : index_of t = S it) by (unfold index_of; rewrite Et; reflexivity).
+      assert (Hsit : S it < length c) by (rewrite Hit_index in Hlt; exact Hlt).
+      destruct (nth_error_exists c (S it) Hsit) as [z Hz].
+      assert (HAtz : A t z).
+      { apply (chain_nth_A c it t z); [destruct Hc as [Hcc _]; exact Hcc | exact (proj1 Hit Ht) | exact Hz]. }
+      destruct (Hchoice u) as [iu Hiu] eqn:Eu.
+      assert (Hiu_index : index_of u = S iu) by (unfold index_of; rewrite Eu; reflexivity).
+      assert (Hiueq : iu = S it) by (rewrite Hit_index, Hiu_index in Heqsucc; lia).
+      assert (Hu0 : u ≈A s0).
+      { destruct (classic (u ≈A s0)) as [H | H]; [exact H |].
+        exfalso.
+        assert (Hiu0 : iu = 0) by (apply (proj2 Hiu); exact H).
+        lia. }
+      assert (Hzu : z = u).
+      { assert (Hiu' : nth_error c (S it) = Some u) by (rewrite <- Hiueq; exact (proj1 Hiu Hu0)).
+        rewrite Hz in Hiu'. injection Hiu' as Hiu'. exact Hiu'. }
+      subst z. exact HAtz.
+Qed.
+
+Lemma A_lt_pred : forall t u, t <A u -> exists w, A w u.
+Proof.
+  intros t u H. induction H as [t u Htu | t v u Htv _ IH].
+  - exists t. exact Htu.
+  - exact IH.
+Qed.
+
+Lemma no_pred_unique_in_class :
+  persistent -> bounded ->
+  forall s t u,
+    t ≈A s -> u ≈A s ->
+    (~ exists v, v ≈A s /\ A v t) ->
+    (~ exists v, v ≈A s /\ A v u) ->
+    t = u.
+Proof.
+  intros Hpers Hbnd s t u Ht Hu Hnpt Hnpu.
+  destruct (classic (t = u)) as [Heq | Hneq]; [exact Heq |].
+  assert (Htu : t ≈A u) by (apply A_eq_trans with s; [exact Ht | apply A_eq_sym; exact Hu]).
+  destruct (A_eq_lt_case Hpers Hbnd t u Htu) as [Hlt | [Heq | Hgt]].
+  - exfalso. destruct (A_lt_pred t u Hlt) as [w Hw].
+    apply Hnpu. exists w. split; [| exact Hw].
+    apply A_eq_trans with u; [apply A_eq_step; exact Hw | exact Hu].
+  - exact Heq.
+  - exfalso. destruct (A_lt_pred u t Hgt) as [w Hw].
+    apply Hnpt. exists w. split; [| exact Hw].
+    apply A_eq_trans with t; [apply A_eq_step; exact Hw | exact Ht].
+Qed.
+
+Lemma class_tiered_unique :
+  persistent -> bounded ->
+  forall s n1 n2 f1 f2,
+    (forall t, t ≈A s -> 0 < f1 t /\ f1 t < n1 + 1) ->
+    (forall t u, t ≈A s -> u ≈A s -> f1 t = f1 u -> t = u) ->
+    (forall i, 0 < i -> i < n1 + 1 -> exists t, t ≈A s /\ f1 t = i) ->
+    (forall t u, t ≈A s -> (A t u <-> (f1 t < n1 /\ f1 u = S (f1 t)))) ->
+    (forall t, t ≈A s -> 0 < f2 t /\ f2 t < n2 + 1) ->
+    (forall t u, t ≈A s -> u ≈A s -> f2 t = f2 u -> t = u) ->
+    (forall i, 0 < i -> i < n2 + 1 -> exists t, t ≈A s /\ f2 t = i) ->
+    (forall t u, t ≈A s -> (A t u <-> (f2 t < n2 /\ f2 u = S (f2 t)))) ->
+    n1 = n2 /\ forall t, t ≈A s -> f1 t = f2 t.
+Proof.
+  intros Hpers Hbnd s n1 n2 f1 f2
+    Hr1 Hi1 Hs1 HA1 Hr2 Hi2 Hs2 HA2.
+
+  assert (Hnp1 : forall i, i = 1 -> forall t, t ≈A s -> f1 t = i ->
+                 ~ exists v, v ≈A s /\ A v t).
+  { intros i Hi1eq t Ht Hf1t [v [Hv HAvt]].
+    apply (HA1 v t Hv) in HAvt as [_ Heq].
+    destruct (Hr1 v Hv) as [Hf1vpos _].
+    lia. }
+
+  assert (Hmain : forall i, 0 < i -> i < n1 + 1 -> i < n2 + 1 ->
+                    forall t, t ≈A s -> f1 t = i -> f2 t = i).
+  { intros i.
+    induction i as [i IH] using (well_founded_induction Wf_nat.lt_wf).
+    intros Hi0 Hi1lt Hi2lt t Ht Hf1t.
+    destruct i as [| i'].
+    - lia.
+    - destruct i' as [| i''].
+      + (* i = 1: base case via no-predecessor uniqueness *)
+        destruct (Hs2 1 ltac:(lia) Hi2lt) as [u [Hu Hf2u]].
+        assert (Ht_np : ~ exists v, v ≈A s /\ A v t).
+        { intros [v [Hv HAvt]].
+          apply (HA1 v t Hv) in HAvt as [_ Heq].
+          destruct (Hr1 v Hv) as [Hf1vpos _].
+          rewrite Hf1t in Heq. lia. }
+        assert (Hu_np : ~ exists v, v ≈A s /\ A v u).
+        { intros [v [Hv HAvu]]. 
+          apply (HA2 v u Hv) in HAvu as [_ Heq].
+          destruct (Hr2 v Hv) as [Hf1vpos _].
+          rewrite Hf2u in Heq.
+          lia. }
+        assert (Htu : t = u) by (apply (no_pred_unique_in_class Hpers Hbnd s t u Ht Hu Ht_np Hu_np)).
+        rewrite Htu. exact Hf2u.
+      + (* successor case *)
+        destruct (Hs1 (S i'') ltac:(lia) ltac:(lia)) as [v [Hv Hf1v]].
+        assert (HAvt : A v t).
+        { apply (HA1 v t Hv). split; [lia | rewrite Hf1v, Hf1t; reflexivity]. }
+        assert (Hf2v : f2 v = S i'') by (apply (IH (S i'') ltac:(lia) ltac:(lia) ltac:(lia) ltac:(lia) v Hv Hf1v)).
+        apply (HA2 v t Hv) in HAvt as [_ Hf2t].
+        rewrite Hf2v in Hf2t. exact Hf2t. }
+
+  assert (Hmain2 : forall i, 0 < i -> i < n1 + 1 -> i < n2 + 1 ->
+                    forall t, t ≈A s -> f2 t = i -> f1 t = i).
+  { intros i.
+    induction i as [i IH] using (well_founded_induction Wf_nat.lt_wf).
+    intros Hi0 Hi1lt Hi2lt t Ht Hf2t.
+    destruct i as [| i'].
+    - lia.
+    - destruct i' as [| i''].
+      + destruct (Hs1 1 ltac:(lia) Hi1lt) as [u [Hu Hf1u]].
+        assert (Ht_np : ~ exists v, v ≈A s /\ A v t).
+        { intros [v [Hv HAvt]]. 
+          apply (HA2 v t Hv) in HAvt as [_ Heq].
+          destruct (Hr2 v Hv) as [Hf1vpos _]. 
+          rewrite Hf2t in Heq. 
+          lia. }
+        assert (Hu_np : ~ exists v, v ≈A s /\ A v u).
+        { intros [v [Hv HAvu]]. 
+          apply (HA1 v u Hv) in HAvu as [_ Heq]. 
+          destruct (Hr1 v Hv) as [Hf1vpos _].
+          rewrite Hf1u in Heq. 
+          lia. }
+        assert (Htu : t = u) by (apply (no_pred_unique_in_class Hpers Hbnd s t u Ht Hu Ht_np Hu_np)).
+        rewrite Htu. exact Hf1u.
+      + destruct (Hs2 (S i'') ltac:(lia) ltac:(lia)) as [v [Hv Hf2v]].
+        assert (HAvt : A v t).
+        { apply (HA2 v t Hv). split; [lia | rewrite Hf2v, Hf2t; reflexivity]. }
+        assert (Hf1v : f1 v = S i'') by (apply (IH (S i'') ltac:(lia) ltac:(lia) ltac:(lia) ltac:(lia) v Hv Hf2v)).
+        apply (HA1 v t Hv) in HAvt as [_ Hf1t].
+        rewrite Hf1v in Hf1t. exact Hf1t. }
+
+  assert (Hn : n1 = n2).
+  { destruct (Nat.lt_trichotomy n1 n2) as [Hlt | [Heq | Hgt]]; auto.
+    - exfalso.
+      destruct (Hs2 (n1+1) ltac:(lia) ltac:(lia)) as [u [Hu Hf2u]].
+      destruct (Hr2 u Hu) as [_ Hf2u_lt].
+      destruct (Nat.lt_trichotomy (f1 u) (n1+1)) as [Hc1 | [Hc2 | Hc3]].
+      + assert (Hf1lt : f1 u < n1 + 1) by lia.
+        destruct (Hr1 u Hu) as [Hf1pos _].
+        assert (Hf2u' : f2 u = f1 u) by (apply (Hmain (f1 u) Hf1pos Hf1lt ltac:(lia) u Hu eq_refl)).
+        rewrite Hf2u in Hf2u'. lia.
+      + destruct (Hr1 u Hu) as [_ Hf1u_lt]. lia.
+      + destruct (Hr1 u Hu) as [_ Hf1u_lt]. lia.
+    - exfalso.
+      destruct (Hs1 (n2+1) ltac:(lia) ltac:(lia)) as [u [Hu Hf1u]].
+      destruct (Hr1 u Hu) as [_ Hf1u_lt].
+      destruct (Nat.lt_trichotomy (f2 u) (n2+1)) as [Hc1 | [Hc2 | Hc3]].
+      + assert (Hf2lt : f2 u < n2 + 1) by lia.
+        destruct (Hr2 u Hu) as [Hf2pos _].
+        assert (Hf1u' : f1 u = f2 u) by (apply (Hmain2 (f2 u) Hf2pos ltac:(lia) ltac:(lia) u Hu eq_refl)).
+        rewrite Hf1u in Hf1u'. lia.
+      + destruct (Hr2 u Hu) as [_ Hf2u_lt]. lia.
+      + destruct (Hr2 u Hu) as [_ Hf2u_lt]. lia. }
+
+  split; [exact Hn |].
+  intros t Ht.
+  destruct (Hr1 t Ht) as [Hpos Hlt]. symmetry.
+  apply (Hmain (f1 t) Hpos ltac:(lia) ltac:(lia) t Ht eq_refl).
+Qed.
+
+Lemma persistent_bounded_seperable_iff_disjoint_union_of_tiered : 
+  (persistent /\ bounded /\ separable) <-> disjoint_union_of_tiered.
+Proof.
+  split.
+
+ - intros [Hpers [Hbnd Hsep]].
+    assert (Hwit : forall s0 : Sort, {p : nat * (Sort -> nat) |
+      (forall t, t ≈A s0 -> 0 < snd p t /\ snd p t < fst p + 1) /\
+      (forall t u, t ≈A s0 -> u ≈A s0 -> snd p t = snd p u -> t = u) /\
+      (forall i, 0 < i -> i < fst p + 1 -> exists t, t ≈A s0 /\ snd p t = i) /\
+      (forall t u, t ≈A s0 -> (A t u <-> (snd p t < fst p /\ snd p u = S (snd p t))))}).
+    { intros s0.
+      apply constructive_indefinite_description.
+      destruct (class_tiered Hpers Hbnd s0) as [n [index_of H]].
+      exists (n, index_of). exact H. }
+
+    set (n_of := fun s => fst (proj1_sig (Hwit s))).
+    set (index_of := fun s => snd (proj1_sig (Hwit s)) s).
+
+    assert (Hprop : forall s, 
+      (forall t, t ≈A s -> 0 < snd (proj1_sig (Hwit s)) t /\ snd (proj1_sig (Hwit s)) t < fst (proj1_sig (Hwit s)) + 1) /\
+      (forall t u, t ≈A s -> u ≈A s -> snd (proj1_sig (Hwit s)) t = snd (proj1_sig (Hwit s)) u -> t = u) /\
+      (forall i, 0 < i -> i < fst (proj1_sig (Hwit s)) + 1 -> exists t, t ≈A s /\ snd (proj1_sig (Hwit s)) t = i) /\
+      (forall t u, t ≈A s -> (A t u <-> (snd (proj1_sig (Hwit s)) t < fst (proj1_sig (Hwit s)) /\ snd (proj1_sig (Hwit s)) u = S (snd (proj1_sig (Hwit s)) t))))).
+    { intros s. exact (proj2_sig (Hwit s)). }
+
+    assert (Hagree : forall s t, s ≈A t -> forall u, u ≈A s ->
+      fst (proj1_sig (Hwit s)) = fst (proj1_sig (Hwit t)) /\
+      snd (proj1_sig (Hwit s)) u = snd (proj1_sig (Hwit t)) u).
+        { intros s t Hst u Hu.
+      destruct (Hprop s) as [Hr1 [Hi1 [Hs1 HA1]]].
+      destruct (Hprop t) as [Hr2 [Hi2 [Hs2 HA2]]].
+      assert (Hr2' : forall v, v ≈A s -> 0 < snd (proj1_sig (Hwit t)) v /\ snd (proj1_sig (Hwit t)) v < fst (proj1_sig (Hwit t)) + 1).
+      { intros v Hv. apply Hr2. apply A_eq_trans with s; [exact Hv | exact Hst]. }
+      assert (Hi2' : forall v w, v ≈A s -> w ≈A s -> snd (proj1_sig (Hwit t)) v = snd (proj1_sig (Hwit t)) w -> v = w).
+      { intros v w Hv Hw. apply Hi2; apply A_eq_trans with s; auto. }
+      assert (Hs2' : forall i, 0 < i -> i < fst (proj1_sig (Hwit t)) + 1 -> exists v, v ≈A s /\ snd (proj1_sig (Hwit t)) v = i).
+      { intros i Hi0 Hilt. destruct (Hs2 i Hi0 Hilt) as [v [Hv Hvi]]. exists v. split; [| exact Hvi].
+        apply A_eq_trans with t; [exact Hv | apply A_eq_sym; exact Hst]. }
+      assert (HA2' : forall v w, v ≈A s -> (A v w <-> (snd (proj1_sig (Hwit t)) v < fst (proj1_sig (Hwit t)) /\ snd (proj1_sig (Hwit t)) w = S (snd (proj1_sig (Hwit t)) v)))).
+      { intros v w Hv. apply HA2. apply A_eq_trans with s; [exact Hv | exact Hst]. }
+      destruct (class_tiered_unique Hpers Hbnd s
+                  (fst (proj1_sig (Hwit s))) (fst (proj1_sig (Hwit t)))
+                  (snd (proj1_sig (Hwit s))) (snd (proj1_sig (Hwit t)))
+                  Hr1 Hi1 Hs1 HA1 Hr2' Hi2' Hs2' HA2') as [Hn Hf].
+      split; [exact Hn | apply Hf; exact Hu]. }
+
+    exists n_of, index_of.
+    split.
+
+    (* A s t -> s ≈A t *)
+    intros s t HAst.
+    destruct (Hprop s) as [_ [_ [_ HAiff]]].
+    assert (Hss : s ≈A s) by apply A_eq_refl.
+    apply A_eq_step; exact HAst.
+    split.
+
+    (* R s t u -> s ≈A t *)
+    intros s t u HR.
+    destruct Hpers as [_ [_ Hshape]].
+    assert (Htu : t = u) by (apply (Hshape s t u); exact HR).
+    apply (Hsep s t). rewrite <- Htu in HR. exact HR.
+    split.
+
+    (* n_of constant on class *)
+    intros s t Hst. unfold n_of.
+    destruct (Hagree s t Hst s) as [Hn _]; [apply A_eq_refl |]. exact Hn.
+    split.
+
+    (* range *)
+    intros s. unfold index_of.
+    destruct (Hprop s) as [Hrange _].
+    apply (Hrange s). apply A_eq_refl.
+    split.
+
+    (* injectivity *)
+    intros s t Hst Heq. unfold index_of, n_of in *.
+    assert (Hs_ind : snd (proj1_sig (Hwit s)) s = snd (proj1_sig (Hwit t)) t) by exact Heq.
+    destruct (Hagree s t Hst s) as [_ Hval]; [apply A_eq_refl |].
+    rewrite Hval in Hs_ind.
+    destruct (Hprop t) as [_ [Hinj _]].
+    apply (Hinj s t).
+    apply A_eq_trans with s; [apply A_eq_refl | exact Hst].
+    apply A_eq_refl.
+    exact Hs_ind.
+    split.
+
+    (* surjectivity *)
+    intros s i Hi1 Hi2. unfold n_of, index_of in *.
+    destruct (Hprop s) as [_ [_ [Hsurj _]]].
+    assert (Hi2' : i < fst (proj1_sig (Hwit s)) + 1) by lia.
+    destruct (Hsurj i Hi1 Hi2') as [t [Ht Hti]].
+    exists t. split; [exact Ht |]. apply A_eq_sym in Ht.
+    destruct (Hagree s t Ht t) as [_ Hval]. apply A_eq_sym. apply Ht.
+    rewrite <- Hval. exact Hti.
+    split.
+
+    (* A iff *)
+    intros s t. split.
+
+    intro HAst.
+    assert (Hst_class : s ≈A t) by (apply A_eq_step; exact HAst).
+    destruct (Hprop s) as [_ [_ [_ HAiff]]].
+    apply (HAiff s t (A_eq_refl s)) in HAst as [H1 H2].
+    split; [exact Hst_class |].
+    unfold index_of, n_of.
+    destruct (Hagree s t Hst_class t) as [Hn Hval]. apply A_eq_sym. apply Hst_class.
+    split; [exact H1 | rewrite <- Hval; exact H2].
+
+    intros [Hclass [Hlt Heq]].
+    unfold index_of, n_of in *.
+    destruct (Hprop s) as [_ [_ [_ HAiff]]].
+    apply (HAiff s t (A_eq_refl s)).
+    destruct (Hagree s t Hclass t) as [Hn Hval]; [apply A_eq_sym; exact Hclass |].
+    split; [exact Hlt | rewrite Hval; exact Heq].
+
+    (* R shape *)
+    intros s t u HR.
+    destruct Hpers as [_ [_ Hshape]]. eauto.
+
+  - intros [n_of [index_of [HAclass [HRclass [Hnconst [Hrange [Hinj [Hsurj [HA HR]]]]]]]]].
+    split.
+
+    + (* persistent *)
+      repeat split.
+      * (* unique A-successor *)
+        intros x y y' Hxy Hxy'.
+        apply HA in Hxy as [Hxy1 [Hxy2 Hxy3]].
+        apply HA in Hxy' as [Hxy1' [Hxy2' Hxy3']].
+        apply Hinj.
+        -- (* y ≈A y' *)
+           apply A_eq_trans with x.
+           ++ apply A_eq_sym. apply A_eq_step. apply HA. auto.
+           ++ apply A_eq_step. apply HA. auto.
+        -- rewrite Hxy3, Hxy3'. reflexivity.
+      * (* unique R-shape (functional's 2nd component) *)
+        intros s t u u' Hu Hu'.
+        rewrite <- (HR s t u Hu), (HR s t u' Hu'). reflexivity.
+      * (* unique A-predecessor *)
+        intros x x' y Hxy Hxy'.
+        apply HA in Hxy as [Hxy1 [Hxy2 Hxy3]].
+        apply HA in Hxy' as [Hxy1' [Hxy2' Hxy3']].
+        apply Hinj.
+        -- apply A_eq_trans with y.
+           ++ apply A_eq_step. apply HA. auto.
+           ++ apply A_eq_sym. apply A_eq_step. apply HA. auto.
+        -- assert (Heq : index_of x = index_of x') by lia.
+           exact Heq.
+      * (* R shape *)
+        intros x y z HRxyz. exact (HR x y z HRxyz).
+
+    + split. split.
+
+      (* ascending chain condition *)
+      intro s.
+      apply (wf_by_measure Sort (fun u v => u <A v) index_of).
+      intros u v Huv.
+      apply (A_lt_index_incr index_of n_of HA u v Huv).
+
+      (* descending chain condition *)
+      intro s.
+      apply (wf_by_measure Sort (fun u v => v <A u) (fun s => n_of s - index_of s)).
+      intros u v Huv.
+      pose proof (A_lt_index_incr index_of n_of HA v u Huv) as Hidx.
+      pose proof (A_lt_n_of_const n_of HAclass Hnconst v u Huv) as Hn.
+      pose proof (Hrange u) as [_ Hu2].
+      pose proof (Hrange v) as [_ Hv2].
+      lia.
+
+      (* separable *)
+      intros s s' HR'.
+      apply HRclass in HR' as Hclass.
+      pose proof (HR s s' s' HR') as Ht.
+      exact Hclass.
+Qed.
 
 End PTS.
