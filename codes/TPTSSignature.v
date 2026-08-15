@@ -6,6 +6,7 @@ Module Type TPTS_SIGNATURE <: PTS_SIGNATURE.
   Parameter n : nat.
   Parameter index_of : Sort -> nat.
 
+  Axiom n_range : n > 0.
   Axiom index_range : forall x, 0 < index_of x /\ index_of x < n + 1.
   Axiom index_inj    : forall x y, index_of x = index_of y -> x = y.
   Axiom index_surj : forall i : nat, 0 < i /\ i < n + 1 -> exists x : Sort, index_of x = i.

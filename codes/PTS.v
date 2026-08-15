@@ -5,6 +5,7 @@ Import ListNotations.
 From Stdlib.Program Require Import Program Wf.
 From Stdlib Require Import Lia.
 Require Import Coq.Arith.Arith.
+Require Import ZArith.
 
 Require Import Thesis.PTSSignature.
 
@@ -2777,5 +2778,91 @@ Proof.
       pose proof (HR s s' s' HR') as Ht.
       exact Hclass.
 Qed.
+
+Definition non_dependent_tiered (n : nat) : Prop :=
+  exists index_of : Sort -> nat,
+    (forall x, 0 < index_of x /\ index_of x < n + 1) /\
+    (forall x y, index_of x = index_of y -> x = y) /\
+    (forall i, 0 < i -> i < n + 1 -> exists x, index_of x = i) /\
+    (forall x y, A x y <-> index_of x < n /\ index_of y = S (index_of x)) /\
+    (forall x y z, R x y z -> y = z /\ index_of y <= index_of x).
+
+Definition disjoint_union_of_non_dependent_tiered : Prop :=
+  exists (n_of : Sort -> nat) (index_of : Sort -> nat),
+    (forall s t, A s t -> s ≈A t) /\
+    (forall s t u, R s t u -> s ≈A t) /\
+    (forall s t, s ≈A t -> n_of s = n_of t) /\
+    (forall s, 0 < index_of s /\ index_of s < n_of s + 1) /\
+    (forall s t, s ≈A t -> index_of s = index_of t -> s = t) /\
+    (forall s i, 0 < i -> i <= n_of s -> exists t, t ≈A s /\ index_of t = i) /\
+    (forall s t, A s t <-> (s ≈A t /\ index_of s < n_of s /\ index_of t = S (index_of s))) /\
+    (forall s t u, R s t u -> t = u /\ index_of t <= index_of s).
+
+(* Corollary 1 *)
+Axiom bounded_non_dependent_iff_disjoint_union_of_non_dependent_tiered :
+  bounded_non_dependent <-> disjoint_union_of_non_dependent_tiered.
+
+(* Proposition 2 *)
+Axiom weak_implies_strong_normalization_lift :
+  (forall n, non_dependent_tiered n \/ tiered n ->
+    (forall M, weakly_normalizing M -> strongly_normalizing M)) ->
+  (persistent /\ bounded /\ separable ->
+    (forall M, weakly_normalizing M -> strongly_normalizing M)).
+
+Open Scope Z_scope.
+
+Definition Zpos_tiered : Prop :=
+  exists index_of : Sort -> Z,
+    (forall x, 0 < index_of x) /\
+    (forall x y, index_of x = index_of y -> x = y) /\
+    (forall i : Z, 0 < i -> exists x, index_of x = i) /\
+    (forall x y, A x y <-> index_of y = index_of x + 1) /\
+    (forall x y z, R x y z -> y = z).
+
+Definition Zneg_tiered : Prop :=
+  exists index_of : Sort -> Z,
+    (forall x, index_of x < 0) /\
+    (forall x y, index_of x = index_of y -> x = y) /\
+    (forall i : Z, i < 0 -> exists x, index_of x = i) /\
+    (forall x y, A x y <-> index_of x <= -2 /\ index_of y = index_of x + 1) /\
+    (forall x y z, R x y z -> y = z).
+
+Definition Z_tiered : Prop :=
+  exists index_of : Sort -> Z,
+    (forall x y, index_of x = index_of y -> x = y) /\
+    (forall i : Z, exists x, index_of x = i) /\
+    (forall x y, A x y <-> index_of y = index_of x + 1) /\
+    (forall x y z, R x y z -> y = z).
+
+Close Scope Z_scope.
+
+Axiom finite_or_Zneg_tiered_atomic_gen_non_dependent :
+  forall n, tiered n \/ Zneg_tiered ->
+    atomic /\ generalized_non_dependent.
+
+Axiom weak_implies_strong_normalization_n_tiered_lift :
+  (forall n, non_dependent_tiered n ->
+    (forall M, weakly_normalizing M -> strongly_normalizing M)) ->
+  (generalized_non_dependent ->
+    (forall M, weakly_normalizing M -> strongly_normalizing M)).
+
+Definition cyclic_tiered (n : nat) : Prop :=
+  exists index_of : Sort -> nat,
+    (forall x, 0 < index_of x /\ index_of x < n + 1) /\
+    (forall x y, index_of x = index_of y -> x = y) /\
+    (forall i, 0 < i -> i < n + 1 -> exists x, index_of x = i) /\
+    (forall x y, A x y <->
+       (index_of x < n /\ index_of y = S (index_of x)) \/
+       (index_of x = n /\ index_of y = 1)) /\
+    (forall x y z, R x y z -> y = z).
+
+(* Proposition 4 *)
+Axiom weak_implies_strong_normalization_persistent_separable_lift :
+  (forall n, (tiered n \/ cyclic_tiered n) ->
+    (forall M, weakly_normalizing M -> strongly_normalizing M)) ->
+  (persistent /\ separable ->
+    (forall M, weakly_normalizing M -> strongly_normalizing M)).
+
+
 
 End PTS.
