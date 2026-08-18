@@ -310,4 +310,34 @@ Fixpoint rho (i : nat) (M : term) : term :=
          end) (deg N - 1 - i)
   end.
 
+Fixpoint rho_ctx_tel (x : var) (T : term) (k : nat) : context :=
+  let j := index_of (var_sort x) in
+  match k with
+  | 0    => [(x, rho (j - 1) T)]
+  | S k' => (rho_ctx_tel x T k') ++ [(mkvar (sort_of (j - k)) (var_idx x), rho (j - k - 1) T)]
+  end.
+
+Fixpoint rho_ctx (i : nat) (Γ : context) : context :=
+  match Γ with
+  | [] => [(zero_var, t_sort (sort_of 1))]
+  | (x, T) :: Γ' => (rho_ctx_tel x T (index_of (var_sort x) - i - 1)) ++ rho_ctx i Γ'
+  end.
+
+Axiom subcontext_append : 
+  forall Γ1 Δ1 Γ2 Δ2,
+  (Γ1 ⊆ Δ1) -> (Γ2 ⊆ Δ2) -> ((Γ1 ++ Γ2) ⊆ (Δ1 ++ Δ2)).
+
+Axiom rho_ctx_tel_sub : 
+  forall x T p q, p < q -> 
+  rho_ctx_tel x T p ⊆ rho_ctx_tel x T q.
+
+Lemma rho_ctx_sub : forall i j Γ, i < j -> rho_ctx j Γ ⊆ rho_ctx i Γ.
+Proof.
+  intros. induction Γ; auto.
+  - simpl. unfold subcontext. auto.
+  - destruct a as [y G]. simpl. apply subcontext_append; auto. 
+    apply rho_ctx_tel_sub. assert (j + 1 > i + 1) by lia. admit.
+Admitted.
+
+
 End TPTS.
