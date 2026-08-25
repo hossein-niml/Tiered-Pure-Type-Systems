@@ -159,11 +159,15 @@ Program Fixpoint subst_term (x : var) (N : term) (t : term) {measure (size t)} :
   | t_app P Q => t_app (P⁅x ≔ N⁆) (Q⁅x ≔ N⁆)
 
   | t_pi y A B =>
-    let z := fresh (var_sort y) (fv N ++ fv B) in
+    let z := if in_dec eq_var_dec y (fv N ++ fv B) 
+    then fresh (var_sort y) (fv N ++ fv B) 
+    else y in
     t_pi z (A⁅x ≔ N⁆) ((rename y z B)⁅x ≔ N⁆)
 
   | t_lam y A M =>
-    let z := fresh (var_sort y) (fv N ++ fv M) in
+    let z := if in_dec eq_var_dec y (fv N ++ fv M) 
+    then fresh (var_sort y) (fv N ++ fv M) 
+    else y in
     t_lam z (A⁅x ≔ N⁆) ((rename y z M)⁅x ≔ N⁆)
   end
   
@@ -197,11 +201,11 @@ Axiom subst_app : forall M1 M2 x N,
   (t_app M1 M2)⁅x ≔ N⁆ = t_app (M1⁅x ≔ N⁆) (M2⁅x ≔ N⁆).
 
 Axiom subst_pi : forall y A B x N,
-  let z := fresh (var_sort y) (fv N ++ fv B) in
+  let z := if in_dec eq_var_dec y (fv N ++ fv B) then fresh (var_sort y) (fv N ++ fv B) else y in
   (t_pi y A B)⁅x ≔ N⁆ = t_pi z (A⁅x ≔ N⁆) ((rename y z B)⁅x ≔ N⁆).
 
 Axiom subst_lam : forall y A M x N,
-  let z := fresh (var_sort y) (fv N ++ fv M) in
+  let z := if in_dec eq_var_dec y (fv N ++ fv M) then fresh (var_sort y) (fv N ++ fv M) else y in
   (t_lam y A M)⁅x ≔ N⁆ = t_lam z (A⁅x ≔ N⁆) ((rename y z M)⁅x ≔ N⁆).
 
 Definition beta (M N : term) : Prop :=
@@ -873,15 +877,17 @@ Proof.
   remember (fresh (var_sort x0) (fv N ++ fv B)) as w eqn:Hw.
   assert (Hsort: var_sort(w) = var_sort(x0)). rewrite Hw. reflexivity.
   apply typing_pi with s.
-    * rewrite Hsort. apply IHtyping1; auto.
+    * destruct (in_dec eq_var_dec x0 (fv N ++ fv B)). 
+      ** rewrite Hsort. apply IHtyping1; auto.
+      ** apply IHtyping1; auto.
     * admit. 
-    * rewrite Hsort. apply H.
+    * destruct (in_dec eq_var_dec x0 (fv N ++ fv B)); auto. rewrite Hsort. apply H.
 
   - intros Δ HZ. rewrite subst_sort in *. rewrite subst_lam in *. rewrite subst_pi in *.
   remember (fresh (var_sort x0) (fv N ++ fv M)) as w eqn:Hw.
   remember (fresh (var_sort x0) (fv N ++ fv B)) as v eqn:Hv.
   assert (Hvw : v = w). rewrite Hw. rewrite Hv. apply fresh_eq.
-  rewrite Hvw in *. apply typing_lam with s'; auto. admit.
+  rewrite Hvw in *.  admit.
 
 Admitted.
 

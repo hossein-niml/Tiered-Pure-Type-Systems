@@ -281,6 +281,33 @@ Definition sort_of (i : nat) : Sort :=
 (* Type-Level Translation *)
 Parameter zero_var : var.
 
+Axiom zero_var_distinct : 
+  forall x : var, x <> zero_var.
+
+Lemma zero_var_distinct' : 
+  forall (x : var) (Hx : zero_var = x), False.
+Proof.
+  intros x Hx. apply zero_var_distinct with x; auto.
+Qed.
+
+Fixpoint rho_pi_tel (r : nat -> term -> term) (x : var) (A B : term) (i k : nat) : term :=
+  match k with
+  | 0    => t_pi x (r i A) (r i B)
+  | S k' => t_pi x (r (i + S k') A) (rho_pi_tel r x A B i k')
+  end.
+
+Fixpoint rho_lam_tel (r : nat -> term -> term) (x : var) (A M' : term) (i k : nat) : term :=
+  match k with
+  | 0    => t_lam x (r (i + 1) A) (r i M')
+  | S k' => t_lam x (r (i + 1 + S k') A) (rho_lam_tel r x A M' i k')
+  end.
+
+Fixpoint rho_app_tel (r : nat -> term -> term) (M' N : term) (i k : nat) : term :=
+  match k with
+  | 0    => t_app (r i M') (r i N)
+  | S k' => t_app (rho_app_tel r M' N i k') (r (i + S k') N)
+  end.
+
 Fixpoint rho (i : nat) (M : term) : term :=
   match M with
   | t_sort s =>
@@ -291,23 +318,20 @@ Fixpoint rho (i : nat) (M : term) : term :=
   | t_var x =>
       t_var (mkvar (sort_of (i + 2)) (var_idx x))
   | t_pi x A B =>
-      (fix pi_tel (k : nat) : term :=
-         match k with
-         | 0    => t_pi x (rho i A) (rho i B)
-         | S k' => t_pi x (rho (i + S k') A) (pi_tel k')
-         end) (deg A - 1 - i)
+      match le_lt_dec (i + 1) (deg A) with
+      | left _  => rho_pi_tel rho x A B i (deg A - 1 - i)
+      | right _ => rho i B
+      end
   | t_lam x A M' =>
-      (fix lam_tel (k : nat) : term :=
-         match k with
-         | 0    => t_lam x (rho (i + 1) A) (rho i M')
-         | S k' => t_lam x (rho (i + 1 + S k') A) (lam_tel k')
-         end) (deg A - 1 - (i + 1))
+      match le_lt_dec (i + 2) (deg A) with
+      | left _  => rho_lam_tel rho x A M' i (deg A - 1 - (i + 1))
+      | right _ => rho i M'
+      end
   | t_app M' N =>
-      (fix app_tel (k : nat) : term :=
-         match k with
-         | 0    => t_app (rho i M') (rho i N)
-         | S k' => t_app (app_tel k') (rho (i + S k') N)
-         end) (deg N - 1 - i)
+      match le_lt_dec (i + 1) (deg N) with
+      | left _  => rho_app_tel rho M' N i (deg N - 1 - i)
+      | right _ => rho i M'
+      end
   end.
 
 Fixpoint rho_ctx_tel (x : var) (T : term) (k : nat) : context :=
@@ -323,21 +347,219 @@ Fixpoint rho_ctx (i : nat) (Γ : context) : context :=
   | (x, T) :: Γ' => (rho_ctx_tel x T (index_of (var_sort x) - i - 1)) ++ rho_ctx i Γ'
   end.
 
-Axiom subcontext_append : 
+Lemma subcontext_append : 
   forall Γ1 Δ1 Γ2 Δ2,
   (Γ1 ⊆ Δ1) -> (Γ2 ⊆ Δ2) -> ((Γ1 ++ Γ2) ⊆ (Δ1 ++ Δ2)).
+Proof.
+  intros Γ1 Δ1 Γ2 Δ2 H1 H2 x T Hin. 
+  apply in_app_or in Hin. destruct Hin; apply in_or_app.
+  - left; auto.
+  - right; auto.
+Qed.
 
 Axiom rho_ctx_tel_sub : 
-  forall x T p q, p < q -> 
-  rho_ctx_tel x T p ⊆ rho_ctx_tel x T q.
+  forall x T p q, 
+  p < q -> rho_ctx_tel x T p ⊆ rho_ctx_tel x T q.
 
-Lemma rho_ctx_sub : forall i j Γ, i < j -> rho_ctx j Γ ⊆ rho_ctx i Γ.
+Definition ctx_above (b : nat) (Γ : context) : Prop :=
+  forall x T, In (x, T) Γ -> b < index_of (var_sort x).
+
+Lemma rho_ctx_sub : forall Γ i j,
+  i < j -> ctx_above j Γ -> rho_ctx j Γ ⊆ rho_ctx i Γ.
 Proof.
-  intros. induction Γ; auto.
+  induction Γ as [| [y T] Γ' IH]; intros i j Hij Habove.
   - simpl. unfold subcontext. auto.
-  - destruct a as [y G]. simpl. apply subcontext_append; auto. 
-    apply rho_ctx_tel_sub. assert (j + 1 > i + 1) by lia. admit.
-Admitted.
+  - simpl. apply subcontext_append.
+    + apply rho_ctx_tel_sub.
+      assert (Hy : j < index_of (var_sort y)).
+      { apply Habove with T. left. reflexivity. }
+      lia.
+    + apply IH; auto. intros x' T' Hin. apply Habove with T'. right. exact Hin.
+Qed.
+
+Fixpoint rho_subst_tel (M N : term) (varidx i k : nat) : term :=
+  match k with
+  | O => M ⁅ mkvar (sort_of (i + 2)) (varidx) ≔ rho i N ⁆
+  | S k' => rho_subst_tel (M ⁅ mkvar (sort_of (k + i + 2)) (varidx) ≔ rho (k + i) N ⁆) N varidx i k'
+  end.
+
+Definition rho_subst (M N : term) (x : var) (i : nat) : term :=
+  let j := index_of (var_sort x) in
+  match lt_dec j (i + 2) with
+  | left _  => rho i M
+  | right _ => rho_subst_tel (rho i M) (N) (var_idx x) (i) (j - i - 2)
+  end.
+
+Lemma sort_of_correct : forall i, 0 < i -> i < n + 1 -> index_of (sort_of i) = i.
+Proof.
+  intros i H1 H2. unfold sort_of.
+  destruct (lt_dec 0 i) as [Hd1|Hd1]; [| lia].
+  destruct (lt_dec i (n+1)) as [Hd2|Hd2]; [| lia].
+  unfold partial_sort_of.
+  destruct (constructive_indefinite_description (fun s => index_of s = i)
+              (index_surj i (conj Hd1 Hd2))) as [s Hs].
+  exact Hs.
+Qed.
+
+Lemma sort_of_inj : forall p q,
+  0 < p -> p < n + 1 -> 0 < q -> q < n + 1 ->
+  sort_of p = sort_of q -> p = q.
+Proof.
+  intros p q Hp1 Hp2 Hq1 Hq2 Heq.
+  assert (Hp : index_of (sort_of p) = p) by (apply sort_of_correct; lia).
+  assert (Hq : index_of (sort_of q) = q) by (apply sort_of_correct; lia).
+  rewrite Heq in Hp. rewrite Hp in Hq. exact Hq.
+Qed.
+
+Axiom var_idx_neq_of_var_neq : forall x y : var, y <> x -> var_idx y <> var_idx x.
+
+Lemma rename_id : forall v t, rename v v t = t.
+Proof.
+  intros v t. induction t.
+  - reflexivity.
+  - simpl. destruct (eq_var_dec v0 v) as [Heq | Hneq].
+    + subst v0. reflexivity.
+    + reflexivity.
+  - simpl. rewrite IHt1, IHt2. reflexivity.
+  - simpl. destruct (eq_var_dec v0 v) as [Heq | Hneq].
+    + subst v0. rewrite IHt1. reflexivity.
+    + rewrite IHt1, IHt2. reflexivity.
+  - simpl. destruct (eq_var_dec v0 v) as [Heq | Hneq].
+    + subst v0. rewrite IHt1. reflexivity.
+    + rewrite IHt1, IHt2. reflexivity.
+Qed.
+
+Lemma subst_pi_no_capture : forall y A B x N,
+  var_idx y <> var_idx x ->
+  ~ In y (fv N) ->
+  ~ In y (fv B) ->
+  (t_pi y A B) ⁅x ≔ N⁆ = t_pi y (A⁅x ≔ N⁆) (B⁅x ≔ N⁆).
+Proof.
+  intros y A B x N Hyx HyN HyB.
+  rewrite subst_pi.
+  simpl.
+  destruct (in_dec eq_var_dec y (fv N ++ fv B)) as [Hin | Hnotin].
+  - exfalso. apply in_app_or in Hin. destruct Hin as [Hin | Hin]; auto.
+  - rewrite rename_id. reflexivity.
+Qed.
+
+Lemma rho_commutes_substitution : 
+  forall i, 0 <= i <= n ->
+  forall x, 1 <= index_of (var_sort x) <= n ->
+  forall M, deg M >= i + 1 ->
+  forall N, deg N = index_of (var_sort x) - 1 ->
+  rho i (M ⁅ x ≔ N ⁆) = rho_subst M N x i.
+Proof.
+  intros i.
+  induction i as [i IHouter] using
+    (well_founded_induction (Wf_nat.well_founded_ltof nat (fun i => n - i))).
+  intros Hi x Hx M.
+  induction M as [s | y | P IHP Q IHQ | y A M' IHM' | y C IHC D IHD]; intros Hdeg N HdegN.
+
+  - (* M = t_sort s *)
+    rewrite subst_sort. unfold rho_subst. 
+    destruct (lt_dec (index_of (var_sort x)) (i + 2)) as [E | E]; auto.
+    assert (Hconst : forall k M0,
+                  k <= index_of (var_sort x) - i - 2 ->
+                  (exists s0, M0 = t_sort s0) \/ (i = 0 /\ M0 = t_var zero_var /\
+                    forall k', i+2 <= k' -> k' <= index_of (var_sort x) ->
+                    {| var_sort := sort_of k'; var_idx := var_idx x |} <> zero_var) ->
+                  rho_subst_tel M0 N (var_idx x) i k = M0).
+        { induction k as [| k' IHk]; intros M0 Hkbound Hcase.
+          - simpl. destruct Hcase as [[s0 Heq] | [Hi0 [Heq Hne]]]; subst M0.
+            + rewrite subst_sort. reflexivity.
+            + rewrite subst_var.
+              destruct (eq_var_dec zero_var (mkvar (sort_of (i+2)) (var_idx x))) as [Heq2|Hne2]; auto.
+              exfalso. 
+              apply zero_var_distinct with ({| var_sort := sort_of (i + 2); var_idx := var_idx x |}).
+              auto.
+          - simpl. destruct Hcase as [[s0 Heq] | [Hi0 [Heq Hne]]]; subst M0.
+            + rewrite subst_sort. apply IHk; [lia | left; exists s0; reflexivity].
+            + rewrite subst_var.
+              destruct (eq_var_dec zero_var (mkvar (sort_of (k'+i+2)) (var_idx x))) as [Heq2|Hne2].
+              * exfalso. apply zero_var_distinct' with (Hx := Heq2).
+              * destruct (eq_var_dec zero_var (mkvar (sort_of (S (k' + i + 2))) (var_idx x))) as [Heq3 | Hne3].
+                -- exfalso. apply zero_var_distinct' with (Hx := Heq3).
+                -- apply IHk; [lia | right; repeat split; [exact Hi0 | exact Hne]].
+        }
+    symmetry. apply Hconst; auto.
+    destruct i as [| i'].
+      + right. repeat split; auto. intros. apply zero_var_distinct.
+      + left. exists (sort_of (S i')). reflexivity.
+
+  - (* M = t_var y *)
+    unfold rho_subst.
+    destruct (lt_dec (index_of (var_sort x)) (i + 2)) as [E | E].
+    + simpl in Hdeg. assert (Hy : index_of (var_sort y) >= i + 2) by lia.
+      rewrite subst_var. destruct (eq_var_dec y x); auto. exfalso. subst. lia.
+    + rewrite subst_var. destruct (eq_var_dec y x).
+      * subst y. remember (mkvar (sort_of (i+2)) (var_idx x)) as z.
+        assert (Hz : rho i N = (t_var z) ⁅ z ≔ rho i N ⁆).
+        rewrite subst_var. destruct (eq_var_dec z z). auto. destruct n0; auto.
+        rewrite Hz. simpl. rewrite <- Heqz.
+        assert (Hconst: forall k, k <= index_of (var_sort x) - i - 2 ->
+          rho_subst_tel (t_var z) N (var_idx x) i k = (t_var z) ⁅ z ≔ rho i N ⁆).
+        {induction k as [| k' IHk]; intros Hk.
+          - simpl. rewrite <- Heqz. reflexivity.
+          - simpl.
+            assert (Hlevel_ne : mkvar (sort_of (S k' + i + 2)) (var_idx x) <> z).
+            { rewrite Heqz. intro Hcontra.
+              injection Hcontra as Hsort.
+              assert (Heq2 : S k' + i + 2 = i + 2).
+              { apply (sort_of_inj (S k' + i + 2) (i + 2)); [lia | lia | lia | lia | exact Hsort]. }
+              lia. }
+        rewrite subst_var.
+        destruct (eq_var_dec z (mkvar (sort_of (S k' + i + 2)) (var_idx x))) as [Heq | Hne].
+        + exfalso. apply Hlevel_ne. symmetry. exact Heq.
+        + destruct (eq_var_dec z {| var_sort := sort_of (S (k' + i + 2)); var_idx := var_idx x |}). 
+          * contradiction. 
+          * apply IHk. lia.
+        }
+        symmetry. apply Hconst. lia.
+      * assert (Hconst : forall y k, var_idx y <> var_idx x -> rho_subst_tel (t_var y) N (var_idx x) i k = t_var y).
+        {
+          intros y0 k Hyx. induction k as [| k' IHk]; simpl.
+          - rewrite subst_var. destruct (eq_var_dec y0 (mkvar (sort_of (i+2)) (var_idx x))) as [Heq|Hne].
+            + exfalso. apply Hyx. rewrite Heq. reflexivity.
+            + reflexivity.
+          - rewrite subst_var. destruct (eq_var_dec y0 (mkvar (sort_of (S k'+i+2)) (var_idx x))) as [Heq|Hne].
+            + exfalso. apply Hyx. rewrite Heq. reflexivity.
+            + destruct (eq_var_dec y0 {| var_sort := sort_of (S (k' + i + 2)); var_idx := var_idx x |}). 
+              * contradiction. 
+              * exact IHk.
+        }
+        symmetry. apply Hconst. simpl. apply var_idx_neq_of_var_neq. exact n0.
+
+  - admit.
+  
+  - admit.
+
+  - (* M = t_pi y C D *)
+    simpl in Hdeg.
+    unfold rho_subst.
+    destruct (le_lt_dec (i + 1) (deg C)) as [HdegC | HdegC].
+
+    + (* deg C >= i+1 *) admit.
+
+    + (* deg C < i+1 *)
+      rewrite subst_pi. 
+      remember (fresh (var_sort y) (fv N ++ fv D)) as z.
+      remember (if in_dec eq_var_dec y (fv N ++ fv D) then z else y) as y'.
+      remember (rename y y' D) as D'.
+      
+      destruct (lt_dec (index_of (var_sort x)) (i + 2)) as [Hj | Hj].
+
+      ++ simpl. assert (Q : deg (C ⁅ x ≔ N ⁆) = deg C). apply deg_subst with (index_of (var_sort x)); auto.
+      rewrite Q. destruct (le_lt_dec (i + 1) (deg C)).
+        * lia.
+        * assert (Q' : deg (D' ⁅ x ≔ N ⁆) = deg D'). apply deg_subst with (index_of (var_sort x)); auto.
+          assert (W : deg D' = deg D). rewrite HeqD'. apply deg_rename. destruct (in_dec eq_var_dec y (fv N ++ fv D)).
+            ** subst. reflexivity.
+            ** subst. reflexivity.
+            **
+          
+          +++ rewrite HeqD'. rewrite deg_rename with (M := D ⁅ x ≔ N ⁆).
+Admitted.    
 
 
 End TPTS.
