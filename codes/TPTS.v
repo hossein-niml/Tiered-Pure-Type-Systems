@@ -383,7 +383,7 @@ Qed.
    already used for [deg_typing_succ]'s app case, transported through
    an extra step of subject-reduction-style reasoning this file does
    not otherwise develop. *)
-Axiom deg_beta : forall Γ M N T, (Γ ⊢ M ∈ T) -> (M ->b N) -> (deg M = deg N).
+Axiom deg_beta : forall M N, (M ->>b N) -> (deg M = deg N).
 
 (* ================================================================= *)
 (** * The n-tiered, full system *)
@@ -1365,6 +1365,332 @@ Proof.
   intros.
   apply rho_commutes_substitution_aux with []; auto.
 Qed.
+
+Lemma brt_pi_A : forall s A A' B, A ->>b A' -> t_pi s A B ->>b t_pi s A' B.
+Proof.
+  intros s A A' B H.
+  induction H as [A | A A' HA | A A' A'' H1 IH1 H2 IH2].
+  - apply brt_refl.
+  - apply brt_step. apply beta_pi_A. exact HA.
+  - apply brt_trans with (t_pi s A' B); auto.
+Qed.
+
+Lemma brt_pi_B : forall s A B B', B ->>b B' -> t_pi s A B ->>b t_pi s A B'.
+Proof.
+  intros s A B B' H.
+  induction H as [B | B B' HB | B B' B'' H1 IH1 H2 IH2].
+  - apply brt_refl.
+  - apply brt_step. apply beta_pi_B. exact HB.
+  - apply brt_trans with (t_pi s A B'); auto.
+Qed.
+
+Lemma brt_pi_congr : forall s A A' B B',
+  A ->>b A' -> B ->>b B' -> t_pi s A B ->>b t_pi s A' B'.
+Proof.
+  intros s A A' B B' HA HB.
+  apply brt_trans with (t_pi s A' B).
+  - apply brt_pi_A. exact HA.
+  - apply brt_pi_B. exact HB.
+Qed.
+
+Lemma brt_lam_A : forall s A A' M, A ->>b A' -> t_lam s A M ->>b t_lam s A' M.
+Proof.
+  intros s A A' M H.
+  induction H as [A | A A' HA | A A' A'' H1 IH1 H2 IH2].
+  - apply brt_refl.
+  - apply brt_step. apply beta_lam_A. exact HA.
+  - apply brt_trans with (t_lam s A' M); auto.
+Qed.
+
+Lemma brt_lam_M : forall s A M M', M ->>b M' -> t_lam s A M ->>b t_lam s A M'.
+Proof.
+  intros s A M M' H.
+  induction H as [M | M M' HM | M M' M'' H1 IH1 H2 IH2].
+  - apply brt_refl.
+  - apply brt_step. apply beta_lam_M. exact HM.
+  - apply brt_trans with (t_lam s A M'); auto.
+Qed.
+
+Lemma brt_lam_congr : forall s A A' M M',
+  A ->>b A' -> M ->>b M' -> t_lam s A M ->>b t_lam s A' M'.
+Proof.
+  intros s A A' M M' HA HM.
+  apply brt_trans with (t_lam s A' M).
+  - apply brt_lam_A. exact HA.
+  - apply brt_lam_M. exact HM.
+Qed.
+
+Lemma brt_app_l : forall M M' N, M ->>b M' -> t_app M N ->>b t_app M' N.
+Proof.
+  intros M M' N H.
+  induction H as [M | M M' HM | M M' M'' H1 IH1 H2 IH2].
+  - apply brt_refl.
+  - apply brt_step. apply beta_app_l. exact HM.
+  - apply brt_trans with (t_app M' N); auto.
+Qed.
+
+Lemma brt_app_r : forall M N N', N ->>b N' -> t_app M N ->>b t_app M N'.
+Proof.
+  intros M N N' H.
+  induction H as [N | N N' HN | N N' N'' H1 IH1 H2 IH2].
+  - apply brt_refl.
+  - apply brt_step. apply beta_app_r. exact HN.
+  - apply brt_trans with (t_app M N'); auto.
+Qed.
+
+Lemma brt_app_congr : forall M M' N N',
+  M ->>b M' -> N ->>b N' -> t_app M N ->>b t_app M' N'.
+Proof.
+  intros M M' N N' HM HN.
+  apply brt_trans with (t_app M' N).
+  - apply brt_app_l. exact HM.
+  - apply brt_app_r. exact HN.
+Qed.
+
+(* ----------------------------------------------------------------- *)
+(** ** Telescope-level congruences: changing the recursor's output at
+      every tier touched by [rho_pi_tel]/[rho_lam_tel]/[rho_app_tel]
+      lifts to a [->>b] fact about the whole telescope. *)
+
+Lemma rho_pi_tel_dom_congr : forall C C' D i k,
+  (forall m, i <= m <= i + k -> rho m C ->>b rho m C') ->
+  rho_pi_tel rho C D i k ->>b rho_pi_tel rho C' D i k.
+Proof.
+  induction k as [| k' IHk]; intros Hall; simpl.
+  - apply brt_pi_A. apply Hall. lia.
+  - apply brt_pi_congr.
+    + apply Hall. lia.
+    + apply IHk. intros m Hm. apply Hall. lia.
+Qed.
+
+Lemma rho_pi_tel_body_congr : forall A B B' i k,
+  rho i B ->>b rho i B' ->
+  rho_pi_tel rho A B i k ->>b rho_pi_tel rho A B' i k.
+Proof.
+  induction k as [| k' IHk]; intros Hb; simpl.
+  - apply brt_pi_B. exact Hb.
+  - apply brt_pi_B. apply IHk. exact Hb.
+Qed.
+
+Lemma rho_lam_tel_dom_congr : forall C C' M' i k,
+  (forall m, i + 1 <= m <= i + 1 + k -> rho m C ->>b rho m C') ->
+  rho_lam_tel rho C M' i k ->>b rho_lam_tel rho C' M' i k.
+Proof.
+  induction k as [| k' IHk]; intros Hall; simpl.
+  - apply brt_lam_A. apply Hall. lia.
+  - apply brt_lam_congr.
+    + apply Hall. lia.
+    + apply IHk. intros m Hm. apply Hall. lia.
+Qed.
+
+Lemma rho_lam_tel_body_congr : forall A M' M'' i k,
+  rho i M' ->>b rho i M'' ->
+  rho_lam_tel rho A M' i k ->>b rho_lam_tel rho A M'' i k.
+Proof.
+  induction k as [| k' IHk]; intros Hb; simpl.
+  - apply brt_lam_M. exact Hb.
+  - apply brt_lam_M. apply IHk. exact Hb.
+Qed.
+
+Lemma rho_app_tel_func_congr : forall P P' Q i k,
+  rho i P ->>b rho i P' ->
+  rho_app_tel rho P Q i k ->>b rho_app_tel rho P' Q i k.
+Proof.
+  induction k as [| k' IHk]; intros Hp; simpl.
+  - apply brt_app_l. exact Hp.
+  - apply brt_app_l. apply IHk. exact Hp.
+Qed.
+
+Lemma rho_app_tel_arg_congr : forall P Q Q' i k,
+  (forall m, i <= m <= i + k -> rho m Q ->>b rho m Q') ->
+  rho_app_tel rho P Q i k ->>b rho_app_tel rho P Q' i k.
+Proof.
+  induction k as [| k' IHk]; intros Hall; simpl.
+  - apply brt_app_r. apply Hall. lia.
+  - apply brt_app_congr.
+    + apply IHk. intros m Hm. apply Hall. lia.
+    + apply Hall. lia.
+Qed.
+
+(* ----------------------------------------------------------------- *)
+(** [rho] commuting with the base beta rule itself,
+      [rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q)],
+    is the one genuinely open case, for the same reason [deg_beta]
+    above had to be axiomatized: [->b] is untyped and purely
+    syntactic, so nothing here pins down the domain's degree or the
+    local closure of [M] once opened.  A syntactic proof would go
+    through [subst_intro] (turning [M ^^ Q] into a free-variable
+    substitution [(open_var M x) ⁅ x ≔ Q ⁆] for a fresh [x]) and then
+    [rho_commutes_substitution], exactly like the app case of
+    [deg_typing_succ] and the comment on [deg_beta] describe -- but
+    that route needs [lc (open_var M x)], which requires a typing (or
+    at least a local-closure) derivation for the redex that this
+    untyped rule does not carry.  We isolate exactly this base-case
+    content and axiomatize it, mirroring [deg_beta] exactly. *)
+Axiom rho_commutes_beta_base : forall i, 0 <= i <= n ->
+  forall s A M Q ctx, deg_aux (s :: ctx) M >= i + 1 ->
+  rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q).
+
+(* ----------------------------------------------------------------- *)
+(** ** The single-step congruence, [ctx]-generalized exactly like
+      [rho_commutes_substitution_aux], with the same combination of
+      outer well-founded induction on [i] (for the cases where a
+      telescope reaches out to a *different* tier) and inner
+      structural induction on [M]. *)
+
+Lemma rho_commutes_beta_aux :
+  forall i, 0 <= i <= n ->
+  forall M ctx, deg_aux ctx M >= i + 1 ->
+  forall N, M ->b N ->
+  rho i M ->>b rho i N.
+Proof.
+  intros i.
+  induction i as [i IHouter] using
+    (well_founded_induction (Wf_nat.well_founded_ltof nat (fun i => n - i))).
+  intros Hi M.
+  induction M as [s | m | y | P IHP Q IHQ | s A IHA M' IHM' | s A IHA B IHB];
+    intros ctx Hdeg N Hstep.
+
+  - (* t_sort *) inversion Hstep.
+  - (* t_bvar *) inversion Hstep.
+  - (* t_fvar *) inversion Hstep.
+
+  - (* t_app P Q *)
+    simpl in Hdeg.
+    inversion Hstep; subst; clear Hstep.
+
+    + (* beta_base *)
+      apply rho_commutes_beta_base with (ctx := ctx); [exact Hi | ].
+      simpl in Hdeg. exact Hdeg.
+
+    + (* beta_app_l : some P' with P ->b P', goal about t_app P' Q *)
+      match goal with
+      | Hs : P ->b ?P' |- _ =>
+        assert (HdegP : deg_aux ctx P >= i + 1) by exact Hdeg;
+        destruct (le_lt_dec (i + 1) (deg Q)) as [E | E];
+        [ rewrite (rho_app_named i P Q E); rewrite (rho_app_named i P' Q E);
+          apply rho_app_tel_func_congr;
+          apply IHP with ctx; auto
+        | assert (Hrho1 : rho i (t_app P Q) = rho i P) by (simpl; destruct (le_lt_dec (i+1) (deg Q)); [lia | reflexivity]);
+          assert (Hrho2 : rho i (t_app P' Q) = rho i P') by (simpl; destruct (le_lt_dec (i+1) (deg Q)); [lia | reflexivity]);
+          rewrite Hrho1, Hrho2;
+          apply IHP with ctx; auto ]
+      end.
+
+    + (* beta_app_r : some Q' with Q ->b Q', goal about t_app P Q' *)
+      match goal with
+      | Hs : Q ->b ?Q' |- _ =>
+        assert (HdegQeq : deg Q = deg Q') by (apply deg_beta; apply brt_step; exact Hs);
+        destruct (le_lt_dec (i + 1) (deg Q)) as [E | E];
+        [ assert (E' : i + 1 <= deg Q') by lia;
+          rewrite (rho_app_named i P Q E); rewrite (rho_app_named i P Q' E');
+          assert (Hk : deg Q - 1 - i = deg Q' - 1 - i) by lia;
+          rewrite Hk;
+          apply rho_app_tel_arg_congr;
+          intros mtier Hmtier;
+          assert (HQle : deg Q <= n + 1) by (apply deg_le_top);
+          assert (HdegQm : deg Q >= mtier + 1) by lia;
+          destruct (Nat.eq_dec mtier i) as [Heqm | Hneqm];
+          [ subst mtier; apply IHQ with []; [unfold deg in *; lia | exact Hs]
+          | apply IHouter with []; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs] ]
+        | assert (E' : ~ i + 1 <= deg Q') by lia;
+          assert (Hrho1 : rho i (t_app P Q) = rho i P) by (simpl; destruct (le_lt_dec (i+1) (deg Q)); [lia | reflexivity]);
+          assert (Hrho2 : rho i (t_app P Q') = rho i P) by (simpl; destruct (le_lt_dec (i+1) (deg Q')); [lia | reflexivity]);
+          rewrite Hrho1, Hrho2; apply brt_refl ]
+      end.
+
+  - (* t_lam s A M' *)
+    inversion Hstep; subst; clear Hstep.
+
+    + (* beta_lam_A : some A1' with A ->b A1', goal about t_lam s A1' M' *)
+      match goal with
+      | Hs : A ->b ?A1' |- _ =>
+        assert (HdegAA' : deg A = deg A1') by (apply deg_beta; apply brt_step; exact Hs);
+        destruct (le_lt_dec (i + 2) (deg A)) as [E | E];
+        [ assert (E' : i + 2 <= deg A1') by lia;
+          rewrite (rho_lam_named i s A M' E); rewrite (rho_lam_named i s A1' M' E');
+          assert (Hk : deg A - 1 - (i + 1) = deg A1' - 1 - (i + 1)) by lia;
+          rewrite Hk;
+          apply rho_lam_tel_dom_congr;
+          intros mtier Hmtier;
+          assert (HAle : deg A <= n + 1) by (apply deg_le_top);
+          assert (HdegAm : deg A >= mtier + 1) by lia;
+          apply IHouter with []; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs]
+        | assert (E' : ~ i + 2 <= deg A1') by lia;
+          assert (Hrho1 : rho i (t_lam s A M') = rho i M') by (simpl; destruct (le_lt_dec (i+2) (deg A)); [lia | reflexivity]);
+          assert (Hrho2 : rho i (t_lam s A1' M') = rho i M') by (simpl; destruct (le_lt_dec (i+2) (deg A1')); [lia | reflexivity]);
+          rewrite Hrho1, Hrho2; apply brt_refl ]
+      end.
+
+    + (* beta_lam_M : some M1' with M' ->b M1', goal about t_lam s A M1' *)
+      match goal with
+      | Hs : M' ->b ?M1' |- _ =>
+        assert (HdegM' : deg_aux (s :: ctx) M' >= i + 1) by exact Hdeg;
+        destruct (le_lt_dec (i + 2) (deg A)) as [E | E];
+        [ rewrite (rho_lam_named i s A M' E); rewrite (rho_lam_named i s A M1' E);
+          apply rho_lam_tel_body_congr;
+          apply IHM' with (s :: ctx); auto
+        | assert (Hrho1 : rho i (t_lam s A M') = rho i M') by (simpl; destruct (le_lt_dec (i+2) (deg A)); [lia | reflexivity]);
+          assert (Hrho2 : rho i (t_lam s A M1') = rho i M1') by (simpl; destruct (le_lt_dec (i+2) (deg A)); [lia | reflexivity]);
+          rewrite Hrho1, Hrho2;
+          apply IHM' with (s :: ctx); auto ]
+      end.
+
+  - (* t_pi s A B *)
+    inversion Hstep; subst; clear Hstep.
+
+    + (* beta_pi_A : some A1' with A ->b A1', goal about t_pi s A1' B *)
+      match goal with
+      | Hs : A ->b ?A1' |- _ =>
+        assert (HdegAA' : deg A = deg A1') by (apply deg_beta; apply brt_step; exact Hs);
+        destruct (le_lt_dec (i + 1) (deg A)) as [E | E];
+        [ assert (E' : i + 1 <= deg A1') by lia;
+          rewrite (rho_pi_named i s A B E); rewrite (rho_pi_named i s A1' B E');
+          assert (Hk : deg A - 1 - i = deg A1' - 1 - i) by lia;
+          rewrite Hk;
+          apply rho_pi_tel_dom_congr;
+          intros mtier Hmtier;
+          assert (HAle : deg A <= n + 1) by (apply deg_le_top);
+          assert (HdegAm : deg A >= mtier + 1) by lia;
+          destruct (Nat.eq_dec mtier i) as [Heqm | Hneqm];
+          [ subst mtier; apply IHA with []; [unfold deg in *; lia | exact Hs]
+          | apply IHouter with []; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs] ]
+        | assert (E' : ~ i + 1 <= deg A1') by lia;
+          assert (Hrho1 : rho i (t_pi s A B) = rho i B) by (simpl; destruct (le_lt_dec (i+1) (deg A)); [lia | reflexivity]);
+          assert (Hrho2 : rho i (t_pi s A1' B) = rho i B) by (simpl; destruct (le_lt_dec (i+1) (deg A1')); [lia | reflexivity]);
+          rewrite Hrho1, Hrho2; apply brt_refl ]
+      end.
+
+    + (* beta_pi_B : some B1' with B ->b B1', goal about t_pi s A B1' *)
+      match goal with
+      | Hs : B ->b ?B1' |- _ =>
+        assert (HdegB : deg_aux (s :: ctx) B >= i + 1) by exact Hdeg;
+        destruct (le_lt_dec (i + 1) (deg A)) as [E | E];
+        [ rewrite (rho_pi_named i s A B E); rewrite (rho_pi_named i s A B1' E);
+          apply rho_pi_tel_body_congr;
+          apply IHB with (s :: ctx); auto
+        | assert (Hrho1 : rho i (t_pi s A B) = rho i B) by (simpl; destruct (le_lt_dec (i+1) (deg A)); [lia | reflexivity]);
+          assert (Hrho2 : rho i (t_pi s A B1') = rho i B1') by (simpl; destruct (le_lt_dec (i+1) (deg A)); [lia | reflexivity]);
+          rewrite Hrho1, Hrho2;
+          apply IHB with (s :: ctx); auto ]
+      end.
+Qed.
+
+Lemma rho_commutes_beta :
+  forall i, 0 <= i <= n ->
+  forall M, deg M >= i + 1 ->
+  forall N, M ->>b N ->
+  rho i M ->>b rho i N.
+Proof.
+  intros i Hi M Hdeg N Hbeta.
+  induction Hbeta as [M | M N Hstep | M N P Hstep1 IH1 Hstep2 IH2].
+  - apply brt_refl.
+  - apply (rho_commutes_beta_aux i Hi M [] Hdeg N Hstep).
+  - apply brt_trans with (rho i N); auto.
+    apply IH2; auto.
+    rewrite <- (deg_beta M N Hstep1); auto.
+Qed.
+
 
 
 End TPTS.
