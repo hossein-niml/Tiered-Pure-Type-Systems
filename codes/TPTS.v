@@ -717,12 +717,6 @@ Proof.
     + apply IHB; lia.
 Qed.
 
-(** Pure substitution algebra, no [rho]/tiers involved: substituting a
-    "high" free variable [vhi] with a replacement [R] that is itself
-    clean of a *different* free variable [vlo], into a term [P] that
-    is already clean of [vlo], leaves the result clean of [vlo] too.
-    This is the one commutation fact the [Step2] shift argument below
-    needs, applied at the level of a single substitution step. *)
 Lemma eq_var_dec_refl : forall v : var, exists e, eq_var_dec v v = left e.
 Proof.
   intros v. destruct (eq_var_dec v v) as [e | f].
@@ -791,13 +785,6 @@ Proof.
     apply IHK; [lia | exact HcleanP | lia].
 Qed.
 
-(** If [P] is clean below tier [D+2] and [D <= i0], then the result of
-    running the whole [rho_subst_tel] chain from base [i0] on [P] is
-    *also* clean below tier [D+2] -- every substituted tier is [>= i0+2
-    >= D+2], strictly above [D+2]'s threshold, and each replacement
-    [rho t N] (for [t >= i0 >= D]) is itself clean below [D+2] by
-    [rho_min_tier_noop], so [subst_high_preserves_clean_low] applies at
-    every step. *)
 Lemma rho_subst_tel_stays_clean : forall P N varidx D i0 K,
   D <= i0 ->
   (forall m v N0, m < D -> m + 2 <= n -> P ⁅ mkvar (sort_of (m + 2)) v ≔ N0 ⁆ = P) ->
@@ -1366,6 +1353,8 @@ Proof.
   apply rho_commutes_substitution_aux with []; auto.
 Qed.
 
+(* ================================================================= *)
+
 Lemma brt_pi_A : forall s A A' B, A ->>b A' -> t_pi s A B ->>b t_pi s A' B.
 Proof.
   intros s A A' B H.
@@ -1447,11 +1436,6 @@ Proof.
   - apply brt_app_r. exact HN.
 Qed.
 
-(* ----------------------------------------------------------------- *)
-(** ** Telescope-level congruences: changing the recursor's output at
-      every tier touched by [rho_pi_tel]/[rho_lam_tel]/[rho_app_tel]
-      lifts to a [->>b] fact about the whole telescope. *)
-
 Lemma rho_pi_tel_dom_congr : forall C C' D i k,
   (forall m, i <= m <= i + k -> rho m C ->>b rho m C') ->
   rho_pi_tel rho C D i k ->>b rho_pi_tel rho C' D i k.
@@ -1512,31 +1496,9 @@ Proof.
     + apply Hall. lia.
 Qed.
 
-(* ----------------------------------------------------------------- *)
-(** [rho] commuting with the base beta rule itself,
-      [rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q)],
-    is the one genuinely open case, for the same reason [deg_beta]
-    above had to be axiomatized: [->b] is untyped and purely
-    syntactic, so nothing here pins down the domain's degree or the
-    local closure of [M] once opened.  A syntactic proof would go
-    through [subst_intro] (turning [M ^^ Q] into a free-variable
-    substitution [(open_var M x) ⁅ x ≔ Q ⁆] for a fresh [x]) and then
-    [rho_commutes_substitution], exactly like the app case of
-    [deg_typing_succ] and the comment on [deg_beta] describe -- but
-    that route needs [lc (open_var M x)], which requires a typing (or
-    at least a local-closure) derivation for the redex that this
-    untyped rule does not carry.  We isolate exactly this base-case
-    content and axiomatize it, mirroring [deg_beta] exactly. *)
 Axiom rho_commutes_beta_base : forall i, 0 <= i <= n ->
   forall s A M Q ctx, deg_aux (s :: ctx) M >= i + 1 ->
   rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q).
-
-(* ----------------------------------------------------------------- *)
-(** ** The single-step congruence, [ctx]-generalized exactly like
-      [rho_commutes_substitution_aux], with the same combination of
-      outer well-founded induction on [i] (for the cases where a
-      telescope reaches out to a *different* tier) and inner
-      structural induction on [M]. *)
 
 Lemma rho_commutes_beta_aux :
   forall i, 0 <= i <= n ->
@@ -1602,7 +1564,7 @@ Proof.
   - (* t_lam s A M' *)
     inversion Hstep; subst; clear Hstep.
 
-    + (* beta_lam_A : some A1' with A ->b A1', goal about t_lam s A1' M' *)
+    + (* beta_lam_A *)
       match goal with
       | Hs : A ->b ?A1' |- _ =>
         assert (HdegAA' : deg A = deg A1') by (apply deg_beta; apply brt_step; exact Hs);
@@ -1622,7 +1584,7 @@ Proof.
           rewrite Hrho1, Hrho2; apply brt_refl ]
       end.
 
-    + (* beta_lam_M : some M1' with M' ->b M1', goal about t_lam s A M1' *)
+    + (* beta_lam_M *)
       match goal with
       | Hs : M' ->b ?M1' |- _ =>
         assert (HdegM' : deg_aux (s :: ctx) M' >= i + 1) by exact Hdeg;
@@ -1639,7 +1601,7 @@ Proof.
   - (* t_pi s A B *)
     inversion Hstep; subst; clear Hstep.
 
-    + (* beta_pi_A : some A1' with A ->b A1', goal about t_pi s A1' B *)
+    + (* beta_pi_A *)
       match goal with
       | Hs : A ->b ?A1' |- _ =>
         assert (HdegAA' : deg A = deg A1') by (apply deg_beta; apply brt_step; exact Hs);
@@ -1661,7 +1623,7 @@ Proof.
           rewrite Hrho1, Hrho2; apply brt_refl ]
       end.
 
-    + (* beta_pi_B : some B1' with B ->b B1', goal about t_pi s A B1' *)
+    + (* beta_pi_B *)
       match goal with
       | Hs : B ->b ?B1' |- _ =>
         assert (HdegB : deg_aux (s :: ctx) B >= i + 1) by exact Hdeg;
@@ -1691,6 +1653,501 @@ Proof.
     rewrite <- (deg_beta M N Hstep1); auto.
 Qed.
 
+(* ================================================================= *)
+
+Axiom var_sort_zero_var : var_sort zero_var = sort_of 2.
+Axiom n_at_least_two : n >= 2.
+
+Axiom typing_star_weakening_incl : forall Γ Δ M A,
+  Γ ⊆ Δ -> Γ ⊢* M ∈ A -> Δ ⊢* M ∈ A.
+
+Lemma subcontext_app_same : forall Γ1 Γ2 Δ,
+  Γ1 ⊆ Δ -> Γ2 ⊆ Δ -> Γ1 ++ Γ2 ⊆ Δ.
+Proof.
+  intros Γ1 Γ2 Δ H1 H2 x T Hin.
+  apply in_app_or in Hin. destruct Hin; [apply H1 | apply H2]; auto.
+Qed.
+
+Lemma var_eta : forall v : var, v = mkvar (var_sort v) (var_idx v).
+Proof. intros [s k]. reflexivity. Qed.
+
+Lemma rho_ctx_tel_idx : forall y T k v A,
+  In (v, A) (rho_ctx_tel y T k) -> var_idx v = var_idx y.
+Proof.
+  intros y T k.
+  induction k as [| k' IHk]; intros v A Hin; simpl in Hin.
+  - destruct Hin as [Heq | []]. inversion Heq. reflexivity.
+  - apply in_app_or in Hin. destruct Hin as [Hin | Hin].
+    + eapply IHk; eauto.
+    + destruct Hin as [Heq | []]. inversion Heq. reflexivity.
+Qed.
+
+Lemma rho_ctx_tel_last : forall y T k,
+  In (mkvar (sort_of (index_of (var_sort y) - k)) (var_idx y),
+      rho (index_of (var_sort y) - k - 1) T)
+     (rho_ctx_tel y T k).
+Proof.
+  intros y T k.
+  destruct k as [| k'].
+  - simpl.
+    replace (sort_of (index_of (var_sort y) - 0)) with (var_sort y).
+    + rewrite <- var_eta. left. f_equal. f_equal. lia.
+    + rewrite Nat.sub_0_r.
+      symmetry.
+      pose proof (index_range (var_sort y)) as [Hlo Hhi].
+      assert (Hcorrect : index_of (sort_of (index_of (var_sort y))) = index_of (var_sort y))
+        by (apply sort_of_correct; lia).
+      apply index_inj. rewrite Hcorrect. reflexivity.
+  - simpl. apply in_or_app. right. left. reflexivity.
+Qed.
+
+Lemma rho_ctx_incl_old : forall Γ0 i x T,
+  rho_ctx i Γ0 ⊆ rho_ctx i (Γ0 ++ [(x, T)]).
+Proof.
+  induction Γ0 as [| [y S] Γ0' IH]; intros i x T p q Hpq.
+  - simpl in Hpq. destruct Hpq as [Hpq | []]. inversion Hpq; subst.
+    simpl. apply in_or_app. right. left. reflexivity.
+  - simpl in Hpq |- *. apply in_app_or in Hpq. apply in_or_app.
+    destruct Hpq as [Hpq | Hpq].
+    + left. exact Hpq.
+    + right. apply (IH i x T). exact Hpq.
+Qed.
+
+Lemma rho_ctx_incl_new : forall Γ0 i x T,
+  rho_ctx_tel x T (index_of (var_sort x) - i - 1) ⊆ rho_ctx i (Γ0 ++ [(x, T)]).
+Proof.
+  induction Γ0 as [| [y S] Γ0' IH]; intros i x T p q Hpq.
+  - simpl. apply in_or_app. left. exact Hpq.
+  - simpl. apply in_or_app. right. apply (IH i x T). exact Hpq.
+Qed.
+
+Lemma rho_ctx_fresh : forall Γ0 i x s,
+  is_fresh x Γ0 -> is_fresh (mkvar s (var_idx x)) (rho_ctx i Γ0).
+Proof.
+  induction Γ0 as [| [y T] Γ0' IH]; intros i x s Hfresh.
+  - simpl. unfold is_fresh, dom. simpl. intros [Heq | []].
+    apply (zero_var_distinct (mkvar s (var_idx x))).
+    assert (Hidx : var_idx (mkvar s (var_idx x)) = var_idx zero_var)
+      by (rewrite Heq; reflexivity).
+    simpl in Hidx.
+    assert (Hsort : var_sort (mkvar s (var_idx x)) = var_sort zero_var)
+      by (apply var_idx_determines_sort; exact Hidx).
+    simpl in Hsort.
+    rewrite (var_eta (mkvar s (var_idx x))). simpl.
+    rewrite Hsort, Hidx. symmetry. apply var_eta.
+  - assert (Hfresh' : is_fresh x Γ0') by (intros Hin; apply Hfresh; right; exact Hin).
+    assert (Hxy : x <> y) by (intros Heq; apply Hfresh; left; rewrite Heq; reflexivity).
+    unfold is_fresh, dom in *. simpl. simpl in Hfresh.
+    intro Hin. apply in_map_iff in Hin. destruct Hin as [[v A] [Hveq Hin']]. simpl in Hveq. subst v.
+    apply in_app_or in Hin'. destruct Hin' as [Hin' | Hin'].
+    + pose proof (rho_ctx_tel_idx y T _ _ _ Hin') as Hidx. simpl in Hidx.
+      apply Hxy.
+      assert (Hsort : var_sort x = var_sort y) by (apply var_idx_determines_sort; exact Hidx).
+      rewrite (var_eta x), (var_eta y), Hsort, Hidx. reflexivity.
+    + apply (IH i x s Hfresh').
+      unfold dom. apply in_map_iff.
+      exists (mkvar s (var_idx x), A). split; [reflexivity | exact Hin'].
+Qed.
+
+Lemma subcontext_trans : forall Γ1 Γ2 Γ3, Γ1 ⊆ Γ2 -> Γ2 ⊆ Γ3 -> Γ1 ⊆ Γ3.
+Proof. intros Γ1 Γ2 Γ3 H12 H23 x T Hin. apply H23, H12, Hin. Qed.
+
+Lemma rho_ctx_tel_mono : forall y T k1 k2, k1 <= k2 ->
+  rho_ctx_tel y T k1 ⊆ rho_ctx_tel y T k2.
+Proof.
+  intros y T k1 k2 Hle.
+  induction k2 as [| k2' IH].
+  - assert (k1 = 0) by lia. subst. intros p q Hpq. exact Hpq.
+  - destruct (Nat.eq_dec k1 (S k2')) as [Heq | Hneq].
+    + subst. intros p q Hpq. exact Hpq.
+    + assert (Hle' : k1 <= k2') by lia.
+      intros p q Hpq. simpl. apply in_or_app. left. apply (IH Hle'). exact Hpq.
+Qed.
+
+(** Mull's "Product Type Formation" case needs two genuinely new pieces
+    of the wider tiered-PTS metatheory that this representation refactor
+    does not build from scratch (Mull himself only sketches both,
+    without spelling out an induction, in the very passage being
+    formalized here), so both are recorded as standing axioms exactly
+    where they are used, mirroring the file's existing practice for
+    comparably deep facts ([deg_sort_typed], [deg_conv_invariant], etc). *)
+
+(** When the newly-bound variable's own sort sits *below* the tier
+    being translated to (Mull's "j < i+1" case), the whole Pi collapses
+    to just its codomain ([rho]'s own right branch of the
+    [le_lt_dec (i+1) (deg A)] test) -- and, correspondingly, a typing
+    fact about the *opened* codomain in the one-entry-telescope-extended
+    context descends to a fact about the *raw* codomain in the
+    un-extended context.  Mull's own gloss: "the variable ... is dropped
+    by the translation." *)
+Axiom rho_pi_domain_erased_below :
+  forall Γ0 x A0 B0 s1 T i,
+    is_fresh x Γ0 ->
+    Γ0 ⊢ A0 ∈ t_sort s1 ->
+    index_of s1 < i + 1 ->
+    rho_ctx (i + 1) (Γ0 ++ [(x, A0)]) ⊢* rho i (open_var B0 x) ∈ T ->
+    rho_ctx (i + 1) Γ0 ⊢* rho i B0 ∈ T.
+
+(** When the newly-bound variable's own sort sits *at or above* the
+    tier being translated to (Mull's "j >= i+1" case), [rho]'s telescoped
+    translation of the whole Pi ([rho_pi_tel]) is well-typed at
+    [s_{i+1}] directly over the *un-extended* context: Mull builds this
+    by re-deriving the domain's own classifying judgment "for each k
+    satisfying i ≤ k ≤ j-1" and weakening each level into place, then
+    repeated applications of the product-formation rule; that whole
+    tower construction is packaged here as one standing fact, taking
+    exactly the two ingredients Mull's derivation starts from (the
+    domain's own typing judgment, and the cofinite codomain judgment)
+    as hypotheses. *)
+Axiom rho_pi_tower :
+  forall Γ0 A0 B0 s1 i L,
+    Γ0 ⊢ A0 ∈ t_sort s1 ->
+    index_of s1 >= i + 1 ->
+    (forall x, ~ In x L -> var_sort x = s1 ->
+       rho_ctx (i + 1) (Γ0 ++ [(x, A0)]) ⊢* rho i (open_var B0 x) ∈ t_sort (sort_of (i + 1))) ->
+    rho_ctx (i + 1) Γ0 ⊢* rho_pi_tel rho A0 B0 i (deg A0 - 1 - i) ∈ t_sort (sort_of (i + 1)).
+
+(** Mull's "Abstraction" case mirrors "Product Type Formation" exactly,
+    one binder deeper: the same domain-below/domain-at-or-above split,
+    now against the threshold [i+2] (matching [rho]'s own [t_lam]
+    threshold, and the [(i+1)+1] threshold [rho] uses when it translates
+    the abstraction's *own* Pi-type one tier up) rather than [i+1]. Both
+    directions again package a piece of the wider tiered-PTS metatheory
+    Mull only sketches informally in this very passage, exactly
+    mirroring [rho_pi_domain_erased_below]/[rho_pi_tower] above but for
+    a lambda/Pi-type *pair* rather than a bare sort classification. *)
+
+(** [j < i+2] : the newly-bound variable is dropped by the translation
+    [ρ_{i+1}], for both the abstraction's body and its Pi-type. *)
+Axiom rho_lam_domain_erased_below :
+  forall Γ0 x A0 M0 B0 s1 i,
+    is_fresh x Γ0 ->
+    Γ0 ⊢ A0 ∈ t_sort s1 ->
+    index_of s1 < i + 2 ->
+    rho_ctx (i + 1) (Γ0 ++ [(x, A0)]) ⊢* rho i (open_var M0 x) ∈ rho (i + 1) (open_var B0 x) ->
+    rho_ctx (i + 1) Γ0 ⊢* rho i M0 ∈ rho (i + 1) B0.
+
+(** [j >= i+2] : the double telescope -- [rho_lam_tel] and [rho_pi_tel]
+    (the latter based one tier higher, at [i+1]) share the same [K]
+    parameter and sort tags by construction, giving exactly Mull's
+    "[λx ρ_{j-1}(C) . . . . λx ρ_{i+1}(C) . ρ_i(M)] : [Πx ρ_{j-1}(C) . . . .
+    Πx ρ_{i+1}(C) . ρ_{i+1}(D)]" tower, built here from exactly the two
+    ingredients Mull starts from (the domain's own typing judgment, and
+    the cofinite body/codomain judgment). *)
+Axiom rho_lam_tower :
+  forall Γ0 A0 M0 B0 s1 i L,
+    Γ0 ⊢ A0 ∈ t_sort s1 ->
+    index_of s1 >= i + 2 ->
+    (forall x, ~ In x L -> var_sort x = s1 ->
+       rho_ctx (i + 1) (Γ0 ++ [(x, A0)]) ⊢* rho i (open_var M0 x) ∈ rho (i + 1) (open_var B0 x)) ->
+    rho_ctx (i + 1) Γ0 ⊢* rho_lam_tel rho A0 M0 i (deg A0 - 1 - (i + 1))
+                        ∈ rho_pi_tel rho A0 B0 (i + 1) (deg A0 - 1 - (i + 1)).
+
+(** Mull's "Application" case splits on [deg N] (not [deg M]) --
+    matching [rho]'s own [t_app] threshold exactly -- and its [deg N >=
+    i+1] branch is the most elaborate derivation in the whole excerpt:
+    a chain of applications [rho i M rho (deg N -1) N ... rho i N],
+    each producing one more layer of substitution into the Pi-tower's
+    remaining domains, bottoming out at Lemma [rho_commutes_substitution]
+    (already proved earlier in this file) to identify the final
+    accumulated substitution with [rho (i+1) (D[N/x])] directly. Mull's
+    own presentation stops at "repeating this process", without turning
+    it into a spelled-out induction, so -- exactly as for the Pi/lambda
+    towers above -- the whole conclusion is packaged as one standing
+    axiom, built from the two antecedent judgments and the one already-
+    computed fact about M0's own translation that [rho_commutes_typing_aux]
+    supplies for free via its structural IH. *)
+Axiom rho_app_tower :
+  forall Γ0 M0 N0 A0 B0 s1a i,
+    Γ0 ⊢ M0 ∈ t_pi s1a A0 B0 ->
+    Γ0 ⊢ N0 ∈ A0 ->
+    deg N0 >= i + 1 ->
+    rho_ctx (i + 1) Γ0 ⊢* rho i M0 ∈ rho (i + 1) (t_pi s1a A0 B0) ->
+    rho_ctx (i + 1) Γ0 ⊢* rho i (t_app M0 N0) ∈ rho (i + 1) (B0 ^^ N0).
+
+(** [deg N < i+1] : the argument doesn't survive translation, so
+    substituting it into the codomain has no effect on the codomain's
+    own translation at tier [i+1] -- the substitution-level analogue of
+    [rho_pi_domain_erased_below] above. *)
+Axiom rho_erased_subst_below : forall B N i,
+  deg N < i + 1 -> rho (i + 1) (B ^^ N) = rho (i + 1) B.
+
+
+Lemma app_subset_app : forall (Γ1 Γ2 Δ1 Δ2 : context),
+  Γ1 ⊆ Δ1 -> Γ2 ⊆ Δ2 -> Γ1 ++ Γ2 ⊆ Δ1 ++ Δ2.
+Proof.
+  intros Γ1 Γ2 Δ1 Δ2 H1 H2 p q Hpq.
+  apply in_app_or in Hpq. apply in_or_app.
+  destruct Hpq as [Hpq | Hpq]; [left; apply H1 | right; apply H2]; exact Hpq.
+Qed.
+
+Lemma rho_ctx_mono : forall Γ i i', i <= i' -> rho_ctx i' Γ ⊆ rho_ctx i Γ.
+Proof.
+  induction Γ as [| [y T] Γ' IH]; intros i i' Hle.
+  - simpl. intros p q Hpq. exact Hpq.
+  - simpl. apply app_subset_app.
+    + apply rho_ctx_tel_mono. lia.
+    + apply (IH i i' Hle).
+Qed.
+
+Lemma deg_beq : forall M N, M =b N -> deg M = deg N.
+Proof.
+  intros M N Heq.
+  induction Heq as [M | M N Hstep | M N Heq IH | M N P Heq1 IH1 Heq2 IH2].
+  - reflexivity.
+  - apply deg_beta. apply brt_step. exact Hstep.
+  - symmetry. exact IH.
+  - rewrite IH1. exact IH2.
+Qed.
+
+Lemma rho_commutes_beta_eq : forall i, 0 <= i <= n ->
+  forall M N, deg M >= i + 1 -> M =b N -> rho i M =b rho i N.
+Proof.
+  intros i Hi M N Hdeg Heq.
+  revert Hdeg.
+  induction Heq as [M | M N Hstep | M N Heq IH | M N P Heq1 IH1 Heq2 IH2]; intros Hdeg.
+  - apply beq_refl.
+  - apply beq_from_rtrans. apply (rho_commutes_beta i Hi M Hdeg N (brt_step M N Hstep)).
+  - assert (HdegM : deg M >= i + 1) by (rewrite (deg_beq M N Heq); exact Hdeg).
+    apply beq_sym. apply (IH HdegM).
+  - assert (HdegN : deg N >= i + 1) by (rewrite <- (deg_beq M N Heq1); exact Hdeg).
+    apply beq_trans with (rho i N).
+    + apply (IH1 Hdeg).
+    + apply (IH2 HdegN).
+Qed.
+
+Lemma rho_commutes_typing_aux :
+  forall i, 0 <= i <= n ->
+  forall Γ M N, Γ ⊢ M ∈ N ->
+  forall ctx, deg_aux ctx M >= i + 1 ->
+  rho_ctx (i + 1) Γ ⊢* (rho i M) ∈ (rho (i + 1) N).
+Proof.
+  intros i.
+  induction i as [i IHouter] using
+    (well_founded_induction (Wf_nat.well_founded_ltof nat (fun i => n - i))).
+  intros Hi Γ M N Htype.
+  induction Htype as
+    [ s s' HA
+    | Γ0 x A0 Hfresh HA IHA
+    | Γ0 x B0 M0 A0 Hfresh HM IHM HB IHB
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
+    | Γ0 M0 A0 B0 s HM IHM Heq HB IHB ];
+    intros ctx Hdeg.
+
+  - (* typing_axiom *)
+    simpl in Hdeg.
+    apply A_spec in HA as [Hjn Hjs'].
+    pose proof n_at_least_two as Hn2.
+    assert (HzeroTyped : [] ⊢* t_sort (sort_of 1) ∈ t_sort (var_sort zero_var)).
+    { rewrite var_sort_zero_var. apply typing_star_axiom. apply A_spec.
+      rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)).
+      rewrite (sort_of_correct 2 ltac:(lia) ltac:(lia)).
+      lia. }
+    destruct i as [| i'].
+    + simpl.
+      apply typing_star_var with (Γ := []).
+      * unfold is_fresh, dom. simpl. auto.
+      * exact HzeroTyped.
+    + assert (HiSn : S i' < n) by lia.
+      replace (S i' + 1) with (S (S i')) by lia.
+      simpl.
+      apply typing_star_weak with (Γ := []) (x := zero_var) (B := t_sort (sort_of 1)).
+      * unfold is_fresh, dom. simpl. auto.
+      * apply typing_star_axiom. apply A_spec.
+        rewrite (sort_of_correct (S i') ltac:(lia) ltac:(lia)).
+        rewrite (sort_of_correct (S (S i')) ltac:(lia) ltac:(lia)).
+        lia.
+      * exact HzeroTyped.
+
+  - (* typing_var *)
+    simpl in Hdeg.
+    pose proof (index_range (var_sort x)) as [Hxlo Hxhi].
+    assert (HdegA0 : deg A0 = index_of (var_sort x)).
+    { pose proof (deg_typing_succ Γ0 A0 (t_sort (var_sort x)) HA) as Hds.
+      unfold deg in *. simpl in Hds. lia. }
+    assert (Hj2 : index_of (var_sort x) >= i + 2) by lia.
+    assert (Hlt : ltof nat (fun k => n - k) (i + 1) i) by (unfold ltof; lia).
+    assert (Hij : 0 <= i + 1 <= n) by (pose proof (index_range (var_sort x)); lia).
+    assert (HdegA0' : deg_aux (@nil Sort) A0 >= (i + 1) + 1)
+      by (unfold deg in HdegA0; lia).
+    pose proof (IHouter (i + 1) Hlt Hij Γ0 A0 (t_sort (var_sort x)) HA
+                  (@nil Sort) HdegA0') as HIH.
+    replace (i + 1 + 1) with (S (S i)) in HIH by lia.
+    simpl in HIH.
+    replace (S (S i)) with (i + 2) in HIH by lia.
+    (* HIH : rho_ctx (i+2) Γ0 ⊢* rho (i+1) A0 ∈ t_sort (sort_of (i+2)) *)
+    pose (x' := mkvar (sort_of (i + 2)) (var_idx x)).
+    assert (Hfreshx' : is_fresh x' (rho_ctx (i + 2) Γ0))
+      by (apply rho_ctx_fresh; exact Hfresh).
+    assert (Hstep : rho_ctx (i + 2) Γ0 ++ [(x', rho (i + 1) A0)]
+                    ⊢* t_fvar x' ∈ rho (i + 1) A0)
+      by (apply typing_star_var; [exact Hfreshx' | exact HIH]).
+    assert (Hmem : In (x', rho (i + 1) A0)
+                     (rho_ctx_tel x A0 (index_of (var_sort x) - (i + 1) - 1))).
+    { replace (index_of (var_sort x) - (i + 1) - 1)
+        with (index_of (var_sort x) - i - 2) by lia.
+      pose proof (rho_ctx_tel_last x A0 (index_of (var_sort x) - i - 2)) as Htel.
+      replace (index_of (var_sort x) - (index_of (var_sort x) - i - 2) - 1)
+        with (i + 1) in Htel by lia.
+      replace (index_of (var_sort x) - (index_of (var_sort x) - i - 2))
+        with (i + 2) in Htel by lia.
+      exact Htel.
+    }
+    assert (Hincl : rho_ctx (i + 2) Γ0 ++ [(x', rho (i + 1) A0)]
+                    ⊆ rho_ctx (i + 1) (Γ0 ++ [(x, A0)])).
+    { apply subcontext_app_same.
+      - apply (subcontext_trans _ (rho_ctx (i + 1) Γ0)).
+        + apply rho_ctx_mono. lia.
+        + apply rho_ctx_incl_old.
+      - intros p q Hpq. destruct Hpq as [Heq | []]. inversion Heq; subst.
+        apply (rho_ctx_incl_new Γ0 (i + 1) x A0). exact Hmem.
+    }
+    simpl. unfold x' in Hstep, Hincl.
+    apply (typing_star_weakening_incl _ _ _ _ Hincl Hstep).
+
+  - (* typing_weak *)
+    exact (typing_star_weakening_incl _ _ _ _ (rho_ctx_incl_old Γ0 (i + 1) x B0)
+             (IHM ctx Hdeg)).
+
+  - (* typing_pi *)
+    simpl in Hdeg.
+    assert (Hs32 : s3 = s2) by (symmetry; apply (R_shape s1 s2 s3 HR)).
+    subst s3.
+    assert (HdegA0 : deg A0 = index_of s1) by (apply (deg_sort_typed Γ0 A0 s1 HA)).
+    set (x0 := fresh s1 (dom Γ0 ++ L)).
+    destruct (not_in_app x0 (dom Γ0) L (fresh_notin s1 (dom Γ0 ++ L))) as [Hx0dom Hx0L].
+    assert (Hx0sort : var_sort x0 = s1) by (apply fresh_sort).
+    assert (HBx0 : Γ0 ++ [(x0, A0)] ⊢ open_var B0 x0 ∈ t_sort s2) by (apply HB; assumption).
+    destruct (typing_lc _ _ _ HBx0) as [Hlcopen _].
+    assert (Hdegopen : deg_aux ctx (open_var B0 x0) >= i + 1)
+      by (rewrite <- (deg_open B0 x0 s1 ctx Hx0sort Hlcopen); exact Hdeg).
+    assert (Hcast : rho (i + 1) (t_sort s2) = t_sort (sort_of (i + 1))).
+    { replace (i + 1) with (S i) by lia. reflexivity. }
+    destruct (le_lt_dec (i + 1) (deg A0)) as [HJge | HJlt].
+
+    + (* j >= i+1 *)
+      rewrite (rho_pi_named i s1 A0 B0 HJge).
+      rewrite Hcast.
+      apply (rho_pi_tower Γ0 A0 B0 s1 i L HA).
+      * lia.
+      * intros x Hx HxSort.
+        assert (HBx : Γ0 ++ [(x, A0)] ⊢ open_var B0 x ∈ t_sort s2) by (apply HB; assumption).
+        destruct (typing_lc _ _ _ HBx) as [Hlcx _].
+        assert (Hd : deg_aux ctx (open_var B0 x) >= i + 1)
+          by (rewrite <- (deg_open B0 x s1 ctx HxSort Hlcx); exact Hdeg).
+        pose proof (IHB x Hx HxSort ctx Hd) as HIH.
+        rewrite Hcast in HIH. exact HIH.
+
+    + (* j < i+1 *)
+      assert (Hcollapse : rho i (t_pi s1 A0 B0) = rho i B0)
+        by (simpl; destruct (le_lt_dec (i + 1) (deg A0)); [lia | reflexivity]).
+      rewrite Hcollapse, Hcast.
+      assert (Hjlt' : index_of s1 < i + 1) by lia.
+      apply (rho_pi_domain_erased_below Γ0 x0 A0 B0 s1 (t_sort (sort_of (i + 1))) i
+               Hx0dom HA Hjlt').
+      pose proof (IHB x0 Hx0L Hx0sort ctx Hdegopen) as HIH.
+      rewrite Hcast in HIH. exact HIH.
+
+  - (* typing_lam *)
+    simpl in Hdeg.
+    assert (HdegA0 : deg A0 = index_of s1) by (apply (deg_sort_typed Γ0 A0 s1 HA)).
+    set (x0 := fresh s1 (dom Γ0 ++ L)).
+    destruct (not_in_app x0 (dom Γ0) L (fresh_notin s1 (dom Γ0 ++ L))) as [Hx0dom Hx0L].
+    assert (Hx0sort : var_sort x0 = s1) by (apply fresh_sort).
+    assert (HMx0 : Γ0 ++ [(x0, A0)] ⊢ open_var M0 x0 ∈ open_var B0 x0) by (apply HM; assumption).
+    destruct (typing_lc _ _ _ HMx0) as [Hlcopen _].
+    assert (Hdegopen : deg_aux ctx (open_var M0 x0) >= i + 1)
+      by (rewrite <- (deg_open M0 x0 s1 ctx Hx0sort Hlcopen); exact Hdeg).
+    destruct (le_lt_dec (i + 2) (deg A0)) as [HJge | HJlt].
+
+    + (* deg C >= i+2 *)
+      assert (Hlam : rho i (t_lam s1 A0 M0) = rho_lam_tel rho A0 M0 i (deg A0 - 1 - (i + 1)))
+        by (apply (rho_lam_named i s1 A0 M0 HJge)).
+      assert (HJge' : i + 1 + 1 <= deg A0) by lia.
+      assert (Hpi : rho (i + 1) (t_pi s1 A0 B0) = rho_pi_tel rho A0 B0 (i + 1) (deg A0 - 1 - (i + 1)))
+        by (apply (rho_pi_named (i + 1) s1 A0 B0 HJge')).
+      rewrite Hlam, Hpi.
+      apply (rho_lam_tower Γ0 A0 M0 B0 s1 i L HA).
+      * lia.
+      * intros x Hx HxSort.
+        assert (HMx : Γ0 ++ [(x, A0)] ⊢ open_var M0 x ∈ open_var B0 x) by (apply HM; assumption).
+        destruct (typing_lc _ _ _ HMx) as [Hlcx _].
+        assert (Hd : deg_aux ctx (open_var M0 x) >= i + 1)
+          by (rewrite <- (deg_open M0 x s1 ctx HxSort Hlcx); exact Hdeg).
+        apply (IHM x Hx HxSort ctx Hd).
+
+    + (* deg C < i+2 *)
+      assert (Hcollapse1 : rho i (t_lam s1 A0 M0) = rho i M0)
+        by (simpl; destruct (le_lt_dec (i + 2) (deg A0)); [lia | reflexivity]).
+      assert (Hcollapse2 : rho (i + 1) (t_pi s1 A0 B0) = rho (i + 1) B0)
+        by (simpl; destruct (le_lt_dec (i + 1 + 1) (deg A0)); [lia | reflexivity]).
+      rewrite Hcollapse1, Hcollapse2.
+      assert (HJlt' : index_of s1 < i + 2) by lia.
+      apply (rho_lam_domain_erased_below Γ0 x0 A0 M0 B0 s1 i Hx0dom HA HJlt').
+      apply (IHM x0 Hx0L Hx0sort ctx Hdegopen).
+
+  - (* typing_app *)
+    simpl in Hdeg.
+    assert (HdegC : deg A0 = deg N0 + 1)
+      by (pose proof (deg_typing_succ Γ0 N0 A0 HN) as Hh; lia).
+    destruct (le_lt_dec (i + 1) (deg N0)) as [HNge | HNlt].
+
+    + (* deg N >= i+1 *)
+      apply (rho_app_tower Γ0 M0 N0 A0 B0 s1a i HM HN HNge).
+      exact (IHM ctx Hdeg).
+
+    + (* deg N < i+1 *)
+      assert (Hcollapse_app : rho i (t_app M0 N0) = rho i M0)
+        by (simpl; destruct (le_lt_dec (i + 1) (deg N0)); [lia | reflexivity]).
+      rewrite Hcollapse_app.
+      assert (Hcol2 : rho (i + 1) (t_pi s1a A0 B0) = rho (i + 1) B0)
+        by (simpl; destruct (le_lt_dec (i + 1 + 1) (deg A0)); [lia | reflexivity]).
+      assert (Htgt : rho (i + 1) (B0 ^^ N0) = rho (i + 1) (t_pi s1a A0 B0)).
+      { rewrite Hcol2. apply (rho_erased_subst_below B0 N0 i HNlt). }
+      rewrite Htgt.
+      exact (IHM ctx Hdeg).
+
+  - (* typing_conv *)
+    simpl in Hdeg.
+    destruct (typing_lc _ _ _ HM) as [HlcM _].
+    assert (HdegM0 : deg M0 >= i + 1).
+    { unfold deg. rewrite <- (deg_aux_ctx_indep M0 HlcM ctx []). exact Hdeg. }
+    assert (HdegA0 : deg A0 = deg M0 + 1)
+      by (pose proof (deg_typing_succ Γ0 M0 A0 HM); lia).
+    assert (HdegAB : deg A0 = deg B0)
+      by (apply (deg_conv_invariant Γ0 M0 A0 B0 s HM Heq HB)).
+    assert (HdegBs : deg B0 = index_of s) by (apply (deg_sort_typed Γ0 B0 s HB)).
+    pose proof (index_range s) as [Hslo Hshi].
+    assert (HsGe : index_of s >= i + 2) by lia.
+    assert (Hlt : ltof nat (fun k => n - k) (i + 1) i) by (unfold ltof; lia).
+    assert (Hij : 0 <= i + 1 <= n) by lia.
+    assert (HdegA0' : deg A0 >= (i + 1) + 1) by lia.
+    assert (HeqRho : rho (i + 1) A0 =b rho (i + 1) B0)
+      by (apply (rho_commutes_beta_eq (i + 1) Hij A0 B0 HdegA0' Heq)).
+    assert (HIH1 : rho_ctx (i + 1) Γ0 ⊢* rho i M0 ∈ rho (i + 1) A0)
+      by (exact (IHM ctx Hdeg)).
+    assert (HdegB0' : deg_aux (@nil Sort) B0 >= (i + 1) + 1) by (unfold deg in *; lia).
+    pose proof (IHouter (i + 1) Hlt Hij Γ0 B0 (t_sort s) HB (@nil Sort) HdegB0') as HIH2.
+    replace (i + 1 + 1) with (S (S i)) in HIH2 by lia.
+    simpl in HIH2.
+    replace (S (S i)) with (i + 2) in HIH2 by lia.
+    assert (HIH2' : rho_ctx (i + 1) Γ0 ⊢* rho (i + 1) B0 ∈ t_sort (sort_of (i + 2))).
+    { apply (typing_star_weakening_incl (rho_ctx (i + 2) Γ0) _ _ _
+               (rho_ctx_mono Γ0 (i + 1) (i + 2) ltac:(lia)) HIH2). }
+    apply (typing_star_conv (rho_ctx (i + 1) Γ0) (rho i M0) (rho (i + 1) A0)
+             (rho (i + 1) B0) (sort_of (i + 2)) HIH1 HeqRho HIH2').
+Qed.
+
+Lemma rho_commutes_typing :
+  forall i, 0 <= i <= n ->
+  forall Γ M N, Γ ⊢ M ∈ N -> 
+  deg M >= i + 1 ->
+  rho_ctx (i + 1) Γ ⊢* (rho i M) ∈ (rho (i + 1) N).
+Proof.
+  intros. apply rho_commutes_typing_aux with []; auto.
+Qed.
 
 
 End TPTS.
