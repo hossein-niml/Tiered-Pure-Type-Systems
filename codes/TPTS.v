@@ -2203,4 +2203,659 @@ Fixpoint gamma (M : term) : term :=
       t_app (gamma_app_tel (gamma M') N (deg N - 1)) (gamma N)
   end.
 
+(* ================================================================= *)
+(** * gamma commutes with typing *)
+
+Axiom var_sort_bullet_var : var_sort bullet_var = sort_of 1.
+Axiom var_sort_prod_var : var_sort prod_var = sort_of 1.
+Axiom prod_var_ne_bullet_var : prod_var <> bullet_var.
+
+(* prod : ΠA s1 . 0 → A → 0, requires the rule (s2,s1), which we assume appear in λS. *)
+Axiom R_s2_s1 : R (sort_of 2) (sort_of 1) (sort_of 1).
+
+Lemma var_sort_neq : forall x y : var, var_sort x <> var_sort y -> x <> y.
+Proof. intros x y Hne Heq. subst. apply Hne. reflexivity. Qed.
+
+Lemma sort_of_1_ne_2 : sort_of 1 <> sort_of 2.
+Proof.
+  pose proof n_at_least_two as Hn2.
+  intro Heq.
+  assert (H1 : index_of (sort_of 1) = 1) by (apply sort_of_correct; lia).
+  assert (H2 : index_of (sort_of 2) = 2) by (apply sort_of_correct; lia).
+  rewrite Heq in H1. lia.
+Qed.
+
+Lemma R_s1_s1_s1 : R (sort_of 1) (sort_of 1) (sort_of 1).
+Proof.
+  pose proof n_at_least_two as Hn2.
+  pose proof (is_full _ _ _ R_s2_s1) as Hfw.
+  unfold full_with in Hfw.
+  apply Hfw.
+  - rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)). lia.
+  - rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)). lia.
+  - rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)).
+    rewrite (sort_of_correct 2 ltac:(lia) ltac:(lia)).
+    lia.
+Qed.
+
+Definition T_prod : term :=
+  t_pi (sort_of 2) (t_sort (sort_of 1))
+    (t_pi (sort_of 1) (t_fvar zero_var)
+       (t_pi (sort_of 1) (t_bvar 1) (t_fvar zero_var))).
+
+Lemma subcontext_app_l : forall Γ Δ', Γ ⊆ Γ ++ Δ'.
+Proof. intros Γ Δ' x T Hin. apply in_or_app. left. exact Hin. Qed.
+
+Lemma subcontext_app_r : forall Γ Δ', Γ ⊆ Δ' ++ Γ.
+Proof. intros Γ Δ' x T Hin. apply in_or_app. right. exact Hin. Qed.
+
+Lemma zero_var_typed :
+  [(zero_var, t_sort (sort_of 1))] ⊢* t_fvar zero_var ∈ t_sort (sort_of 1).
+Proof.
+  pose proof n_at_least_two as Hn2.
+  apply (typing_star_var [] zero_var (t_sort (sort_of 1))).
+  - unfold is_fresh, dom. simpl. auto.
+  - rewrite var_sort_zero_var.
+    apply typing_star_axiom. apply A_spec.
+    rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)).
+    rewrite (sort_of_correct 2 ltac:(lia) ltac:(lia)).
+    lia.
+Qed.
+
+Lemma Tprod_typed :
+  [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var)]
+  ⊢* T_prod ∈ t_sort (sort_of 1).
+Proof.
+  pose proof n_at_least_two as Hn2.
+  pose proof zero_var_typed as Hz1.
+  assert (HtsortA : [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var)]
+                     ⊢* t_sort (sort_of 1) ∈ t_sort (sort_of 2)).
+  { apply (typing_star_weakening_incl []).
+    - intros x T [].
+    - apply typing_star_axiom. apply A_spec.
+      rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)).
+      rewrite (sort_of_correct 2 ltac:(lia) ltac:(lia)).
+      lia. }
+  apply (typing_star_pi
+           [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var)]
+           (t_sort (sort_of 1))
+           (t_pi (sort_of 1) (t_fvar zero_var)
+              (t_pi (sort_of 1) (t_bvar 1) (t_fvar zero_var)))
+           (sort_of 2) (sort_of 1) (sort_of 1)
+           (dom [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var)])).
+  - exact HtsortA.
+  - intros x Hx Hxsort.
+    unfold open_var. simpl.
+    assert (Hx_typed :
+              [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var);
+               (x, t_sort (sort_of 1))]
+              ⊢* t_fvar x ∈ t_sort (sort_of 1)).
+    { apply (typing_star_var
+               [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var)]
+               x (t_sort (sort_of 1))).
+      - exact Hx.
+      - rewrite Hxsort. exact HtsortA. }
+    apply (typing_star_pi
+             [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var);
+              (x, t_sort (sort_of 1))]
+             (t_fvar zero_var)
+             (t_pi (sort_of 1) (t_fvar x) (t_fvar zero_var))
+             (sort_of 1) (sort_of 1) (sort_of 1) []).
+    + apply (typing_star_weakening_incl [(zero_var, t_sort (sort_of 1))]).
+      * apply (subcontext_app_l [(zero_var, t_sort (sort_of 1))]
+                 [(bullet_var, t_fvar zero_var); (x, t_sort (sort_of 1))]).
+      * exact Hz1.
+    + intros y Hy Hysort.
+      unfold open_var. simpl.
+      apply (typing_star_pi
+               [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var);
+                (x, t_sort (sort_of 1)); (y, t_fvar zero_var)]
+               (t_fvar x) (t_fvar zero_var) (sort_of 1) (sort_of 1) (sort_of 1) []).
+      * apply (typing_star_weakening_incl
+                 [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var);
+                  (x, t_sort (sort_of 1))]).
+        -- apply (subcontext_app_l
+                     [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var);
+                      (x, t_sort (sort_of 1))]
+                     [(y, t_fvar zero_var)]).
+        -- exact Hx_typed.
+      * intros z Hz Hzsort.
+        unfold open_var. simpl.
+        apply (typing_star_weakening_incl [(zero_var, t_sort (sort_of 1))]).
+        -- apply (subcontext_app_l [(zero_var, t_sort (sort_of 1))]
+                     [(bullet_var, t_fvar zero_var); (x, t_sort (sort_of 1));
+                      (y, t_fvar zero_var); (z, t_fvar x)]).
+        -- exact Hz1.
+      * split; [exact R_s1_s1_s1 |].
+        rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)). lia.
+    + split; [exact R_s1_s1_s1 |].
+      rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)). lia.
+  - split; [exact R_s2_s1 |].
+    rewrite (sort_of_correct 1 ltac:(lia) ltac:(lia)).
+    rewrite (sort_of_correct 2 ltac:(lia) ltac:(lia)).
+    lia.
+Qed.
+
+Lemma bullet_typed : 
+  [(zero_var, t_sort (sort_of 1));
+   (bullet_var, t_fvar zero_var);
+   (prod_var, T_prod)] ⊢* t_fvar bullet_var ∈ t_fvar zero_var.
+Proof.
+  pose proof n_at_least_two as Hn2.
+  pose proof zero_var_typed as Hz1.
+  assert (Hb1 : [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var)]
+                ⊢* t_fvar bullet_var ∈ t_fvar zero_var).
+  { apply (typing_star_var [(zero_var, t_sort (sort_of 1))] bullet_var (t_fvar zero_var)).
+    - unfold is_fresh, dom. simpl.
+      intros [Heq | []].
+      apply (var_sort_neq bullet_var zero_var); auto.
+      rewrite var_sort_bullet_var, var_sort_zero_var. exact sort_of_1_ne_2.
+    - rewrite var_sort_bullet_var. exact Hz1. }
+  apply (typing_star_weak
+           [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var)]
+           prod_var T_prod (t_fvar bullet_var) (t_fvar zero_var)).
+  - unfold is_fresh, dom. simpl.
+    intros [Heq | [Heq | []]].
+    + apply (var_sort_neq prod_var zero_var); auto.
+      rewrite var_sort_prod_var, var_sort_zero_var. exact sort_of_1_ne_2.
+    + apply prod_var_ne_bullet_var; auto.
+  - exact Hb1.
+  - rewrite var_sort_prod_var. exact Tprod_typed.
+Qed.
+
+Lemma zero_var_typed_Δ :
+  [(zero_var, t_sort (sort_of 1));
+   (bullet_var, t_fvar zero_var);
+   (prod_var, T_prod)] ⊢* t_fvar zero_var ∈ t_sort (sort_of 1).
+Proof.
+  apply (typing_star_weakening_incl [(zero_var, t_sort (sort_of 1))]).
+  - apply (subcontext_app_l [(zero_var, t_sort (sort_of 1))]
+             [(bullet_var, t_fvar zero_var); (prod_var, T_prod)]).
+  - exact zero_var_typed.
+Qed.
+
+Lemma prod_var_typed_Δ :
+  [(zero_var, t_sort (sort_of 1));
+   (bullet_var, t_fvar zero_var);
+   (prod_var, T_prod)] ⊢* t_fvar prod_var ∈ T_prod.
+Proof.
+  apply (typing_star_var [(zero_var, t_sort (sort_of 1)); (bullet_var, t_fvar zero_var)]
+           prod_var T_prod).
+  - unfold is_fresh, dom. simpl.
+    intros [Heq | [Heq | []]].
+    + apply (var_sort_neq prod_var zero_var); auto.
+      rewrite var_sort_prod_var, var_sort_zero_var. exact sort_of_1_ne_2.
+    + apply prod_var_ne_bullet_var; auto.
+  - rewrite var_sort_prod_var. exact Tprod_typed.
+Qed.
+
+
+Axiom gamma_pi_tower :
+  forall Δ0 Γ0 A0 s1,
+    Δ0 ⊢* t_fvar zero_var ∈ t_sort (sort_of 1) ->
+    Γ0 ⊢ A0 ∈ t_sort s1 ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma_pi_tel A0 (t_fvar zero_var) (deg A0 - 1) ∈ t_sort (sort_of 1).
+
+Axiom gamma_lam_tower :
+  forall Δ0 Γ0 A0 B0 s1 L,
+    Δ0 ⊢* t_fvar zero_var ∈ t_sort (sort_of 1) ->
+    Γ0 ⊢ A0 ∈ t_sort s1 ->
+    (forall x, ~ In x L -> var_sort x = s1 ->
+       Δ0 ++ rho_ctx 0 (Γ0 ++ [(x, A0)]) ⊢* gamma (open_var B0 x) ∈ t_fvar zero_var) ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma_lam_tel A0 (gamma B0) (deg A0 - 1)
+                        ∈ gamma_pi_tel A0 (t_fvar zero_var) (deg A0 - 1).
+
+(* Mull: the final "two applications" assembling prod(piTel)(gammaA)(lamterm).
+   T_prod is a fixed closed template, so this is a mechanical (if tedious)
+   substitution fact; taken as given at the same trust level as the tower
+   axioms above. *)
+Lemma gamma_pi_tel_eq_rho_pi_tel : forall A B k,
+  gamma_pi_tel A (rho 0 B) k = rho_pi_tel rho A B 0 k.
+Proof.
+  intros A B k. induction k as [| k' IH].
+  - reflexivity.
+  - simpl. rewrite IH. reflexivity.
+Qed.
+
+Lemma rho0_pi_eq_gamma_pi_tel : forall Γ0 A0 B0 s1,
+  Γ0 ⊢ A0 ∈ t_sort s1 ->
+  rho 0 (t_pi s1 A0 B0) = gamma_pi_tel A0 (rho 0 B0) (deg A0 - 1).
+Proof.
+  intros Γ0 A0 B0 s1 HA.
+  pose proof (deg_sort_typed Γ0 A0 s1 HA) as HdegA0.
+  pose proof (index_range s1) as [Hlo Hhi].
+  assert (Hge : 0 + 1 <= deg A0) by lia.
+  rewrite (rho_pi_named 0 s1 A0 B0 Hge).
+  replace (deg A0 - 1 - 0) with (deg A0 - 1) by lia.
+  symmetry. apply gamma_pi_tel_eq_rho_pi_tel.
+Qed.
+
+Axiom gamma_lam_tower_D :
+  forall Δ0 Γ0 A0 M0 B0 s1 L,
+    Γ0 ⊢ A0 ∈ t_sort s1 ->
+    (forall x, ~ In x L -> var_sort x = s1 ->
+       Δ0 ++ rho_ctx 0 (Γ0 ++ [(x, A0)]) ⊢* gamma (open_var M0 x) ∈ rho 0 (open_var B0 x)) ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma_lam_tel A0 (gamma M0) (deg A0 - 1)
+                        ∈ gamma_pi_tel A0 (rho 0 B0) (deg A0 - 1).
+
+Axiom gamma_app_tower :
+  forall Δ0 Γ0 M0 N0 A0 B0 s1a,
+    Γ0 ⊢ M0 ∈ t_pi s1a A0 B0 ->
+    Γ0 ⊢ N0 ∈ A0 ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma M0 ∈ rho 0 (t_pi s1a A0 B0) ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma N0 ∈ rho 0 A0 ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* t_app (gamma_app_tel (gamma M0) N0 (deg N0 - 1)) (gamma N0)
+                        ∈ rho 0 (B0 ^^ N0).
+
+(* Mull: weakening by a fresh z:0, then abstraction and application to
+   cancel the dummy domain back out -- taken as given, at the same trust
+   level as the other assembly axioms above. *)
+Axiom gamma_lam_applied :
+  forall Δ0 Γ0 A0 lamTerm piType,
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* lamTerm ∈ piType ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* piType ∈ t_sort (sort_of 1) ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma A0 ∈ t_fvar zero_var ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢*
+      t_app (t_lam (sort_of 1) (t_fvar zero_var) lamTerm) (gamma A0) ∈ piType.
+
+Axiom gamma_prod_applied :
+  forall Δ0 Γ0 A0 lamterm,
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* t_fvar prod_var ∈ T_prod ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma_pi_tel A0 (t_fvar zero_var) (deg A0 - 1) ∈ t_sort (sort_of 1) ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma A0 ∈ t_fvar zero_var ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢* lamterm ∈ gamma_pi_tel A0 (t_fvar zero_var) (deg A0 - 1) ->
+    Δ0 ++ rho_ctx 0 Γ0 ⊢*
+      t_app (t_app (t_app (t_fvar prod_var) (gamma_pi_tel A0 (t_fvar zero_var) (deg A0 - 1)))
+                   (gamma A0))
+            lamterm
+      ∈ t_fvar zero_var.
+
+Lemma gamma_commutes_typing :
+  forall Γ M N, Γ ⊢ M ∈ N ->
+  [(zero_var, t_sort (sort_of 1));
+   (bullet_var, t_fvar zero_var);
+   (prod_var, T_prod)] ++ rho_ctx 0 Γ ⊢* gamma M ∈ rho 0 N.
+Proof.
+  intros Γ M N Htype. 
+  remember ([(zero_var, t_sort (sort_of 1)); 
+             (bullet_var, t_fvar zero_var); 
+             (prod_var, T_prod)]) as Δ.
+  induction Htype as
+    [ s s' HA
+    | Γ0 x A0 Hfresh HA IHA
+    | Γ0 x B0 M0 A0 Hfresh HM IHM HB IHB
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
+    | Γ0 M0 A0 B0 s HM IHM Heq HB IHB ].
+
+  - (* typing_axiom *)
+    simpl.
+    apply (typing_star_weakening_incl Δ).
+    + apply (subcontext_app_l Δ (rho_ctx 0 [])).
+    + rewrite HeqΔ. exact bullet_typed.
+
+  - (* typing_var *)
+    pose proof (index_range (var_sort x)) as [Hxlo Hxhi].
+    pose proof (deg_sort_typed Γ0 A0 (var_sort x) HA) as HdegA0.
+    assert (Hdeg1 : deg A0 >= 0 + 1) by lia.
+    pose proof (rho_commutes_typing 0 (ltac:(lia)) Γ0 A0 (t_sort (var_sort x)) HA Hdeg1) as HB1.
+    simpl in HB1.
+    assert (HB0 : rho_ctx 0 Γ0 ⊢* rho 0 A0 ∈ t_sort (sort_of 1))
+      by (apply (typing_star_weakening_incl (rho_ctx 1 Γ0) (rho_ctx 0 Γ0));
+          [apply rho_ctx_mono; lia | exact HB1]).
+    pose (x' := mkvar (sort_of 1) (var_idx x)).
+    assert (Hxnz : x <> zero_var)
+      by (apply (typing_avoids_zero_var (Γ0 ++ [(x, A0)]) (t_fvar x) A0
+                   (typing_var Γ0 x A0 Hfresh HA) x A0);
+          apply in_or_app; right; left; reflexivity).
+    assert (Hfreshx' : is_fresh x' (rho_ctx 0 Γ0))
+      by (apply rho_ctx_fresh; [exact Hxnz | exact Hfresh]).
+    assert (Hstep : rho_ctx 0 Γ0 ++ [(x', rho 0 A0)] ⊢* t_fvar x' ∈ rho 0 A0)
+      by (apply typing_star_var; [exact Hfreshx' | exact HB0]).
+    assert (Hmem : In (x', rho 0 A0)
+                     (rho_ctx_tel x A0 (index_of (var_sort x) - 0 - 1))).
+    { pose proof (rho_ctx_tel_last x A0 (index_of (var_sort x) - 0 - 1)) as Htel.
+      replace (index_of (var_sort x) - (index_of (var_sort x) - 0 - 1))
+        with 1 in Htel by lia.
+      simpl in Htel.
+      exact Htel.
+    }
+    assert (Hincl : rho_ctx 0 Γ0 ++ [(x', rho 0 A0)]
+                    ⊆ rho_ctx 0 (Γ0 ++ [(x, A0)])).
+    { apply subcontext_app_same.
+      - apply rho_ctx_incl_old.
+      - intros p q Hpq. destruct Hpq as [Heq | []]. inversion Heq; subst.
+        apply (rho_ctx_incl_new Γ0 0 x A0). exact Hmem.
+    }
+    assert (Hfinal : rho_ctx 0 (Γ0 ++ [(x, A0)]) ⊢* t_fvar x' ∈ rho 0 A0)
+      by (apply (typing_star_weakening_incl _ _ _ _ Hincl Hstep)).
+    simpl. unfold x' in Hfinal.
+    apply (typing_star_weakening_incl (rho_ctx 0 (Γ0 ++ [(x, A0)]))
+             (Δ ++ rho_ctx 0 (Γ0 ++ [(x, A0)]))).
+    + apply (subcontext_app_r (rho_ctx 0 (Γ0 ++ [(x, A0)])) Δ).
+    + exact Hfinal.
+
+  - (* typing_weak *)
+    apply (typing_star_weakening_incl (Δ ++ rho_ctx 0 Γ0)
+             (Δ ++ rho_ctx 0 (Γ0 ++ [(x, B0)]))).
+    + apply app_subset_app.
+      * intros p q Hpq. exact Hpq.
+      * apply rho_ctx_incl_old.
+    + exact IHM.
+
+  - (* typing_pi *)
+    simpl.
+    assert (HzeroΔ0 : Δ ⊢* t_fvar zero_var ∈ t_sort (sort_of 1))
+      by (rewrite HeqΔ; exact zero_var_typed_Δ).
+    assert (HProdTyped : Δ ++ rho_ctx 0 Γ0 ⊢* t_fvar prod_var ∈ T_prod).
+    { apply (typing_star_weakening_incl Δ).
+      - apply (subcontext_app_l Δ (rho_ctx 0 Γ0)).
+      - rewrite HeqΔ. exact prod_var_typed_Δ. }
+    assert (HpiTel : Δ ++ rho_ctx 0 Γ0 ⊢* gamma_pi_tel A0 (t_fvar zero_var) (deg A0 - 1)
+                      ∈ t_sort (sort_of 1))
+      by (apply (gamma_pi_tower Δ Γ0 A0 s1 HzeroΔ0 HA)).
+    assert (HgammaA : Δ ++ rho_ctx 0 Γ0 ⊢* gamma A0 ∈ t_fvar zero_var)
+      by (simpl in IHA; exact IHA).
+    assert (HBcofin : forall x, ~ In x L -> var_sort x = s1 ->
+               Δ ++ rho_ctx 0 (Γ0 ++ [(x, A0)]) ⊢* gamma (open_var B0 x) ∈ t_fvar zero_var).
+    { intros x Hx Hxsort. pose proof (IHB x Hx Hxsort) as H. simpl in H. exact H. }
+    assert (HlamTel : Δ ++ rho_ctx 0 Γ0 ⊢* gamma_lam_tel A0 (gamma B0) (deg A0 - 1)
+                        ∈ gamma_pi_tel A0 (t_fvar zero_var) (deg A0 - 1))
+      by (apply (gamma_lam_tower Δ Γ0 A0 B0 s1 L HzeroΔ0 HA HBcofin)).
+    apply (gamma_prod_applied Δ Γ0 A0 (gamma_lam_tel A0 (gamma B0) (deg A0 - 1))
+             HProdTyped HpiTel HgammaA HlamTel).
+
+  - (* typing_lam *)
+    rewrite (rho0_pi_eq_gamma_pi_tel Γ0 A0 B0 s1 HA).
+    assert (HdegPi1 : deg (t_pi s1 A0 B0) >= 0 + 1)
+      by (pose proof (index_range s3) as [Hlo Hhi];
+          pose proof (deg_sort_typed Γ0 (t_pi s1 A0 B0) s3 HPi); lia).
+    pose proof (rho_commutes_typing 0 (ltac:(lia)) Γ0 (t_pi s1 A0 B0) (t_sort s3) HPi HdegPi1)
+      as HpiTelD1.
+    simpl in HpiTelD1.
+    assert (HpiTelD0 : rho_ctx 0 Γ0 ⊢* rho 0 (t_pi s1 A0 B0) ∈ t_sort (sort_of 1))
+      by (apply (typing_star_weakening_incl (rho_ctx 1 Γ0) (rho_ctx 0 Γ0));
+          [apply rho_ctx_mono; lia | exact HpiTelD1]).
+    rewrite (rho0_pi_eq_gamma_pi_tel Γ0 A0 B0 s1 HA) in HpiTelD0.
+    assert (HpiTelD : Δ ++ rho_ctx 0 Γ0 ⊢* gamma_pi_tel A0 (rho 0 B0) (deg A0 - 1)
+                        ∈ t_sort (sort_of 1))
+      by (apply (typing_star_weakening_incl (rho_ctx 0 Γ0) (Δ ++ rho_ctx 0 Γ0));
+          [apply (subcontext_app_r (rho_ctx 0 Γ0) Δ) | exact HpiTelD0]).
+    assert (HgammaA : Δ ++ rho_ctx 0 Γ0 ⊢* gamma A0 ∈ t_fvar zero_var)
+      by (simpl in IHA; exact IHA).
+    assert (HMcofin : forall x, ~ In x L -> var_sort x = s1 ->
+               Δ ++ rho_ctx 0 (Γ0 ++ [(x, A0)]) ⊢* gamma (open_var M0 x) ∈ rho 0 (open_var B0 x)).
+    { intros x Hx Hxsort. exact (IHM x Hx Hxsort). }
+    assert (HlamTelD : Δ ++ rho_ctx 0 Γ0 ⊢* gamma_lam_tel A0 (gamma M0) (deg A0 - 1)
+                        ∈ gamma_pi_tel A0 (rho 0 B0) (deg A0 - 1))
+      by (apply (gamma_lam_tower_D Δ Γ0 A0 M0 B0 s1 L HA HMcofin)).
+    apply (gamma_lam_applied Δ Γ0 A0
+             (gamma_lam_tel A0 (gamma M0) (deg A0 - 1))
+             (gamma_pi_tel A0 (rho 0 B0) (deg A0 - 1))
+             HlamTelD HpiTelD HgammaA).
+
+  - (* typing_app *)
+    apply (gamma_app_tower Δ Γ0 M0 N0 A0 B0 s1a HM HN IHM IHN).
+
+  - (* typing_conv *)
+    assert (HdegA0 : deg A0 >= 0 + 1)
+      by (pose proof (deg_typing_succ Γ0 M0 A0 HM); lia).
+    assert (HeqRho : rho 0 A0 =b rho 0 B0)
+      by (apply (rho_commutes_beta_eq 0 (ltac:(lia)) A0 B0 HdegA0 Heq)).
+    assert (HdegB1 : deg B0 >= 0 + 1)
+      by (pose proof (index_range s) as [Hlo Hhi];
+          pose proof (deg_sort_typed Γ0 B0 s HB); lia).
+    pose proof (rho_commutes_typing 0 (ltac:(lia)) Γ0 B0 (t_sort s) HB HdegB1) as HrhoB1.
+    simpl in HrhoB1.
+    assert (HrhoB0 : rho_ctx 0 Γ0 ⊢* rho 0 B0 ∈ t_sort (sort_of 1))
+      by (apply (typing_star_weakening_incl (rho_ctx 1 Γ0) (rho_ctx 0 Γ0));
+          [apply rho_ctx_mono; lia | exact HrhoB1]).
+    assert (HrhoB0Δ : Δ ++ rho_ctx 0 Γ0 ⊢* rho 0 B0 ∈ t_sort (sort_of 1))
+      by (apply (typing_star_weakening_incl (rho_ctx 0 Γ0) (Δ ++ rho_ctx 0 Γ0));
+          [apply (subcontext_app_r (rho_ctx 0 Γ0) Δ) | exact HrhoB0]).
+    apply (typing_star_conv (Δ ++ rho_ctx 0 Γ0) (gamma M0) (rho 0 A0) (rho 0 B0)
+             (sort_of 1) IHM HeqRho HrhoB0Δ).
+Qed.
+
+(* ================================================================= *)
+(** * gamma commutes with substitution *)
+
+Fixpoint gamma_subst_tel (M B : term) (varidx K : nat) : term :=
+  match K with
+  | O    => M
+  | S K' => gamma_subst_tel (M ⁅ mkvar (sort_of (K' + 2)) varidx ≔ rho K' B ⁆) B varidx K'
+  end.
+
+Definition gamma_subst (A B : term) (x : var) : term :=
+  gamma_subst_tel (gamma A) B (var_idx x) (index_of (var_sort x) - 1)
+    ⁅ mkvar (sort_of 1) (var_idx x) ≔ gamma B ⁆.
+
+Lemma sort_of_1_ne_sort_of_m : forall m, 2 <= m -> m < n + 1 -> sort_of 1 <> sort_of m.
+Proof.
+  intros m Hm2 Hmn Heq.
+  assert (H1 : index_of (sort_of 1) = 1) by (apply sort_of_correct; lia).
+  assert (H2 : index_of (sort_of m) = m) by (apply sort_of_correct; lia).
+  rewrite Heq in H1. lia.
+Qed.
+
+Lemma gamma_subst_tel_fvar_const : forall C varidx B K,
+  (forall m, 2 <= m -> m <= K + 1 -> mkvar (sort_of m) varidx <> C) ->
+  gamma_subst_tel (t_fvar C) B varidx K = t_fvar C.
+Proof.
+  intros C varidx B K.
+  induction K as [| K' IH]; intros Hm.
+  - reflexivity.
+  - simpl.
+    destruct (eq_var_dec C (mkvar (sort_of (K' + 2)) varidx)) as [Heq | Hneq].
+    + exfalso. apply (Hm (K' + 2) ltac:(lia) ltac:(lia)). symmetry. exact Heq.
+    + apply IH. intros m Hm2 Hm3. apply Hm; lia.
+Qed.
+
+Lemma gamma_subst_tel_bvar_const : forall k0 varidx B K,
+  gamma_subst_tel (t_bvar k0) B varidx K = t_bvar k0.
+Proof.
+  intros k0 varidx B K.
+  induction K as [| K' IH].
+  - reflexivity.
+  - simpl. exact IH.
+Qed.
+
+Lemma gamma_subst_tel_app_commute : forall P Q B varidx K,
+  gamma_subst_tel (t_app P Q) B varidx K
+  = t_app (gamma_subst_tel P B varidx K) (gamma_subst_tel Q B varidx K).
+Proof.
+  intros P Q B varidx K. revert P Q.
+  induction K as [| K' IH]; intros P Q.
+  - reflexivity.
+  - simpl. apply IH.
+Qed.
+
+Lemma gamma_subst_tel_lam_commute : forall s' A' M' B varidx K,
+  gamma_subst_tel (t_lam s' A' M') B varidx K
+  = t_lam s' (gamma_subst_tel A' B varidx K) (gamma_subst_tel M' B varidx K).
+Proof.
+  intros s' A' M' B varidx K. revert A' M'.
+  induction K as [| K' IH]; intros A' M'.
+  - reflexivity.
+  - simpl. apply IH.
+Qed.
+
+Lemma gamma_subst_zero_var_const : forall B x,
+  var_idx zero_var <> var_idx x ->
+  gamma_subst_tel (t_fvar zero_var) B (var_idx x) (index_of (var_sort x) - 1)
+    ⁅ mkvar (sort_of 1) (var_idx x) ≔ gamma B ⁆
+  = t_fvar zero_var.
+Proof.
+  intros B x Hidxz.
+  assert (Hconst : gamma_subst_tel (t_fvar zero_var) B (var_idx x) (index_of (var_sort x) - 1) = t_fvar zero_var).
+  { apply gamma_subst_tel_fvar_const.
+    intros m Hm2 Hm3 Heq.
+    apply Hidxz.
+    assert (Hveq : var_idx zero_var = var_idx (mkvar (sort_of m) (var_idx x)))
+      by (rewrite Heq at 1; reflexivity).
+    simpl in Hveq. exact Hveq. }
+  rewrite Hconst. simpl.
+  destruct (eq_var_dec zero_var (mkvar (sort_of 1) (var_idx x))) as [Heq | Hneq].
+  + exfalso. apply Hidxz.
+    assert (Hveq : var_idx zero_var = var_idx (mkvar (sort_of 1) (var_idx x)))
+      by (rewrite Heq at 1; reflexivity).
+    simpl in Hveq. exact Hveq.
+  + reflexivity.
+Qed.
+
+Lemma gamma_subst_prod_var_const : forall B x,
+  var_idx prod_var <> var_idx x ->
+  gamma_subst_tel (t_fvar prod_var) B (var_idx x) (index_of (var_sort x) - 1)
+    ⁅ mkvar (sort_of 1) (var_idx x) ≔ gamma B ⁆
+  = t_fvar prod_var.
+Proof.
+  intros B x Hidxp.
+  assert (Hconst : gamma_subst_tel (t_fvar prod_var) B (var_idx x) (index_of (var_sort x) - 1) = t_fvar prod_var).
+  { apply gamma_subst_tel_fvar_const.
+    intros m Hm2 Hm3 Heq.
+    apply Hidxp.
+    assert (Hveq : var_idx prod_var = var_idx (mkvar (sort_of m) (var_idx x)))
+      by (rewrite Heq at 1; reflexivity).
+    simpl in Hveq. exact Hveq. }
+  rewrite Hconst. simpl.
+  destruct (eq_var_dec prod_var (mkvar (sort_of 1) (var_idx x))) as [Heq | Hneq].
+  + exfalso. apply Hidxp.
+    assert (Hveq : var_idx prod_var = var_idx (mkvar (sort_of 1) (var_idx x)))
+      by (rewrite Heq at 1; reflexivity).
+    simpl in Hveq. exact Hveq.
+  + reflexivity.
+Qed.
+
+Axiom gamma_pi_tel_commutes_subst : forall C B x KC,
+  x <> zero_var -> 1 <= index_of (var_sort x) <= n ->
+  deg B = index_of (var_sort x) - 1 -> lc B ->
+  gamma_subst_tel (gamma_pi_tel C (t_fvar zero_var) KC) B (var_idx x) (index_of (var_sort x) - 1)
+    ⁅ mkvar (sort_of 1) (var_idx x) ≔ gamma B ⁆
+  = gamma_pi_tel (C ⁅ x ≔ B ⁆) (t_fvar zero_var) KC.
+
+Axiom gamma_lam_tel_commutes_subst : forall C D B x KC,
+  x <> zero_var -> 1 <= index_of (var_sort x) <= n ->
+  deg B = index_of (var_sort x) - 1 -> lc B ->
+  gamma_subst_tel (gamma_lam_tel C D KC) B (var_idx x) (index_of (var_sort x) - 1)
+    ⁅ mkvar (sort_of 1) (var_idx x) ≔ gamma B ⁆
+  = gamma_lam_tel (C ⁅ x ≔ B ⁆)
+      (gamma_subst_tel D B (var_idx x) (index_of (var_sort x) - 1)
+         ⁅ mkvar (sort_of 1) (var_idx x) ≔ gamma B ⁆)
+      KC.
+
+Axiom gamma_app_tel_commutes_subst : forall MG C B x KC,
+  x <> zero_var -> 1 <= index_of (var_sort x) <= n ->
+  deg B = index_of (var_sort x) - 1 -> lc B ->
+  gamma_subst_tel (gamma_app_tel MG C KC) B (var_idx x) (index_of (var_sort x) - 1)
+    ⁅ mkvar (sort_of 1) (var_idx x) ≔ gamma B ⁆
+  = gamma_app_tel
+      (gamma_subst_tel MG B (var_idx x) (index_of (var_sort x) - 1)
+         ⁅ mkvar (sort_of 1) (var_idx x) ≔ gamma B ⁆)
+      (C ⁅ x ≔ B ⁆) KC.
+
+Lemma gamma_commutes_substitution_aux :
+  forall x, x <> bullet_var -> x <> zero_var -> x <> prod_var ->
+  1 <= index_of (var_sort x) <= n ->
+  forall A B, deg B = index_of (var_sort x) - 1 -> lc B ->
+  gamma (A ⁅ x ≔ B ⁆) = gamma_subst A B x.
+Proof.
+  intros x Hxb Hxz Hxp Hxrange A B HdegB HlcB.
+  pose proof n_at_least_two as Hn2.
+  assert (Hidx : var_idx bullet_var <> var_idx x)
+    by (apply var_idx_neq_of_var_neq; intro Heq; apply Hxb; symmetry; exact Heq).
+  assert (Hidxz : var_idx zero_var <> var_idx x)
+    by (apply var_idx_neq_of_var_neq; intro Heq; apply Hxz; symmetry; exact Heq).
+  assert (Hidxp : var_idx prod_var <> var_idx x)
+    by (apply var_idx_neq_of_var_neq; intro Heq; apply Hxp; symmetry; exact Heq).
+  unfold gamma_subst.
+  induction A as [s | m | y | D IHD C IHC | s C IHC D IHD | s C IHC D IHD].
+
+  - (* A = t_sort s *)
+    rewrite subst_sort. simpl.
+    assert (Hconst : gamma_subst_tel (t_fvar bullet_var) B (var_idx x) (index_of (var_sort x) - 1) = t_fvar bullet_var).
+    { apply gamma_subst_tel_fvar_const.
+      intros m Hm2 Hm3 Heq.
+      apply (sort_of_1_ne_sort_of_m m Hm2 ltac:(lia)).
+      assert (Hvseq : var_sort bullet_var = var_sort (mkvar (sort_of m) (var_idx x)))
+        by (rewrite Heq at 1; reflexivity).
+      simpl in Hvseq. rewrite var_sort_bullet_var in Hvseq. exact Hvseq. }
+    rewrite Hconst. simpl.
+    destruct (eq_var_dec bullet_var (mkvar (sort_of 1) (var_idx x))) as [Heq | Hneq].
+    + exfalso. apply Hidx.
+      assert (Hveq : var_idx bullet_var = var_idx (mkvar (sort_of 1) (var_idx x)))
+        by (rewrite Heq at 1; reflexivity).
+      simpl in Hveq. exact Hveq.
+    + reflexivity.
+
+  - (* A = t_bvar m *)
+    rewrite subst_bvar. simpl. rewrite gamma_subst_tel_bvar_const. reflexivity.
+
+  - (* A = t_fvar y *)
+    rewrite subst_var. simpl.
+    destruct (eq_var_dec y x) as [Heq | Hne].
+    + subst y.
+      assert (Hconst : gamma_subst_tel (t_fvar (mkvar (sort_of 1) (var_idx x))) B (var_idx x) (index_of (var_sort x) - 1)
+                        = t_fvar (mkvar (sort_of 1) (var_idx x))).
+      { apply gamma_subst_tel_fvar_const.
+        intros m Hm2 Hm3 Heq.
+        apply (sort_of_1_ne_sort_of_m m Hm2 ltac:(lia)).
+        assert (Hvseq : var_sort (mkvar (sort_of 1) (var_idx x)) = var_sort (mkvar (sort_of m) (var_idx x)))
+          by (rewrite Heq at 1; reflexivity).
+        simpl in Hvseq. exact Hvseq. }
+      rewrite Hconst. simpl.
+      destruct (eq_var_dec (mkvar (sort_of 1) (var_idx x)) (mkvar (sort_of 1) (var_idx x))) as [_ | Hne2].
+      * reflexivity.
+      * exfalso. apply Hne2. reflexivity.
+    + assert (Hyidx : var_idx y <> var_idx x) by (apply var_idx_neq_of_var_neq; exact Hne).
+      assert (Hconst : gamma_subst_tel (t_fvar (mkvar (sort_of 1) (var_idx y))) B (var_idx x) (index_of (var_sort x) - 1)
+                        = t_fvar (mkvar (sort_of 1) (var_idx y))).
+      { apply gamma_subst_tel_fvar_const.
+        intros m Hm2 Hm3 Heq.
+        apply (sort_of_1_ne_sort_of_m m Hm2 ltac:(lia)).
+        assert (Hvseq : var_sort (mkvar (sort_of 1) (var_idx y)) = var_sort (mkvar (sort_of m) (var_idx x)))
+          by (rewrite Heq at 1; reflexivity).
+        simpl in Hvseq. exact Hvseq. }
+      rewrite Hconst. simpl.
+      destruct (eq_var_dec (mkvar (sort_of 1) (var_idx y)) (mkvar (sort_of 1) (var_idx x))) as [Heq2 | Hneq2].
+      * exfalso. apply Hyidx.
+        assert (Hveq : var_idx (mkvar (sort_of 1) (var_idx y)) = var_idx (mkvar (sort_of 1) (var_idx x)))
+          by (rewrite Heq2 at 1; reflexivity).
+        simpl in Hveq. exact Hveq.
+      * reflexivity.
+
+  - (* A = t_app D C *)
+    assert (HdegC : deg (C ⁅ x ≔ B ⁆) = deg C)
+      by (apply (deg_subst C B x (index_of (var_sort x)) eq_refl HdegB HlcB)).
+    rewrite subst_app. simpl. rewrite HdegC.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite (gamma_app_tel_commutes_subst (gamma D) C B x (deg C - 1) Hxz Hxrange HdegB HlcB).
+    rewrite <- IHD, <- IHC.
+    reflexivity.
+
+  - (* A = t_lam s C D *)
+    assert (HdegC : deg (C ⁅ x ≔ B ⁆) = deg C)
+      by (apply (deg_subst C B x (index_of (var_sort x)) eq_refl HdegB HlcB)).
+    rewrite subst_lam. simpl. rewrite HdegC.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite gamma_subst_tel_lam_commute, subst_lam.
+    rewrite (gamma_subst_zero_var_const B x Hidxz).
+    rewrite (gamma_lam_tel_commutes_subst C (gamma D) B x (deg C - 1) Hxz Hxrange HdegB HlcB).
+    rewrite <- IHD, <- IHC.
+    reflexivity.
+
+  - (* A = t_pi s C D *)
+    assert (HdegC : deg (C ⁅ x ≔ B ⁆) = deg C)
+      by (apply (deg_subst C B x (index_of (var_sort x)) eq_refl HdegB HlcB)).
+    rewrite subst_pi. simpl. rewrite HdegC.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite (gamma_subst_prod_var_const B x Hidxp).
+    rewrite (gamma_pi_tel_commutes_subst C B x (deg C - 1) Hxz Hxrange HdegB HlcB).
+    rewrite (gamma_lam_tel_commutes_subst C (gamma D) B x (deg C - 1) Hxz Hxrange HdegB HlcB).
+    rewrite <- IHD, <- IHC.
+    reflexivity.
+Qed.
+
 End TPTS.
