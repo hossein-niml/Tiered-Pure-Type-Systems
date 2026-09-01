@@ -1721,19 +1721,7 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-(*
-    [rho_ctx (i+1) []] always types [zero_var] itself: it is the
-    designated placeholder [rho 0] produces out of a sort, and its own
-    type sits at the very bottom of the tower.  Two standing facts
-    about it are needed below and were not needed anywhere earlier in
-    this file (nothing before this lemma has to type [zero_var] --
-    only substitute it away or show it is never touched -- so this is
-    the first place its own classification matters): its sort tag,
-    and that the base system actually has at least two tiers to put
-    an axiom pair (s_1, s_2) in (a 1-tiered system is a degenerate
-    case the whole theory of "tiers" isn't really about; Mull's
-    remark that "every full system contains the rule (s_1, s_2)"
-    silently assumes this). *)
+
 Axiom var_sort_zero_var : var_sort zero_var = sort_of 2.
 Axiom n_at_least_two : n >= 2.
 
@@ -2119,7 +2107,6 @@ Proof.
 
   - (* typing_conv *)
     simpl in Hdeg.
-    (* Hdeg : deg_aux ctx M0 >= i + 1 *)
     destruct (typing_lc _ _ _ HM) as [HlcM _].
     assert (HdegM0 : deg M0 >= i + 1).
     { unfold deg. rewrite <- (deg_aux_ctx_indep M0 HlcM ctx []). exact Hdeg. }
@@ -2142,7 +2129,6 @@ Proof.
     replace (i + 1 + 1) with (S (S i)) in HIH2 by lia.
     simpl in HIH2.
     replace (S (S i)) with (i + 2) in HIH2 by lia.
-    (* HIH2 : rho_ctx (i+2) Γ0 ⊢* rho (i+1) B0 ∈ t_sort (sort_of (i+2)) *)
     assert (HIH2' : rho_ctx (i + 1) Γ0 ⊢* rho (i + 1) B0 ∈ t_sort (sort_of (i + 2))).
     { apply (typing_star_weakening_incl (rho_ctx (i + 2) Γ0) _ _ _
                (rho_ctx_mono Γ0 (i + 1) (i + 2) ltac:(lia)) HIH2). }
@@ -2389,7 +2375,6 @@ Proof.
   - rewrite var_sort_prod_var. exact Tprod_typed.
 Qed.
 
-
 Axiom gamma_pi_tower :
   forall Δ0 Γ0 A0 s1,
     Δ0 ⊢* t_fvar zero_var ∈ t_sort (sort_of 1) ->
@@ -2405,10 +2390,6 @@ Axiom gamma_lam_tower :
     Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma_lam_tel A0 (gamma B0) (deg A0 - 1)
                         ∈ gamma_pi_tel A0 (t_fvar zero_var) (deg A0 - 1).
 
-(* Mull: the final "two applications" assembling prod(piTel)(gammaA)(lamterm).
-   T_prod is a fixed closed template, so this is a mechanical (if tedious)
-   substitution fact; taken as given at the same trust level as the tower
-   axioms above. *)
 Lemma gamma_pi_tel_eq_rho_pi_tel : forall A B k,
   gamma_pi_tel A (rho 0 B) k = rho_pi_tel rho A B 0 k.
 Proof.
@@ -2447,9 +2428,6 @@ Axiom gamma_app_tower :
     Δ0 ++ rho_ctx 0 Γ0 ⊢* t_app (gamma_app_tel (gamma M0) N0 (deg N0 - 1)) (gamma N0)
                         ∈ rho 0 (B0 ^^ N0).
 
-(* Mull: weakening by a fresh z:0, then abstraction and application to
-   cancel the dummy domain back out -- taken as given, at the same trust
-   level as the other assembly axioms above. *)
 Axiom gamma_lam_applied :
   forall Δ0 Γ0 A0 lamTerm piType,
     Δ0 ++ rho_ctx 0 Γ0 ⊢* lamTerm ∈ piType ->
@@ -2856,6 +2834,349 @@ Proof.
     rewrite (gamma_lam_tel_commutes_subst C (gamma D) B x (deg C - 1) Hxz Hxrange HdegB HlcB).
     rewrite <- IHD, <- IHC.
     reflexivity.
+Qed.
+
+(* ================================================================= *)
+(** * gamma commutes with beta *)
+
+Lemma gamma_pi_tel_dom_congr : forall C C' body k,
+  (forall m, m <= k -> rho m C ->>b rho m C') ->
+  gamma_pi_tel C body k ->>b gamma_pi_tel C' body k.
+Proof.
+  induction k as [| k' IHk]; intros Hall; simpl.
+  - apply brt_pi_A. apply Hall. lia.
+  - apply brt_pi_congr.
+    + apply Hall. lia.
+    + apply IHk. intros m Hm. apply Hall. lia.
+Qed.
+
+Lemma gamma_lam_tel_dom_congr : forall C C' body k,
+  (forall m, m <= k -> rho m C ->>b rho m C') ->
+  gamma_lam_tel C body k ->>b gamma_lam_tel C' body k.
+Proof.
+  induction k as [| k' IHk]; intros Hall; simpl.
+  - apply brt_lam_A. apply Hall. lia.
+  - apply brt_lam_congr.
+    + apply Hall. lia.
+    + apply IHk. intros m Hm. apply Hall. lia.
+Qed.
+
+Lemma gamma_lam_tel_body_congr : forall C body body' k,
+  body ->>b body' -> gamma_lam_tel C body k ->>b gamma_lam_tel C body' k.
+Proof.
+  induction k as [| k' IHk]; intros Hb; simpl.
+  - apply brt_lam_M. exact Hb.
+  - apply brt_lam_M. apply IHk. exact Hb.
+Qed.
+
+Lemma gamma_app_tel_func_congr : forall M M' N k,
+  M ->>b M' -> gamma_app_tel M N k ->>b gamma_app_tel M' N k.
+Proof.
+  intros M M' N k. revert M M'.
+  induction k as [| k' IH]; intros M M' Hstep; simpl.
+  - apply brt_app_l. exact Hstep.
+  - apply IH. apply brt_app_l. exact Hstep.
+Qed.
+
+Lemma gamma_app_tel_arg_congr : forall MG N N' k,
+  (forall j, j <= k -> rho j N ->>b rho j N') ->
+  gamma_app_tel MG N k ->>b gamma_app_tel MG N' k.
+Proof.
+  intros MG N N' k. revert MG.
+  induction k as [| k' IH]; intros MG Hall; simpl.
+  - apply brt_app_r. apply Hall. lia.
+  - apply brt_trans with (gamma_app_tel (t_app MG (rho (S k') N')) N k').
+    + apply gamma_app_tel_func_congr. apply brt_app_r. apply Hall. lia.
+    + apply IH. intros j Hj. apply Hall. lia.
+Qed.
+
+Axiom rho_commutes_beta_below : forall i, 0 <= i <= n ->
+  forall M N, deg M < i + 1 -> M ->>b N -> rho i M ->>b rho i N.
+
+Lemma rho_commutes_beta_total :
+  forall i, 0 <= i <= n -> forall M N, M ->>b N -> rho i M ->>b rho i N.
+Proof.
+  intros i Hi M N Hbeta.
+  destruct (le_lt_dec (i + 1) (deg M)) as [E | E].
+  - apply rho_commutes_beta; [lia | lia | exact Hbeta].
+  - apply rho_commutes_beta_below; [lia | lia | exact Hbeta].
+Qed.
+
+Lemma bt_pi_A : forall s A A' B, A ->>+b A' -> t_pi s A B ->>+b t_pi s A' B.
+Proof.
+  intros s A A' B H.
+  induction H as [A A' Hs | A A'' A' H1 IH1 H2 IH2].
+  - apply bt_step. apply beta_pi_A. exact Hs.
+  - apply bt_trans with (t_pi s A'' B); auto.
+Qed.
+
+Lemma bt_pi_B : forall s A B B', B ->>+b B' -> t_pi s A B ->>+b t_pi s A B'.
+Proof.
+  intros s A B B' H.
+  induction H as [B B' Hs | B B'' B' H1 IH1 H2 IH2].
+  - apply bt_step. apply beta_pi_B. exact Hs.
+  - apply bt_trans with (t_pi s A B''); auto.
+Qed.
+
+Lemma bt_lam_A : forall s A A' M, A ->>+b A' -> t_lam s A M ->>+b t_lam s A' M.
+Proof.
+  intros s A A' M H.
+  induction H as [A A' Hs | A A'' A' H1 IH1 H2 IH2].
+  - apply bt_step. apply beta_lam_A. exact Hs.
+  - apply bt_trans with (t_lam s A'' M); auto.
+Qed.
+
+Lemma bt_lam_M : forall s A M M', M ->>+b M' -> t_lam s A M ->>+b t_lam s A M'.
+Proof.
+  intros s A M M' H.
+  induction H as [M M' Hs | M M'' M' H1 IH1 H2 IH2].
+  - apply bt_step. apply beta_lam_M. exact Hs.
+  - apply bt_trans with (t_lam s A M''); auto.
+Qed.
+
+Lemma bt_app_l : forall M M' N, M ->>+b M' -> t_app M N ->>+b t_app M' N.
+Proof.
+  intros M M' N H.
+  induction H as [M M' Hs | M M'' M' H1 IH1 H2 IH2].
+  - apply bt_step. apply beta_app_l. exact Hs.
+  - apply bt_trans with (t_app M'' N); auto.
+Qed.
+
+Lemma bt_app_r : forall M N N', N ->>+b N' -> t_app M N ->>+b t_app M N'.
+Proof.
+  intros M N N' H.
+  induction H as [N N' Hs | N N'' N' H1 IH1 H2 IH2].
+  - apply bt_step. apply beta_app_r. exact Hs.
+  - apply bt_trans with (t_app M N''); auto.
+Qed.
+
+Lemma brt_bt_trans : forall M K N, M ->>b K -> K ->>+b N -> M ->>+b N.
+Proof.
+  intros M K N Hmk.
+  induction Hmk as [M | M K Hs | M Q K H1 IH1 H2 IH2]; intros Hkn.
+  - exact Hkn.
+  - apply bt_trans with K; [apply bt_step; exact Hs | exact Hkn].
+  - apply IH1. apply IH2. exact Hkn.
+Qed.
+
+Lemma bt_brt_trans : forall M K N, K ->>b N -> M ->>+b K -> M ->>+b N.
+Proof.
+  intros M K N Hkn.
+  induction Hkn as [K | K N Hs | K Q N H1 IH1 H2 IH2]; intros Hmk.
+  - exact Hmk.
+  - apply bt_trans with K; [exact Hmk | apply bt_step; exact Hs].
+  - apply IH2. apply IH1. exact Hmk.
+Qed.
+
+Lemma bt_app_congr_L : forall M M' N N',
+  M ->>+b M' -> N ->>b N' -> t_app M N ->>+b t_app M' N'.
+Proof.
+  intros M M' N N' HM HN.
+  apply (bt_brt_trans (t_app M N) (t_app M' N) (t_app M' N')).
+  - apply brt_app_r. exact HN.
+  - apply bt_app_l. exact HM.
+Qed.
+
+Lemma bt_app_congr_R : forall M M' N N',
+  M ->>b M' -> N ->>+b N' -> t_app M N ->>+b t_app M' N'.
+Proof.
+  intros M M' N N' HM HN.
+  apply (brt_bt_trans (t_app M N) (t_app M' N) (t_app M' N')).
+  - apply brt_app_l. exact HM.
+  - apply bt_app_r. exact HN.
+Qed.
+
+Lemma gamma_app_tel_func_congr_plus : forall M M' N k,
+  M ->>+b M' -> gamma_app_tel M N k ->>+b gamma_app_tel M' N k.
+Proof.
+  intros M M' N k. revert M M'.
+  induction k as [| k' IH]; intros M M' Hstep; simpl.
+  - apply bt_app_l. exact Hstep.
+  - apply IH. apply bt_app_l. exact Hstep.
+Qed.
+
+Lemma gamma_lam_tel_body_congr_plus : forall C body body' k,
+  body ->>+b body' -> gamma_lam_tel C body k ->>+b gamma_lam_tel C body' k.
+Proof.
+  induction k as [| k' IHk]; intros Hb; simpl.
+  - apply bt_lam_M. exact Hb.
+  - apply bt_lam_M. apply IHk. exact Hb.
+Qed.
+
+Axiom gamma_commutes_beta_base : forall s A M N,
+  gamma (t_app (t_lam s A M) N) ->>+b gamma (M ^^ N).
+
+Lemma gamma_commutes_beta_aux :
+  forall M N, M ->b N -> gamma M ->>+b gamma N.
+Proof.
+  induction M as [s | m | y | P IHP Q IHQ | s A IHA M' IHM' | s A IHA B IHB];
+    intros N Hstep.
+
+  - (* t_sort *) inversion Hstep.
+  - (* t_bvar *) inversion Hstep.
+  - (* t_fvar *) inversion Hstep.
+
+  - (* t_app P Q *)
+    inversion Hstep; subst; clear Hstep.
+
+    + (* beta_base *)
+      apply gamma_commutes_beta_base.
+
+    + (* beta_app_l *)
+      match goal with
+      | Hs : P ->b ?P' |- _ =>
+        simpl; apply bt_app_l; apply gamma_app_tel_func_congr_plus; apply IHP; exact Hs
+      end.
+
+    + (* beta_app_r *)
+      match goal with
+      | Hs : Q ->b ?Q' |- _ =>
+        assert (HdegQeq : deg Q = deg Q') by (apply deg_beta; apply brt_step; exact Hs);
+        assert (HQle : deg Q <= n + 1) by (apply deg_le_top);
+        simpl; rewrite <- HdegQeq;
+        apply bt_app_congr_R;
+        [ apply gamma_app_tel_arg_congr;
+          intros j Hj; apply rho_commutes_beta_total; [lia | apply brt_step; exact Hs]
+        | apply IHQ; exact Hs ]
+      end.
+
+  - (* t_lam s A M' *)
+    inversion Hstep; subst; clear Hstep.
+
+    + (* beta_lam_A *)
+      match goal with
+      | Hs : A ->b ?A1' |- _ =>
+        assert (HdegAeq : deg A = deg A1') by (apply deg_beta; apply brt_step; exact Hs);
+        assert (HAle : deg A <= n + 1) by (apply deg_le_top);
+        simpl; rewrite <- HdegAeq;
+        apply bt_app_congr_R;
+        [ apply brt_lam_M; apply gamma_lam_tel_dom_congr;
+          intros mtier Hmtier; apply rho_commutes_beta_total; [lia | apply brt_step; exact Hs]
+        | apply IHA; exact Hs ]
+      end.
+
+    + (* beta_lam_M *)
+      match goal with
+      | Hs : M' ->b ?M1' |- _ =>
+        simpl; apply bt_app_l; apply bt_lam_M; apply gamma_lam_tel_body_congr_plus;
+        apply IHM'; exact Hs
+      end.
+
+  - (* t_pi s A B *)
+    inversion Hstep; subst; clear Hstep.
+
+    + (* beta_pi_A *)
+      match goal with
+      | Hs : A ->b ?A1' |- _ =>
+        assert (HdegAeq : deg A = deg A1') by (apply deg_beta; apply brt_step; exact Hs);
+        assert (HAle : deg A <= n + 1) by (apply deg_le_top);
+        simpl; rewrite <- HdegAeq;
+        apply bt_app_congr_L;
+        [ apply bt_app_congr_R;
+          [ apply brt_app_r; apply gamma_pi_tel_dom_congr;
+            intros mtier Hmtier; apply rho_commutes_beta_total; [lia | apply brt_step; exact Hs]
+          | apply IHA; exact Hs ]
+        | apply gamma_lam_tel_dom_congr;
+          intros mtier Hmtier; apply rho_commutes_beta_total; [lia | apply brt_step; exact Hs] ]
+      end.
+
+    + (* beta_pi_B *)
+      match goal with
+      | Hs : B ->b ?B1' |- _ =>
+        simpl; apply bt_app_r; apply gamma_lam_tel_body_congr_plus; apply IHB; exact Hs
+      end.
+Qed.
+
+Lemma gamma_commutes_beta :
+  forall M N, M ->>b N -> gamma M ->>b gamma N.
+Proof.
+  intros M N Hbeta.
+  induction Hbeta as [M | M N Hstep | M N P Hstep1 IH1 Hstep2 IH2].
+  - apply brt_refl.
+  - apply brt_from_trans. apply (gamma_commutes_beta_aux M N Hstep).
+  - apply brt_trans with (gamma N); auto.
+Qed.
+
+(* ================================================================= *)
+(** Theorem: λS is strongly normalizing iff λS∗ is *)
+
+Lemma bt_forward_acc : forall X Y, X ->>+b Y ->
+  (forall Z, X ->b Z -> Acc (fun N M => M ->>+b N) Z) ->
+  Acc (fun N M => M ->>+b N) Y.
+Proof.
+  intros X Y HXY.
+  induction HXY as [X Y Hstep | X Z Y H1 IH1 H2 IH2]; intros Hbase.
+  - apply Hbase. exact Hstep.
+  - apply IH2.
+    intros Z0 HstepZ.
+    destruct (IH1 Hbase) as [f].
+    apply f. apply bt_step. exact HstepZ.
+Qed.
+
+Lemma Acc_atomic_implies_Acc_plus : forall X,
+  strongly_normalizing X -> Acc (fun N M => M ->>+b N) X.
+Proof.
+  intros X HX.
+  induction HX as [X _ IH].
+  constructor.
+  intros Y HXY.
+  exact (bt_forward_acc X Y HXY IH).
+Qed.
+
+Lemma sn_reflection_core :
+  forall b, Acc (fun N M => M ->>+b N) b ->
+  forall M, b = gamma M -> strongly_normalizing M.
+Proof.
+  intros b Hacc.
+  induction Hacc as [b _ IH].
+  intros M Heq.
+  constructor.
+  intros M' HstepM.
+  apply (IH (gamma M')).
+  - rewrite Heq. apply gamma_commutes_beta_aux. exact HstepM.
+  - reflexivity.
+Qed.
+
+Lemma sn_reflection : forall M,
+  strongly_normalizing (gamma M) -> strongly_normalizing M.
+Proof.
+  intros M Hsn.
+  exact (sn_reflection_core (gamma M) (Acc_atomic_implies_Acc_plus (gamma M) Hsn) M eq_refl).
+Qed.
+
+Lemma gamma_commutes_typing_derivable : forall M,
+  derivable M -> derivable_star (gamma M).
+Proof.
+  intros M [Γ [N HMN]].
+  exists ([(zero_var, t_sort (sort_of 1));
+           (bullet_var, t_fvar zero_var);
+           (prod_var, T_prod)] ++ rho_ctx 0 Γ), (rho 0 N).
+  exact (gamma_commutes_typing Γ M N HMN).
+Qed.
+
+Axiom derivable_star_implies_derivable : forall M,
+  derivable_star M -> derivable M.
+
+Definition system_strongly_normalizing (P : term -> Prop) : Prop :=
+  forall M, P M -> strongly_normalizing M.
+
+Theorem lambdaS_SN_iff_lambdaS_star_SN :
+  system_strongly_normalizing derivable <-> system_strongly_normalizing derivable_star.
+Proof.
+  split.
+
+  - (* λS SN -> λS∗ SN *)
+    intros HSN M HMstar.
+    apply HSN.
+    apply derivable_star_implies_derivable.
+    exact HMstar.
+
+  - (* λS∗ SN -> λS SN *)
+    intros HSNstar M HM.
+    apply sn_reflection.
+    apply HSNstar.
+    apply gamma_commutes_typing_derivable.
+    exact HM.
 Qed.
 
 End TPTS.
