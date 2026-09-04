@@ -73,20 +73,15 @@ Qed.
 
 (* Degree *)
 
-Fixpoint deg_aux (sorts : list Sort) (t : term) : nat :=
+Fixpoint deg (t : term) : nat :=
   match t with
   | t_sort s     => index_of s + 1
-  | t_bvar k     => match nth_error sorts k with
-                     | Some s => index_of s - 1
-                     | None   => 0
-                     end
+  | t_bvar s _   => index_of s - 1
   | t_fvar s _   => index_of s - 1
-  | t_app M _    => deg_aux sorts M
-  | t_lam s _ M  => deg_aux (s :: sorts) M
-  | t_pi  s _ B  => deg_aux (s :: sorts) B
+  | t_app M _    => deg M
+  | t_lam _ _ M  => deg M
+  | t_pi  _ _ B  => deg B
   end.
-
-Definition deg (t : term) : nat := deg_aux [] t.
 
 Definition T_eq (j : nat) (M : term) : Prop := deg M = j.
 Definition T_geq (j : nat) (M : term) : Prop := j <= deg M.
@@ -109,7 +104,7 @@ Definition derivable (M : term) : Prop := exists Γ N, Γ ⊢ M ∈ N.
 Fixpoint closed_at (k : nat) (t : term) : Prop :=
   match t with
   | t_sort _    => True
-  | t_bvar n    => n < k
+  | t_bvar _ n  => n < k
   | t_fvar _ _  => True
   | t_app M _   => closed_at k M
   | t_lam _ _ M => closed_at (S k) M
@@ -118,10 +113,10 @@ Fixpoint closed_at (k : nat) (t : term) : Prop :=
 
 Lemma closed_at_open_rec_inv : forall t k u,
   closed_at k (open_rec k u t) ->
-  (forall m, u <> t_bvar m) ->
+  (forall s m, u <> t_bvar s m) ->
   closed_at (S k) t.
 Proof.
-  induction t as [s0 | n | y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
+  induction t as [s0 | sn n | y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
     intros k u Hc Hu; simpl in *; auto.
   - destruct (Nat.eqb n k) eqn:Heqb.
     + apply Nat.eqb_eq in Heqb. lia.
@@ -143,149 +138,82 @@ Proof.
     specialize (IHB x0 Hx0L).
     unfold open_var in IHB.
     apply (closed_at_open_rec_inv B 0 (t_fvar s x0) IHB).
-    intros m Hcontra. discriminate.
+    intros sv m Hcontra. discriminate.
   - remember (fresh L) as x0 eqn:Hx0def.
     assert (Hx0L : ~ In x0 L) by (rewrite Hx0def; apply fresh_notin).
     specialize (IHM x0 Hx0L).
     unfold open_var in IHM.
     apply (closed_at_open_rec_inv M 0 (t_fvar s x0) IHM).
-    intros m Hcontra. discriminate.
+    intros sv m Hcontra. discriminate.
 Qed.
 
-Lemma deg_aux_open_rec_gen : forall B pre ctx0 x s,
-  closed_at (S (length pre)) B ->
-  deg_aux (pre ++ s :: ctx0) B = deg_aux (pre ++ ctx0) (open_rec (length pre) (t_fvar s x) B).
+
+(** Opening at depth [k] never changes [deg_aux], provided the
+    [t_bvar] node it would replace already carries the sort being
+    opened to -- i.e. the term was tagged consistently with its own
+    binder to begin with ([bvar_tag_ok]). Since [deg_aux] ignores its
+    context list entirely, there is no [pre]/[ctx0] split to track
+    here any more: only the numeric depth [k] needs to grow under
+    binders, to stay in step with [open_rec]'s own [S k]. *)
+Lemma deg_open_rec_gen : forall B k x s,
+  bvar_tag_ok k s B ->
+  deg B = deg (open_rec k (t_fvar s x) B).
 Proof.
-  induction B as [s0 | n | y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
-    intros pre ctx0 x s Hclosed; simpl in *.
+  induction B as [s0 | s_n n | y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
+    intros k x s Htag; simpl in *.
   - reflexivity.
-  - destruct (Nat.eqb n (length pre)) eqn:Heqb.
+  - destruct (Nat.eqb n k) eqn:Heqb.
     + apply Nat.eqb_eq in Heqb. subst n.
-      simpl.
-      rewrite nth_error_app2 by lia.
-      replace (length pre - length pre) with 0 by lia.
-      simpl.
+      specialize (Htag eq_refl). subst s_n.
       reflexivity.
-    + apply Nat.eqb_neq in Heqb.
-      assert (Hn : n < length pre) by lia.
-      simpl.
-      rewrite nth_error_app1 by lia.
-      rewrite nth_error_app1 by lia.
-      reflexivity.
+    + reflexivity.
   - reflexivity.
-  - apply IHP; auto.
-  - apply (IHM (s1 :: pre) ctx0 x s Hclosed).
-  - apply (IHB (s1 :: pre) ctx0 x s Hclosed).
+  - apply (IHP k x s Htag).
+  - apply (IHM (S k) x s Htag).
+  - apply (IHB (S k) x s Htag).
 Qed.
 
-Lemma deg_open : forall B x s ctx,
-  lc (open_var B s x) ->
-  deg_aux (s :: ctx) B = deg_aux ctx (open_var B s x).
+Lemma deg_open : forall B x s,
+  bvar_tag_ok 0 s B ->
+  deg B = deg (open_var B s x).
 Proof.
-  intros B x s ctx Hlc.
-  pose proof (lc_closed_at _ Hlc) as Hc0.
-  unfold open_var in Hc0.
-  assert (Hclosed1 : closed_at 1 B).
-  { apply (closed_at_open_rec_inv B 0 (t_fvar s x) Hc0).
-    intros m Hcontra. discriminate. }
-  pose proof (deg_aux_open_rec_gen B [] ctx x s Hclosed1) as Hgen.
-  simpl in Hgen.
+  intros B x s Htag.
   unfold open_var.
-  exact Hgen.
+  apply deg_open_rec_gen. exact Htag.
 Qed.
 
-
-Lemma deg_aux_ctx_indep : forall t, lc t -> forall ctx1 ctx2, deg_aux ctx1 t = deg_aux ctx2 t.
+Lemma deg_open_rec_subst : forall B k u s,
+  bvar_tag_ok k s B ->
+  deg u = index_of s - 1 ->
+  deg (open_rec k u B) = deg B.
 Proof.
-  intros t Hlc.
-  induction Hlc as [ s | x | M N HM IHM HN IHN
-                    | s A B L HA IHA HB IHB
-                    | s A M L HA IHA HM IHM ];
-    intros ctx1 ctx2; simpl.
+  induction B as [s0 | s_n n | y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
+    intros k u s Htag Hdegu; simpl in *.
   - reflexivity.
-  - reflexivity.
-  - apply IHM.
-  - remember (fresh (L ++ fv B)) as x0 eqn:Hx0def.
-    assert (Hx0L : ~ In x0 L).
-    { rewrite Hx0def. intro Hc. apply (fresh_notin (L ++ fv B)).
-      apply in_or_app. left. exact Hc. }
-    rewrite (deg_open B x0 s ctx1 (HB x0 Hx0L)).
-    rewrite (deg_open B x0 s ctx2 (HB x0 Hx0L)).
-    apply IHB; auto.
-  - remember (fresh (L ++ fv M)) as x0 eqn:Hx0def.
-    assert (Hx0L : ~ In x0 L).
-    { rewrite Hx0def. intro Hc. apply (fresh_notin (L ++ fv M)).
-      apply in_or_app. left. exact Hc. }
-    rewrite (deg_open M x0 s ctx1 (HM x0 Hx0L)).
-    rewrite (deg_open M x0 s ctx2 (HM x0 Hx0L)).
-    apply IHM; auto.
-Qed.
-
-(** Under [var := nat], a variable's sort is no longer part of its
-    own identity: two syntactic occurrences of the same atom [x] can
-    in principle carry different [t_fvar] sort tags, so a fully
-    general "substituting [x] never changes degree" fact (the old
-    [deg_subst], stated with a single global sort for [x]) is not
-    actually true any more -- it silently relied on [var_sort x]
-    being position-independent by construction. What *is* still true
-    unconditionally is the shape every call site here actually needs:
-    opening a body at a *fresh* atom [x] (so [x] has no other,
-    possibly differently-tagged occurrences to begin with) and then
-    substituting that one, freshly-introduced, uniformly-tagged
-    occurrence away. [deg_aux_open_rec_subst] is the substitution
-    analogue of [deg_aux_open_rec_gen] above (same induction, using
-    [deg_aux_ctx_indep] to relate [u]'s degree in the outer context to
-    its already-known degree in the empty one), and [deg_subst_open]
-    packages it together with [subst_open_var_eq] into exactly the
-    "open-then-substitute" fact [deg_typing_succ] needs. *)
-Lemma deg_aux_open_rec_subst : forall B pre ctx0 u s,
-  closed_at (S (length pre)) B ->
-  lc u ->
-  deg_aux ctx0 u = index_of s - 1 ->
-  deg_aux (pre ++ ctx0) (open_rec (length pre) u B) = deg_aux (pre ++ s :: ctx0) B.
-Proof.
-  induction B as [s0 | n | y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
-    intros pre ctx0 u s Hclosed Hlcu Hdegu; simpl in *.
-  - reflexivity.
-  - destruct (Nat.eqb n (length pre)) eqn:Heqb.
+  - destruct (Nat.eqb n k) eqn:Heqb.
     + apply Nat.eqb_eq in Heqb. subst n.
-      simpl.
-      rewrite nth_error_app2 by lia.
-      replace (length pre - length pre) with 0 by lia.
-      simpl.
-      rewrite (deg_aux_ctx_indep u Hlcu (pre ++ ctx0) ctx0).
+      specialize (Htag eq_refl). subst s_n.
       exact Hdegu.
-    + apply Nat.eqb_neq in Heqb.
-      assert (Hn : n < length pre) by lia.
-      simpl.
-      rewrite nth_error_app1 by lia.
-      rewrite nth_error_app1 by lia.
-      reflexivity.
+    + reflexivity.
   - reflexivity.
-  - apply IHP; auto.
-  - apply (IHM (s1 :: pre) ctx0 u s Hclosed Hlcu Hdegu).
-  - apply (IHB (s1 :: pre) ctx0 u s Hclosed Hlcu Hdegu).
+  - apply (IHP k u s Htag Hdegu).
+  - apply (IHM (S k) u s Htag Hdegu).
+  - apply (IHB (S k) u s Htag Hdegu).
 Qed.
 
 Lemma deg_subst_open : forall B x s N,
   ~ In x (fv B) ->
-  lc (open_var B s x) ->
+  bvar_tag_ok 0 s B ->
   lc N ->
   deg N = index_of s - 1 ->
   deg ((open_var B s x) ⁅ x ≔ N ⁆) = deg (open_var B s x).
 Proof.
-  intros B x s N HxB HlcOpen HlcN HdegN.
+  intros B x s N HxB Htag HlcN HdegN.
   rewrite (subst_open_var_eq B s x N HxB HlcN).
-  unfold deg.
-  pose proof (lc_closed_at _ HlcOpen) as Hc0.
-  unfold open_var in Hc0.
-  assert (Hclosed1 : closed_at 1 B).
-  { apply (closed_at_open_rec_inv B 0 (t_fvar s x) Hc0).
-    intros m Hcontra. discriminate. }
-  pose proof (deg_aux_open_rec_subst B [] [] N s Hclosed1 HlcN HdegN) as Hgen.
-  simpl in Hgen.
+  pose proof (deg_open_rec_subst B 0 N s Htag HdegN) as Hgen.
   rewrite Hgen.
-  apply deg_open. exact HlcOpen.
+  unfold open_var.
+  apply deg_open_rec_gen. exact Htag.
 Qed.
 
 (** Two genuinely open facts, stated as explicit, precisely-scoped
@@ -318,6 +246,32 @@ Axiom deg_sort_typed : forall Γ A s,
 Axiom deg_conv_invariant : forall Γ M A B s,
   Γ ⊢ M ∈ A -> A =b B -> Γ ⊢ B ∈ t_sort s -> deg A = deg B.
 
+(** Whenever [t_pi s A B] is the *subject* of a typing derivation (for
+    any type at all), its body [B] is tagged consistently with [s].
+    [typing_pi] carries this as an explicit premise for the *specific*
+    Pi it introduces; every other rule that can leave the subject
+    syntactically unchanged ([typing_weak], [typing_conv]) has to be
+    peeled through to reach the [typing_pi] node that actually
+    produced it. *)
+Lemma typing_pi_subject_bvar_tag_ok : forall Γ M T,
+  Γ ⊢ M ∈ T -> forall s A B, M = t_pi s A B -> bvar_tag_ok 0 s B.
+Proof.
+  intros Γ M T Htyp.
+  induction Htyp as
+    [ sa sb HA
+    | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
+    | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
+    | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
+    | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ];
+    intros s A B HeqM; try discriminate.
+  - (* weak: subject unchanged *) apply (IHM0 s A B HeqM).
+  - (* pi: this is the node that introduced it *)
+    injection HeqM as Hs HA' HB'. subst. exact HTagB.
+  - (* conv: subject unchanged *) apply (IHM s A B HeqM).
+Qed.
+
 Lemma deg_typing_succ : forall Γ M N, Γ ⊢ M ∈ N -> deg N = deg M + 1.
 Proof.
   intros Γ M N Htyp.
@@ -325,18 +279,18 @@ Proof.
     [ sa sb HA
     | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ];
-    unfold deg in *; simpl in *.
+    simpl in *.
 
   - (* axiom *)
     apply A_spec in HA as [Hlt Heq2]. lia.
 
   - (* var *)
     unfold deg in IHA0. simpl in IHA0.
-    pose proof (index_range s0) as [Hr1 Hr2]. lia.
+    pose proof (index_range s0) as [Hr1 Hr2]. unfold deg. lia.
 
   - (* weak *)
     exact IHM0.
@@ -347,11 +301,8 @@ Proof.
     { rewrite Hx0def. intro Hc. apply (fresh_notin (L ++ fv B0)).
       apply in_or_app. left. exact Hc. }
     specialize (IHB x0 Hx0L). unfold deg in IHB. simpl in IHB.
-    assert (HlcB : lc (open_var B0 s1 x0)).
-    { apply (proj1 (typing_lc (Γ0 ++ [(x0, (s1, A0))]) (open_var B0 s1 x0) (t_sort s2)
-                      (HB x0 Hx0L))). }
-    rewrite (deg_open B0 x0 s1 (@nil Sort) HlcB).
-    pose proof (R_shape s1 s2 s3 HR) as Hshape. subst s3.
+    rewrite (deg_open B0 x0 s1 HTagB).
+    pose proof (R_shape s1 s2 s3 HR) as Hshape. subst s3. unfold deg.
     lia.
 
   - (* lam *)
@@ -362,10 +313,14 @@ Proof.
     assert (HtypM : Γ0 ++ [(x0, (s1, A0))] ⊢ open_var M0 s1 x0 ∈ open_var B0 s1 x0)
       by (apply HM; auto).
     specialize (IHM x0 Hx0L). unfold deg in IHM. simpl in IHM.
-    assert (HlcM : lc (open_var M0 s1 x0)) by (apply (proj1 (typing_lc _ _ _ HtypM))).
-    assert (HlcB : lc (open_var B0 s1 x0)) by (apply (proj2 (typing_lc _ _ _ HtypM))).
-    rewrite (deg_open M0 x0 s1 (@nil Sort) HlcM).
-    rewrite (deg_open B0 x0 s1 (@nil Sort) HlcB).
+    rewrite (deg_open M0 x0 s1 HTagM).
+    (* [B0] is not our own binder's obligation here, but it comes for
+       free: [B0] already sits inside a fully-elaborated [t_pi] type
+       (from [HPi]), which carries its own [bvar_tag_ok] premise. *)
+    assert (HTagB0 : bvar_tag_ok 0 s1 B0)
+      by (apply (typing_pi_subject_bvar_tag_ok Γ0 (t_pi s1 A0 B0) (t_sort s3) HPi
+                   s1 A0 B0 eq_refl)).
+    rewrite (deg_open B0 x0 s1 HTagB0). unfold deg.
     lia.
 
   - (* app *)
@@ -373,29 +328,22 @@ Proof.
     destruct Hcor as [[s Hs] | [s Hs]].
     + discriminate Hs.
     + destruct (generation_pi Γ0 s1a A0 B0 (t_sort s) Hs)
-        as [s2 [s3 [L [HB1 [HB2 [HB3 HB4]]]]]].
+        as [s2 [s3 [L [HB1 [HTag1 [HB2 [HB3 HB4]]]]]]].
       assert (Hdeg_A0 : deg A0 = index_of s1a) by (apply (deg_sort_typed Γ0 A0 s1a HB1)).
       assert (Hdeg_N0 : deg N0 = index_of s1a - 1) by (unfold deg in *; lia).
       pose proof (typing_lc Γ0 N0 A0 HN) as [HlcN0 _].
-      pose proof (typing_lc Γ0 M0 (t_pi s1a A0 B0) HM) as [_ HlcPi].
-      destruct (lc_pi_body s1a A0 B0 HlcPi) as [L' HL'].
-      remember (fresh (L' ++ fv B0)) as x0 eqn:Hx0def.
-      assert (Hx0L' : ~ In x0 L').
-      { rewrite Hx0def. intro Hc. apply (fresh_notin (L' ++ fv B0)).
-        apply in_or_app. left. exact Hc. }
+      remember (fresh (fv B0)) as x0 eqn:Hx0def.
       assert (Hx0B : ~ In x0 (fv B0)).
-      { rewrite Hx0def. intro Hc. apply (fresh_notin (L' ++ fv B0)).
-        apply in_or_app. right. exact Hc. }
-      assert (HlcOpen : lc (open_var B0 s1a x0)) by (apply HL'; exact Hx0L').
+      { rewrite Hx0def. apply fresh_notin. }
       assert (Heqterm : B0 ^^ N0 = (open_var B0 s1a x0) ⁅ x0 ≔ N0 ⁆)
         by (apply subst_intro; [exact Hx0B | exact HlcN0]).
       assert (Hdegsub : deg ((open_var B0 s1a x0) ⁅ x0 ≔ N0 ⁆) = deg (open_var B0 s1a x0))
-        by (apply deg_subst_open; [exact Hx0B | exact HlcOpen | exact HlcN0 | exact Hdeg_N0]).
-      assert (Hdegopen : deg (open_var B0 s1a x0) = deg_aux [s1a] B0)
-        by (symmetry; apply (deg_open B0 x0 s1a (@nil Sort) HlcOpen)).
+        by (apply deg_subst_open; [exact Hx0B | exact HTag1 | exact HlcN0 | exact Hdeg_N0]).
+      assert (Hdegopen : deg B0 = deg (open_var B0 s1a x0))
+        by (apply deg_open; exact HTag1).
       unfold deg. rewrite Heqterm.
       unfold deg in Hdegsub, Hdegopen.
-      rewrite Hdegsub, Hdegopen.
+      rewrite Hdegsub. rewrite <- Hdegopen.
       exact IHM.
 
   - (* conv *)
@@ -403,19 +351,14 @@ Proof.
     unfold deg in *. lia.
 Qed.
 
-Lemma deg_aux_le_top : forall t ctx, deg_aux ctx t <= n + 1.
+Lemma deg_le_top : forall t, deg t <= n + 1.
 Proof.
-  induction t as [s | n0 | sv v | P IHP Q IHQ | s A IHA M IHM | s A IHA B IHB];
-    intros ctx; simpl; auto.
+  induction t as [s | s_n0 n0 | sv v | P IHP Q IHQ | s A IHA M IHM | s A IHA B IHB];
+    simpl; auto.
   - pose proof (index_range s) as [_ H]. lia.
-  - destruct (nth_error ctx n0) as [s|] eqn:E.
-    + pose proof (index_range s) as [_ H]. lia.
-    + lia.
+  - pose proof (index_range s_n0) as [_ H]. lia.
   - pose proof (index_range sv) as [_ H]. lia.
 Qed.
-
-Lemma deg_le_top : forall M, deg M <= n + 1.
-Proof. intros M. apply deg_aux_le_top. Qed.
 
 Lemma deg_top : forall M, (derivable M) ->
   (deg M = n + 1 <-> exists s, M = t_sort s /\ index_of s = n).
@@ -426,8 +369,8 @@ Proof.
       [ sa sb HA
       | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
       | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-      | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-      | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+      | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+      | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
       | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
       | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ].
     + exists sa. split; [reflexivity |]. unfold deg in Hdeg. simpl in Hdeg. lia.
@@ -437,20 +380,20 @@ Proof.
     + exfalso. unfold deg in Hdeg. simpl in Hdeg.
       assert (Hsucc : deg (t_sort s3) = deg (t_pi s1 A0 B0) + 1)
         by (apply deg_typing_succ with Γ0;
-            apply (typing_pi Γ0 A0 B0 s1 s2 s3 L HA HB HR)).
+            apply (typing_pi Γ0 A0 B0 s1 s2 s3 L HA HTagB HB HR)).
       unfold deg in Hsucc. simpl in Hsucc.
       pose proof (index_range s3) as [_ Hs2]. lia.
     + exfalso. unfold deg in Hdeg. simpl in Hdeg.
       assert (Hsucc1 : deg (t_pi s1 A0 B0) = deg (t_lam s1 A0 M0) + 1)
         by (apply deg_typing_succ with Γ0;
-            apply (typing_lam Γ0 A0 M0 B0 s1 s3 L HA HM HPi)).
+            apply (typing_lam Γ0 A0 M0 B0 s1 s3 L HA HTagM HM HPi)).
       unfold deg in Hsucc1. simpl in Hsucc1.
-      pose proof (deg_aux_le_top B0 [s1]) as HB'. lia.
+      pose proof (deg_le_top B0) as HB'. unfold deg in *. lia.
     + exfalso. unfold deg in Hdeg. simpl in Hdeg.
       assert (Hsucc : deg (t_pi s1a A0 B0) = deg M0 + 1)
         by (apply deg_typing_succ with Γ0; exact HM).
       unfold deg in Hsucc. simpl in Hsucc.
-      pose proof (deg_aux_le_top B0 [s1a]) as HB'. unfold deg in Hdeg. lia.
+      pose proof (deg_le_top B0) as HB'. unfold deg in *. lia.
     + apply IHM. exact Hdeg.
 
   - intros [s [Heq Hidx]]. subst M. unfold deg. simpl. lia.
@@ -465,8 +408,8 @@ Proof.
       [ sa sb HA
       | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
       | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-      | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-      | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+      | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+      | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
       | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
       | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ].
 
@@ -482,15 +425,15 @@ Proof.
     + apply IHM0. apply Hdeg.
 
     + exists Γ0, s3. split.
-      * apply (typing_pi Γ0 A0 B0 s1 s2 s3 L HA HB HR).
+      * apply (typing_pi Γ0 A0 B0 s1 s2 s3 L HA HTagB HB HR).
       * pose proof (deg_typing_succ Γ0 (t_pi s1 A0 B0) (t_sort s3)
-                      (typing_pi Γ0 A0 B0 s1 s2 s3 L HA HB HR)) as Hsucc.
+                      (typing_pi Γ0 A0 B0 s1 s2 s3 L HA HTagB HB HR)) as Hsucc.
         unfold deg in Hsucc, Hdeg. simpl in Hsucc, Hdeg. lia.
 
     + exfalso.
       assert (Hsucc1 : deg (t_pi s1 A0 B0) = deg (t_lam s1 A0 M0) + 1)
         by (apply deg_typing_succ with Γ0;
-            apply (typing_lam Γ0 A0 M0 B0 s1 s3 L HA HM HPi)).
+            apply (typing_lam Γ0 A0 M0 B0 s1 s3 L HA HTagM HM HPi)).
       unfold deg in Hsucc1, Hdeg. simpl in Hsucc1, Hdeg.
       assert (Htop : deg (t_pi s1 A0 B0) = n + 1) by (unfold deg; simpl; lia).
       assert (Hderiv : derivable (t_pi s1 A0 B0)).
@@ -720,7 +663,7 @@ Fixpoint rho (i : nat) (M : term) : term :=
       | 0 => t_fvar (sort_of 2) zero_var
       | _ => t_sort (sort_of i)
       end
-  | t_bvar k => t_bvar k
+  | t_bvar s0 k => t_bvar s0 k
   | t_fvar s0 x =>
       t_fvar (sort_of (i + 2)) (retag x (sort_of (i + 2)))
   | t_pi s A B =>
@@ -912,7 +855,7 @@ Lemma rho_min_tier_noop : forall M D m v N',
   m < D -> m + 2 <= n ->
   (rho D M) ⁅ retag v (sort_of (m + 2)) ≔ N' ⁆ = rho D M.
 Proof.
-  induction M as [s | k | sy y | P IHP Q IHQ | s A IHA M' IHM' | s A IHA B IHB];
+  induction M as [s | s_k k | sy y | P IHP Q IHQ | s A IHA M' IHM' | s A IHA B IHB];
     intros D m v N' Hmd Hmn.
   - (* t_sort s *)
     destruct D as [| D']; [lia | simpl; reflexivity].
@@ -981,7 +924,7 @@ Lemma subst_high_preserves_clean_low : forall P vhi R vlo,
   (forall N0, P ⁅ vlo ≔ N0 ⁆ = P) ->
   forall N1, (P ⁅ vhi ≔ R ⁆) ⁅ vlo ≔ N1 ⁆ = P ⁅ vhi ≔ R ⁆.
 Proof.
-  induction P as [s | k | sy y | P1 IHP1 P2 IHP2 | s A IHA M' IHM' | s A IHA B IHB];
+  induction P as [s | s_k k | sy y | P1 IHP1 P2 IHP2 | s A IHA M' IHM' | s A IHA B IHB];
     intros vhi R vlo Hne HRclean HPclean N1.
   - reflexivity.
   - reflexivity.
@@ -1031,29 +974,27 @@ Qed.
 Fixpoint only_tagged (x : var) (s : Sort) (t : term) : Prop :=
   match t with
   | t_sort _    => True
-  | t_bvar _    => True
+  | t_bvar _ _  => True
   | t_fvar s0 y => y = x -> s0 = s
   | t_app P Q   => only_tagged x s P /\ only_tagged x s Q
   | t_pi _ A B  => only_tagged x s A /\ only_tagged x s B
   | t_lam _ A M => only_tagged x s A /\ only_tagged x s M
   end.
 
-Lemma deg_aux_subst_tagged : forall C x s N ctx,
+Lemma deg_subst_tagged : forall C x s N,
   only_tagged x s C -> lc N -> deg N = index_of s - 1 ->
-  deg_aux ctx (C ⁅ x ≔ N ⁆) = deg_aux ctx C.
+  deg (C ⁅ x ≔ N ⁆) = deg C.
 Proof.
-  induction C as [s0 | k | s0 y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
-    intros x s N ctx Htag HlcN HdegN; simpl in *.
+  induction C as [s0 | s_k k | s0 y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
+    intros x s N Htag HlcN HdegN; simpl in *.
   - reflexivity.
   - reflexivity.
   - destruct (eq_var_dec y x) as [Heq | Hneq].
-    + subst y. rewrite (Htag eq_refl).
-      rewrite (deg_aux_ctx_indep N HlcN ctx []).
-      unfold deg in HdegN. exact HdegN.
+    + subst y. rewrite (Htag eq_refl). exact HdegN.
     + reflexivity.
-  - destruct Htag as [HtagP _]. apply (IHP x s N ctx HtagP HlcN HdegN).
-  - destruct Htag as [_ HtagM]. apply (IHM x s N (s1 :: ctx) HtagM HlcN HdegN).
-  - destruct Htag as [_ HtagB]. apply (IHB x s N (s1 :: ctx) HtagB HlcN HdegN).
+  - destruct Htag as [HtagP _]. apply (IHP x s N HtagP HlcN HdegN).
+  - destruct Htag as [_ HtagM]. apply (IHM x s N HtagM HlcN HdegN).
+  - destruct Htag as [_ HtagB]. apply (IHB x s N HtagB HlcN HdegN).
 Qed.
 
 (** If [P] is already clean below tier [D+2] (in the [rho_min_tier_noop]
@@ -1203,10 +1144,10 @@ Qed.
     "[deg] is subst-invariant" fact replaced by [deg_aux_subst_tagged]
     under the explicit [only_tagged] hypothesis this representation
     actually needs (see the comment there). *)
-Lemma rho_commutes_substitution_aux :
+Lemma rho_commutes_substitution :
   forall i, 0 <= i <= n ->
   forall x s, x <> zero_var -> 1 <= index_of s <= n ->
-  forall M ctx, deg_aux ctx M >= i + 1 -> only_tagged x s M ->
+  forall M, deg M >= i + 1 -> only_tagged x s M ->
   forall N, deg N = index_of s - 1 -> lc N ->
   rho i (M ⁅ x ≔ N ⁆) = rho_subst M N x s i.
 Proof.
@@ -1214,8 +1155,8 @@ Proof.
   induction i as [i IHouter] using
     (well_founded_induction (Wf_nat.well_founded_ltof nat (fun i => n - i))).
   intros Hi x s Hxnz Hx M.
-  induction M as [s0 | m | sy y | D IHD C IHC | s1 C IHC D IHD | s1 C IHC D IHD];
-    intros ctx Hdeg Honly N HdegN HlcN.
+  induction M as [s0 | s_m m | sy y | D IHD C IHC | s1 C IHC D IHD | s1 C IHC D IHD];
+    intros Hdeg Honly N HdegN HlcN.
 
   - (* M = t_sort s0 *)
     rewrite subst_sort. unfold rho_subst.
@@ -1248,7 +1189,7 @@ Proof.
     rewrite subst_bvar. unfold rho_subst.
     destruct (lt_dec (index_of s) (i + 2)) as [E | E].
     + reflexivity.
-    + assert (Hconst : forall y0 k, t_bvar y0 = rho_subst_tel (t_bvar y0) N x i k)
+    + assert (Hconst : forall sy0 y0 k, t_bvar sy0 y0 = rho_subst_tel (t_bvar sy0 y0) N x i k)
       by (induction k as [| k' IHk]; auto).
       apply Hconst.
 
@@ -1295,9 +1236,9 @@ Proof.
   - (* M = t_app D C *)
     destruct Honly as [HonlyD HonlyC].
     assert (HdegEqC : deg (C ⁅ x ≔ N ⁆) = deg C)
-    by (apply (deg_aux_subst_tagged C x s N []); auto).
+    by (apply (deg_subst_tagged C x s N); auto).
     assert (HdegEqD : deg (D ⁅ x ≔ N ⁆) = deg D)
-    by (apply (deg_aux_subst_tagged D x s N []); auto).
+    by (apply (deg_subst_tagged D x s N); auto).
 
     destruct (le_lt_dec (i + 1) (deg C)) as [HdegC | HdegC].
 
@@ -1313,13 +1254,13 @@ Proof.
           assert (Htel : forall k', k' <= k -> rho_app_tel rho (D⁅x≔N⁆) (C⁅x≔N⁆) i k' = rho_app_tel rho D C i k').
           { induction k' as [| k'' IHk']; intros Hk'.
             - simpl. f_equal.
-              + apply IHD with (ctx := ctx); auto.
-              + apply IHC with (ctx := []); auto.
+              + apply IHD; auto.
+              + apply IHC; auto.
             - simpl. f_equal.
               + apply IHk'. lia.
               + assert (HCle : deg C <= n + 1) by (apply deg_le_top).
                 assert (HIH : rho (i + S k'') (C⁅x≔N⁆) = rho_subst C N x s (i + S k''))
-                  by (apply IHouter with (ctx := []); [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN]).
+                  by (apply IHouter; [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN]).
                 rewrite HIH. unfold rho_subst.
                 destruct (lt_dec (index_of s) (i + S k'' + 2)) as [_ | Hcontra]; [reflexivity | lia]. }
            apply Htel; lia.
@@ -1327,9 +1268,9 @@ Proof.
         ++ (* j >= i+2 *)
           rewrite HdegEqC.
           assert (FD : rho i (D ⁅ x ≔ N ⁆) = rho_subst_tel (rho i D) N x i (index_of s - i - 2))
-          by (apply IHD with (ctx := ctx); auto).
+          by (apply IHD; auto).
           assert (FC : rho i (C ⁅ x ≔ N ⁆) = rho_subst_tel (rho i C) N x i (index_of s - i - 2))
-          by (apply IHC with (ctx := []); auto).
+          by (apply IHC; auto).
 
           remember (fun i0 M0 => rho_subst M0 N x s i0) as f.
           assert (Step1 : forall k, k <= deg C - 1 - i ->
@@ -1343,7 +1284,7 @@ Proof.
             - simpl. rewrite Heqf. f_equal.
               + rewrite <- Heqf. apply IHk. lia.
               + assert (HCle : deg C <= n + 1) by (apply deg_le_top).
-                apply IHouter with (ctx := []); [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN].
+                apply IHouter; [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN].
           }
           rewrite Step1; auto.
 
@@ -1392,18 +1333,18 @@ Proof.
 
       * (* j < i+2 *)
         simpl. destruct (le_lt_dec (i + 1) (deg C)) as [E' | E']. lia.
-        apply IHD with (ctx := ctx); auto.
+        apply IHD; auto.
 
       * (* j >= i+2 *)
         assert (F : rho i (D ⁅ x ≔ N ⁆) = rho_subst_tel (rho i D) N x i (index_of s - i - 2))
-        by (apply IHD with (ctx := ctx); auto).
+        by (apply IHD; auto).
         rewrite F. f_equal. simpl.
         destruct (le_lt_dec (i + 1) (deg C)) as [E' | E']. lia. auto.
 
   - (* M = t_lam s1 C D *)
     destruct Honly as [HonlyC HonlyD].
     assert (HdegEqC : deg (C ⁅ x ≔ N ⁆) = deg C)
-    by (apply (deg_aux_subst_tagged C x s N []); auto).
+    by (apply (deg_subst_tagged C x s N); auto).
     destruct (le_lt_dec (i + 2) (deg C)) as [HdegC | HdegC].
 
     + (* deg C >= i+2 *)
@@ -1420,13 +1361,13 @@ Proof.
           { induction k' as [| k'' IHk']; intros Hk'.
             - simpl. f_equal.
               + assert (HIH : rho (i + 1) (C⁅x≔N⁆) = rho_subst C N x s (i + 1))
-                  by (apply IHouter with (ctx := []); [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN]).
+                  by (apply IHouter; [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN]).
                 rewrite HIH. unfold rho_subst.
                 destruct (lt_dec (index_of s) (i + 1 + 2)) as [_ | Hcontra]; [reflexivity | lia].
-              + apply IHD with (ctx := s1 :: ctx); auto.
+              + apply IHD; auto.
             - simpl. f_equal.
               + assert (HIH : rho (i + 1 + S k'') (C⁅x≔N⁆) = rho_subst C N x s (i + 1 + S k''))
-                  by (apply IHouter with (ctx := []); [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN]).
+                  by (apply IHouter; [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN]).
                 rewrite HIH. unfold rho_subst.
                 destruct (lt_dec (index_of s) (i + 1 + S k'' + 2)) as [_ | Hcontra]; [reflexivity | lia].
               + apply IHk'. lia. }
@@ -1435,18 +1376,18 @@ Proof.
         ++ (* j >= i+2 *)
           rewrite HdegEqC.
           assert (FD : rho i (D ⁅ x ≔ N ⁆) = rho_subst_tel (rho i D) N x i (index_of s - i - 2))
-          by (apply IHD with (ctx := s1 :: ctx); auto).
+          by (apply IHD; auto).
 
           remember (fun i0 M0 => rho_subst M0 N x s i0) as f.
           assert (Step1 : forall k, k <= deg C - 1 - (i + 1) ->
                     rho_lam_tel rho (C⁅x≔N⁆) (D⁅x≔N⁆) i k = rho_lam_tel f C D i k).
           { induction k as [| k' IHk]; intros Hk.
             - simpl. rewrite Heqf. f_equal.
-              + apply IHouter with (ctx := []); [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN].
+              + apply IHouter; [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN].
               + unfold rho_subst.
                 destruct (lt_dec (index_of s) (i + 2)) as [Hlt0 | Hge0]; [lia | exact FD].
             - simpl. rewrite Heqf. f_equal.
-              + apply IHouter with (ctx := []); [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN].
+              + apply IHouter; [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN].
               + rewrite <- Heqf. apply IHk. lia.
           }
           rewrite Step1; auto.
@@ -1513,18 +1454,18 @@ Proof.
 
       * (* j < i+2 *)
         simpl. destruct (le_lt_dec (i + 2) (deg C)) as [E' | E']. lia.
-        apply IHD with (ctx := s1 :: ctx); auto.
+        apply IHD; auto.
 
       * (* j >= i+2 *)
         assert (F : rho i (D ⁅ x ≔ N ⁆) = rho_subst_tel (rho i D) N x i (index_of s - i - 2))
-        by (apply IHD with (ctx := s1 :: ctx); auto).
+        by (apply IHD; auto).
         rewrite F. f_equal. simpl.
         destruct (le_lt_dec (i + 2) (deg C)) as [E' | E']. lia. auto.
 
   - (* M = t_pi s1 C D *)
     destruct Honly as [HonlyC HonlyD].
     assert (HdegEqC : deg (C ⁅ x ≔ N ⁆) = deg C)
-    by (apply (deg_aux_subst_tagged C x s N []); auto).
+    by (apply (deg_subst_tagged C x s N); auto).
     destruct (le_lt_dec (i + 1) (deg C)) as [HdegC | HdegC].
 
     + (* deg C >= i+1 *)
@@ -1539,12 +1480,12 @@ Proof.
           assert (Htel : forall k', k' <= k -> rho_pi_tel rho (C⁅x≔N⁆) (D⁅x≔N⁆) i k' = rho_pi_tel rho C D i k').
           { induction k' as [| k'' IHk']; intros Hk'.
             - simpl. f_equal.
-              + apply IHC with (ctx := []); auto.
-              + apply IHD with (ctx := s1 :: ctx); auto.
+              + apply IHC; auto.
+              + apply IHD; auto.
             - simpl. f_equal.
               + assert (HCle : deg C <= n + 1) by (apply deg_le_top).
                 assert (HIH : rho (i + S k'') (C⁅x≔N⁆) = rho_subst C N x s (i + S k''))
-                  by (apply IHouter with (ctx := []); [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN]).
+                  by (apply IHouter; [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN]).
                 rewrite HIH. unfold rho_subst.
                 destruct (lt_dec (index_of s) (i + S k'' + 2)) as [_ | Hcontra]; [reflexivity | lia].
               + apply IHk'. lia. }
@@ -1553,9 +1494,9 @@ Proof.
         ++ (* j >= i+2 *)
           rewrite HdegEqC.
           assert (FD : rho i (D ⁅ x ≔ N ⁆) = rho_subst_tel (rho i D) N x i (index_of s - i - 2))
-          by (apply IHD with (ctx := s1 :: ctx); auto).
+          by (apply IHD; auto).
           assert (FC : rho i (C ⁅ x ≔ N ⁆) = rho_subst_tel (rho i C) N x i (index_of s - i - 2))
-          by (apply IHC with (ctx := []); auto).
+          by (apply IHC; auto).
 
           remember (fun i0 M0 => rho_subst M0 N x s i0) as f.
           assert (Step1 : forall k, k <= deg C - 1 - i ->
@@ -1568,7 +1509,7 @@ Proof.
                 destruct (lt_dec (index_of s) (i + 2)) as [Hlt0 | Hge0]; [lia | exact FD].
             - simpl. rewrite Heqf. f_equal.
               + assert (HCle : deg C <= n + 1) by (apply deg_le_top).
-                apply IHouter with (ctx := []); [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN].
+                apply IHouter; [unfold ltof; lia | lia | exact Hxnz | exact Hx | unfold deg in *; lia | exact HonlyC | exact HdegN | exact HlcN].
               + rewrite <- Heqf. apply IHk. lia.
           }
           rewrite Step1; auto.
@@ -1618,25 +1559,13 @@ Proof.
 
       * (* j < i+2 *)
         simpl. destruct (le_lt_dec (i + 1) (deg C)) as [E' | E']. lia.
-        apply IHD with (ctx := s1 :: ctx); auto.
+        apply IHD; auto.
 
       * (* j >= i+2 *)
         assert (F : rho i (D ⁅ x ≔ N ⁆) = rho_subst_tel (rho i D) N x i (index_of s - i - 2))
-        by (apply IHD with (ctx := s1 :: ctx); auto).
+        by (apply IHD; auto).
         rewrite F. f_equal. simpl.
         destruct (le_lt_dec (i + 1) (deg C)) as [E' | E']. lia. auto.
-Qed.
-
-Lemma rho_commutes_substitution :
-  forall i, 0 <= i <= n ->
-  forall x s, x <> zero_var -> 1 <= index_of s <= n ->
-  forall M, deg M >= i + 1 -> only_tagged x s M ->
-  forall N, deg N = index_of s - 1 ->
-  lc N ->
-  rho i (M ⁅ x ≔ N ⁆) = rho_subst M N x s i.
-Proof.
-  intros.
-  apply rho_commutes_substitution_aux with (ctx := []); auto.
 Qed.
 
 
@@ -1787,54 +1716,186 @@ Qed.
 
 (* ----------------------------------------------------------------- *)
 (** [rho] commuting with the base beta rule itself,
-      [rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q)],
-    is the one genuinely open case, for the same reason [deg_beta]
-    above had to be axiomatized: [->b] is untyped and purely
-    syntactic, so nothing here pins down the domain's degree or the
-    local closure of [M] once opened.  A syntactic proof would go
-    through [subst_intro] (turning [M ^^ Q] into a free-variable
-    substitution [(open_var M x) ⁅ x ≔ Q ⁆] for a fresh [x]) and then
-    [rho_commutes_substitution] (now a real [Lemma], not [Admitted] --
-    see its proof above, ported against [retag] under the explicit
-    [only_tagged] side condition that representation now needs) --
-    exactly like the app case of [deg_typing_succ] and the comment on
-    [deg_beta] describe.
+      [rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q)].
 
-    That route needs [lc (open_var M s x)], and *that* is where this
-    axiom's remaining content genuinely lives: a full investigation
-    (2026-09-03) traced every hypothesis available at this axiom's one
-    call site, in [rho_commutes_beta_aux] below, and confirmed there is
-    no [lc] or typing premise anywhere in the whole [->b]/[->>b]
-    pipeline this sits in -- [rho_commutes_beta_aux], [rho_commutes_beta],
-    [rho_commutes_beta_below]/[rho_commutes_beta_total], and (on the
-    [gamma] side) [gamma_commutes_beta_aux]/[gamma_commutes_beta_base]/
-    [gamma_commutes_beta], all the way down into the [Acc]-reflection
-    argument ([sn_reflection_core]/[sn_reflection]) that Theorem 3's SN
-    transfer is built from. Adding an [lc M] premise here is not a
-    contained fix: [rho_commutes_beta_aux] would need it (this axiom's
-    call site has no other way to supply local closure), which forces
-    [rho_commutes_beta] and then [rho_commutes_beta_total] to carry it
-    too, which forces [gamma_commutes_beta_aux] to carry it (it invokes
-    [rho_commutes_beta_total] on arbitrary subterms with no [lc] premise
-    of its own), which reaches [sn_reflection]/Theorem 3's own headline
-    statement -- currently proved for *every* syntactic [M], not just
-    locally-closed ones, via a pure [Acc]-reflection argument with no
-    typing context in sight at all. Restricting Theorem 3 to [lc M] is
-    mathematically the right fix (a non-lc term is a malformed AST, not
-    a real term), but it is a materially larger undertaking than this
-    one axiom -- it touches the entire untyped beta-reduction/[Acc]
-    layer feeding Theorem 3, not just this base case. We isolate
-    exactly this base-case content and leave it axiomatized here,
-    mirroring [deg_beta] exactly, pending that dedicated follow-up. *)
+    UPDATE (2026-09-03, second pass, against Mull's actual Lemma 44 /
+    its proof, both supplied by the user): the [lc]-based analysis
+    below this paragraph (first pass, same date) turned out to be
+    chasing the wrong problem, and has been superseded -- kept only
+    because the negative results in it are still informative. Mull's
+    own Lemma 44 needs *no* [lc]/typing side condition at all, just
+    the degree bound [A in T_>=i+1] this axiom already carries -- with
+    NAMED variables, "reduction under a binder" has no escaping-de-
+    Bruijn-index issue to route around in the first place, so nothing
+    like [lc] is ever needed. Two independent de-Bruijn-specific dead
+    ends this project already ruled out, for the record: (1) making
+    [beta_lam_M]/[beta_pi_B] cofinite in [PTS.v] does NOT help -- it
+    fixes [lc]-preservation but breaks this axiom's own call site even
+    worse, since reflecting a cofinite (opened) step back down to the
+    raw step [rho_commutes_beta_aux]'s structural induction needs is
+    false in general (concrete counterexample: a nested lambda body
+    referencing a variable bound two levels out) and was reverted;
+    (2) weakening [deg_open]'s [lc (open_var B s x)] hypothesis to
+    the bare degree bound [deg_aux (s :: ctx) B >= 1] is ALSO false in
+    general once [ctx] is non-empty -- removing the [s] slot from the
+    middle of the context list requires reindexing every bound
+    variable at or past that position, which plain [open_rec] does
+    not do (concrete counterexample: [pre = []], [ctx0 = [t1;t2;t3]],
+    [n = 2] gives [nth_error (s :: ctx0) 2 = t2] but
+    [nth_error ctx0 2 = t3]) -- so [deg_open]'s [lc] hypothesis is
+    load-bearing for nested [ctx] and cannot be dropped this way.
+
+    Mull's actual proof (reverse induction on [i], then induction on
+    the reduction relation) handles this base case by degree-
+    branching on [deg Q] vs [i + 1] (mirroring [rho]'s own [t_app]
+    collapse) and, in the non-collapsing branch, by PEELING [rho i
+    (t_lam s A M)]'s own domain-telescope and [rho_app_tel]'s
+    argument-telescope one [->b]-step at a time -- ordinary,
+    untyped [beta_base] steps the whole way, since each step only
+    ever substitutes a fresh, [retag]-distinct occurrence of [x] that
+    (per Mull's own note) provably does not appear in the domain
+    telescope's own type annotations. [Lemma 43] ([rho_commutes_
+    substitution], already a real, proven [Lemma] here) is invoked
+    only ONCE at the very end, as a pure equality identifying the
+    fully-peeled result with [rho i (M ^^ Q)] -- not to establish any
+    intermediate fact, and in particular never needing [lc (open_var
+    M s x)] the way the (superseded) first-pass analysis assumed.
+
+    This route is real and achievable, but its telescope-peeling
+    argument is comparable in size/delicacy to [rho_commutes_
+    substitution_aux] above (the ~500-line, well-founded-on-[i]-then-
+    structural-on-[M] proof against [only_tagged]/[retag]) -- a new,
+    dedicated construction, not a short patch, and not attempted yet.
+    Two things Mull's excerpt leaves implicit that a Coq proof would
+    need to pin down explicitly: (a) the bound variable's sort tag is
+    always [sort_of (deg A)] in Mull's system (matching his
+    [s_{deg A} x] notation), a relationship this file's [t_lam s A M]
+    does not enforce on [s] as a free parameter; (b) the [deg Q <
+    i + 1] branch's parenthetical "(and deg A < i + 2)" suggests Mull
+    relies on a degree relationship between the redex's argument and
+    domain (matching a well-typed application's [deg Q = deg A - 1])
+    that is not otherwise available to the untyped [rho_commutes_
+    beta_aux] call site below and would need to be threaded in,
+    exactly the kind of extra hypothesis [only_tagged] was for
+    [rho_commutes_substitution_aux]. We leave the axiom in place,
+    with this as the accurate map for whoever picks it up next. *)
+
+(** SECOND UPDATE (2026-09-03, third pass): concrete progress on both
+    open items (a)/(b) above and on the telescope-peeling argument
+    itself, worked out in scratch (not yet in this file as real
+    [Lemma]s -- recorded here so the next session does not redo the
+    exploration). Net effect: [rho_commutes_beta_base] is NOT yet
+    eliminated -- it still needs a nontrivial peeling construction --
+    but the shape of that construction is now understood precisely,
+    which was not true before this pass.
+
+    (a)/(b) resolved cheaply, without adding raw syntactic
+    hypotheses: give the axiom [Γ ⊢ A ∈ t_sort s] (exactly [typing_
+    lam]'s own domain premise) and [Γ ⊢ Q ∈ A] (exactly [typing_app]'s
+    own argument premise) instead of a bare degree bound. From these,
+    [s = sort_of (deg A)] and [deg Q = deg A - 1] both fall out in
+    about ten lines via [deg_sort_typed]/[deg_typing_succ] (already
+    in this file) plus [sort_of_correct]/[index_inj] (already in
+    [TPTSSignature.v]/here) -- no new hypothesis needed, confirming
+    the concern in (a)/(b) was real but cheap to discharge once
+    routed through typing rather than posited directly.
+
+    Low case (deg Q < i + 1): closes completely, but not via the
+    existing [rho_erased_subst_below] axiom -- that axiom is
+    specifically the TYPE-level sibling Lemma 45's machinery needs
+    (its every call site, e.g. the [typing_app] branch discharging
+    [rho_app_tower], invokes it at tier [i + 1] against a [deg N <
+    i + 1] bound on a PI's codomain, one tier above the value). The
+    value-level fact Lemma 44's low case actually needs -- [rho i
+    (M ^^ Q) = rho i M] at the SAME tier the degree bound is stated
+    at -- is a distinct, not derivable-by-reindexing fact (shifting
+    [rho_erased_subst_below]'s own tier down by one would need the
+    strictly tighter [deg Q < i], not [deg Q < i + 1]). Left as its
+    own new, precisely-scoped axiom in scratch,
+    [rho_erased_subst_below_value : forall M Q i, deg Q < i + 1 ->
+    rho i (M ^^ Q) = rho i M], structurally the same phenomenon as
+    its type-level sibling and just as believable, but unproven and
+    not yet added to this file (no point inflating the axiom count
+    for a fact not yet load-bearing anywhere real).
+
+    High case (deg Q >= i + 1): hand-traced the actual reduction
+    precisely, which corrects a wrong guess from the FIRST update
+    above. [rho i (t_app (t_lam s A M) Q)] unfolds (via [rho_app_
+    named]/[rho_lam_named], both firing since [deg A >= i + 2] here)
+    to a [k+1]-argument application chain (Q's translations at tiers
+    i .. i+k, left-associated) whose FUNCTION position is the WHOLE
+    [k+1]-layer domain telescope [rho_lam_tel rho A M i k] in one
+    piece (not spread across the chain), where [k = deg A - i - 2 =
+    deg Q - i - 1]. Reducing the innermost redex first: since [A] is
+    fully [lc] (free from [Γ ⊢ A ∈ t_sort s] via [typing_lc] -- no
+    extra hypothesis needed here either), every domain slot the
+    telescope's own [beta_base] steps consume is untouched by the
+    substitution ([open_rec_lc]), and -- this is the part that took
+    care to get right -- [M]'s own bound-variable occurrence sits
+    [k] layers below the outermost binder, so it is untouched by the
+    first [k] reductions too: those [k] steps peel a domain layer
+    each and DISCARD the argument they consume (Q's translations at
+    tiers i, i+1, ..., i+k-1 all vanish, unused). Only the very LAST
+    (k+1-th) reduction reaches [M] itself, substituting [rho (i + k)
+    Q = rho (deg Q - 1) Q] -- the HIGHEST-tier translation of [Q],
+    matching Mull's own [ρi(M)[ρ_{degN−1}(N)/x]] notation exactly (an
+    earlier guess in this pass had assumed [rho i Q] survived
+    instead; hand-checking the [open_rec] index-threading through the
+    telescope corrected that). So the peeling chain itself is a
+    clean, self-contained induction needing only [lc A] -- no new
+    axiom -- BUT it is not simply "induction on [k]" against the
+    lemma's own top-level statement: [rho_app_tel]'s recursion at a
+    smaller [k' < k] does NOT correspond to a smaller instance of the
+    same problem, because the embedded lam-telescope stays the FULL,
+    fixed [k]-layer one at every [k']; a naive [IHk] leaves a
+    dangling, wrongly-tiered extra application. The fix is to
+    generalize the lemma so the lam-telescope's OWN depth is a second
+    free parameter tied 1-1 to the app-chain's remaining depth (i.e.
+    prove the fact about a [k']-layer telescope applied to its own
+    matching [k'+1]-argument chain, for all [k'], not about
+    [rho_app_tel] applied to the fixed, full-depth [t_lam s A M])
+    -- not yet written, but the fix itself is now a small, mechanical
+    restatement, not an open question.
+
+    The chain's endpoint, [(rho i M) ^^ (rho (deg Q - 1) Q)], still
+    needs one final identification with [rho i (M ^^ Q)] to close the
+    lemma. This does NOT come from [rho_commutes_substitution] (Lemma
+    43) directly -- that lemma is about free-variable substitution
+    ([M ⁅ x ≔ N ⁆]), not de Bruijn opening ([M ^^ N]); bridging the
+    two via [subst_intro] reintroduces exactly the "does [rho] commute
+    with opening" question. That is not a new dead end: it is the
+    same boundary the file's own pre-existing, still-unproven axiom
+    cluster ([rho_pi_domain_erased_below], [rho_lam_domain_erased_
+    below], [rho_app_tower], [rho_pi_tower], [rho_lam_tower]) already
+    sits on. Plausibly those axioms, once proven, hand this final step
+    over directly -- worth checking first, before inventing yet
+    another bespoke fact. *)
+
+(** FIRST-PASS ANALYSIS (2026-09-03, superseded by the update above --
+    kept for its still-useful negative results, see there): [->b] is
+    untyped and purely syntactic, so nothing here pins down the
+    domain's degree or the local closure of [M] once opened.  A
+    syntactic proof would go through [subst_intro] (turning [M ^^ Q]
+    into a free-variable substitution [(open_var M x) ⁅ x ≔ Q ⁆] for a
+    fresh [x]) and then [rho_commutes_substitution] -- exactly like
+    the app case of [deg_typing_succ] and the comment on [deg_beta]
+    describe. That route needs [lc (open_var M s x)], which forces
+    [rho_commutes_beta_aux]/[rho_commutes_beta]/[rho_commutes_beta_
+    below]/[rho_commutes_beta_total] and (on the [gamma] side)
+    [gamma_commutes_beta_aux]/[gamma_commutes_beta_base]/[gamma_
+    commutes_beta] to all carry it too, reaching [sn_reflection]/
+    Theorem 3's own headline statement. As the update above explains,
+    this whole premise turned out to be unnecessary: Mull's own lemma
+    needs no [lc] anywhere. *)
 Axiom rho_commutes_beta_base : forall i, 0 <= i <= n ->
-  forall s A M Q ctx, deg_aux (s :: ctx) M >= i + 1 ->
+  forall s A M Q, deg M >= i + 1 ->
   rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q).
 
 (* ----------------------------------------------------------------- *)
 
 Lemma rho_commutes_beta_aux :
   forall i, 0 <= i <= n ->
-  forall M ctx, deg_aux ctx M >= i + 1 ->
+  forall M, deg M >= i + 1 ->
   forall N, M ->b N ->
   rho i M ->>b rho i N.
 Proof.
@@ -1842,8 +1903,8 @@ Proof.
   induction i as [i IHouter] using
     (well_founded_induction (Wf_nat.well_founded_ltof nat (fun i => n - i))).
   intros Hi M.
-  induction M as [s | m | y | P IHP Q IHQ | s A IHA M' IHM' | s A IHA B IHB];
-    intros ctx Hdeg N Hstep.
+  induction M as [s | s_m m | y | P IHP Q IHQ | s A IHA M' IHM' | s A IHA B IHB];
+    intros Hdeg N Hstep.
 
   - (* t_sort *) inversion Hstep.
   - (* t_bvar *) inversion Hstep.
@@ -1854,21 +1915,21 @@ Proof.
     inversion Hstep; subst; clear Hstep.
 
     + (* beta_base *)
-      apply rho_commutes_beta_base with (ctx := ctx); [exact Hi | ].
+      apply rho_commutes_beta_base; [exact Hi | ].
       simpl in Hdeg. exact Hdeg.
 
     + (* beta_app_l *)
       match goal with
       | Hs : P ->b ?P' |- _ =>
-        assert (HdegP : deg_aux ctx P >= i + 1) by exact Hdeg;
+        assert (HdegP : deg P >= i + 1) by exact Hdeg;
         destruct (le_lt_dec (i + 1) (deg Q)) as [E | E];
         [ rewrite (rho_app_named i P Q E); rewrite (rho_app_named i P' Q E);
           apply rho_app_tel_func_congr;
-          apply IHP with ctx; auto
+          apply IHP; auto
         | assert (Hrho1 : rho i (t_app P Q) = rho i P) by (simpl; destruct (le_lt_dec (i+1) (deg Q)); [lia | reflexivity]);
           assert (Hrho2 : rho i (t_app P' Q) = rho i P') by (simpl; destruct (le_lt_dec (i+1) (deg Q)); [lia | reflexivity]);
           rewrite Hrho1, Hrho2;
-          apply IHP with ctx; auto ]
+          apply IHP; auto ]
       end.
 
     + (* beta_app_r *)
@@ -1885,8 +1946,8 @@ Proof.
           assert (HQle : deg Q <= n + 1) by (apply deg_le_top);
           assert (HdegQm : deg Q >= mtier + 1) by lia;
           destruct (Nat.eq_dec mtier i) as [Heqm | Hneqm];
-          [ subst mtier; apply IHQ with []; [unfold deg in *; lia | exact Hs]
-          | apply IHouter with []; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs] ]
+          [ subst mtier; apply IHQ; [unfold deg in *; lia | exact Hs]
+          | apply IHouter; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs] ]
         | assert (E' : ~ i + 1 <= deg Q') by lia;
           assert (Hrho1 : rho i (t_app P Q) = rho i P) by (simpl; destruct (le_lt_dec (i+1) (deg Q)); [lia | reflexivity]);
           assert (Hrho2 : rho i (t_app P Q') = rho i P) by (simpl; destruct (le_lt_dec (i+1) (deg Q')); [lia | reflexivity]);
@@ -1909,7 +1970,7 @@ Proof.
           intros mtier Hmtier;
           assert (HAle : deg A <= n + 1) by (apply deg_le_top);
           assert (HdegAm : deg A >= mtier + 1) by lia;
-          apply IHouter with []; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs]
+          apply IHouter; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs]
         | assert (E' : ~ i + 2 <= deg A1') by lia;
           assert (Hrho1 : rho i (t_lam s A M') = rho i M') by (simpl; destruct (le_lt_dec (i+2) (deg A)); [lia | reflexivity]);
           assert (Hrho2 : rho i (t_lam s A1' M') = rho i M') by (simpl; destruct (le_lt_dec (i+2) (deg A1')); [lia | reflexivity]);
@@ -1919,15 +1980,15 @@ Proof.
     + (* beta_lam_M *)
       match goal with
       | Hs : M' ->b ?M1' |- _ =>
-        assert (HdegM' : deg_aux (s :: ctx) M' >= i + 1) by exact Hdeg;
+        assert (HdegM' : deg M' >= i + 1) by exact Hdeg;
         destruct (le_lt_dec (i + 2) (deg A)) as [E | E];
         [ rewrite (rho_lam_named i s A M' E); rewrite (rho_lam_named i s A M1' E);
           apply rho_lam_tel_body_congr;
-          apply IHM' with (s :: ctx); auto
+          apply IHM'; auto
         | assert (Hrho1 : rho i (t_lam s A M') = rho i M') by (simpl; destruct (le_lt_dec (i+2) (deg A)); [lia | reflexivity]);
           assert (Hrho2 : rho i (t_lam s A M1') = rho i M1') by (simpl; destruct (le_lt_dec (i+2) (deg A)); [lia | reflexivity]);
           rewrite Hrho1, Hrho2;
-          apply IHM' with (s :: ctx); auto ]
+          apply IHM'; auto ]
       end.
 
   - (* t_pi s A B *)
@@ -1947,8 +2008,8 @@ Proof.
           assert (HAle : deg A <= n + 1) by (apply deg_le_top);
           assert (HdegAm : deg A >= mtier + 1) by lia;
           destruct (Nat.eq_dec mtier i) as [Heqm | Hneqm];
-          [ subst mtier; apply IHA with []; [unfold deg in *; lia | exact Hs]
-          | apply IHouter with []; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs] ]
+          [ subst mtier; apply IHA; [unfold deg in *; lia | exact Hs]
+          | apply IHouter; [unfold ltof; lia | lia | unfold deg in *; lia | exact Hs] ]
         | assert (E' : ~ i + 1 <= deg A1') by lia;
           assert (Hrho1 : rho i (t_pi s A B) = rho i B) by (simpl; destruct (le_lt_dec (i+1) (deg A)); [lia | reflexivity]);
           assert (Hrho2 : rho i (t_pi s A1' B) = rho i B) by (simpl; destruct (le_lt_dec (i+1) (deg A1')); [lia | reflexivity]);
@@ -1958,15 +2019,15 @@ Proof.
     + (* beta_pi_B *)
       match goal with
       | Hs : B ->b ?B1' |- _ =>
-        assert (HdegB : deg_aux (s :: ctx) B >= i + 1) by exact Hdeg;
+        assert (HdegB : deg B >= i + 1) by exact Hdeg;
         destruct (le_lt_dec (i + 1) (deg A)) as [E | E];
         [ rewrite (rho_pi_named i s A B E); rewrite (rho_pi_named i s A B1' E);
           apply rho_pi_tel_body_congr;
-          apply IHB with (s :: ctx); auto
+          apply IHB; auto
         | assert (Hrho1 : rho i (t_pi s A B) = rho i B) by (simpl; destruct (le_lt_dec (i+1) (deg A)); [lia | reflexivity]);
           assert (Hrho2 : rho i (t_pi s A B1') = rho i B1') by (simpl; destruct (le_lt_dec (i+1) (deg A)); [lia | reflexivity]);
           rewrite Hrho1, Hrho2;
-          apply IHB with (s :: ctx); auto ]
+          apply IHB; auto ]
       end.
 Qed.
 
@@ -1978,15 +2039,11 @@ Lemma rho_commutes_beta :
 Proof.
   intros i Hi M Hdeg N Hbeta.
   induction Hbeta as [M | M N Hstep | M N P Hstep1 IH1 Hstep2 IH2].
-
   - apply brt_refl.
-
-  - apply (rho_commutes_beta_aux i Hi M [] Hdeg N Hstep).
-
+  - apply (rho_commutes_beta_aux i Hi M Hdeg N Hstep).
   - apply brt_trans with (rho i N); auto.
     apply IH2; auto.
     rewrite <- (deg_beta M N Hstep1); auto.
-
 Qed.
 
 (* ================================================================= *)
@@ -2196,10 +2253,10 @@ Proof.
     + apply (IH2 HdegN).
 Qed.
 
-Lemma rho_commutes_typing_aux :
+Lemma rho_commutes_typing :
   forall i, 0 <= i <= n ->
   forall Γ M N, Γ ⊢ M ∈ N ->
-  forall ctx, deg_aux ctx M >= i + 1 ->
+  deg M >= i + 1 ->
   rho_ctx (i + 1) Γ ⊢* (rho i M) ∈ (rho (i + 1) N).
 Proof.
   intros i.
@@ -2210,11 +2267,11 @@ Proof.
     [ s s' HA
     | Γ0 x A0 s0 Hfresh HA IHA
     | Γ0 x B0 M0 A0 s0 Hfresh HM IHM HB IHB
-    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 s HM IHM Heq HB IHB ];
-    intros ctx Hdeg.
+    intros Hdeg.
 
   - (* typing_axiom *)
     simpl in Hdeg.
@@ -2252,10 +2309,8 @@ Proof.
     assert (Hj2 : index_of s0 >= i + 2) by lia.
     assert (Hlt : ltof nat (fun k => n - k) (i + 1) i) by (unfold ltof; lia).
     assert (Hij : 0 <= i + 1 <= n) by (pose proof (index_range s0); lia).
-    assert (HdegA0' : deg_aux (@nil Sort) A0 >= (i + 1) + 1)
-      by (unfold deg in HdegA0; lia).
-    pose proof (IHouter (i + 1) Hlt Hij Γ0 A0 (t_sort s0) HA
-                  (@nil Sort) HdegA0') as HIH.
+    assert (HdegA0' : deg A0 >= (i + 1) + 1) by (lia).
+    pose proof (IHouter (i + 1) Hlt Hij Γ0 A0 (t_sort s0) HA HdegA0') as HIH.
     replace (i + 1 + 1) with (S (S i)) in HIH by lia.
     simpl in HIH.
     replace (S (S i)) with (i + 2) in HIH by lia.
@@ -2294,7 +2349,7 @@ Proof.
 
   - (* typing_weak *)
     exact (typing_star_weakening_incl _ _ _ _ (rho_ctx_incl_old Γ0 (i + 1) x s0 B0)
-             (IHM ctx Hdeg)).
+             (IHM Hdeg)).
 
   - (* typing_pi *)
     simpl in Hdeg.
@@ -2309,9 +2364,8 @@ Proof.
     { intro Hc. apply (fresh_notin (dom Γ0 ++ L)).
       apply in_or_app. right. exact Hc. }
     assert (HBx0 : Γ0 ++ [(x0, (s1, A0))] ⊢ open_var B0 s1 x0 ∈ t_sort s2) by (apply HB; exact Hx0L).
-    destruct (typing_lc _ _ _ HBx0) as [Hlcopen _].
-    assert (Hdegopen : deg_aux ctx (open_var B0 s1 x0) >= i + 1)
-      by (rewrite <- (deg_open B0 x0 s1 ctx Hlcopen); exact Hdeg).
+    assert (Hdegopen : deg (open_var B0 s1 x0) >= i + 1)
+      by (rewrite <- (deg_open B0 x0 s1 HTagB); exact Hdeg).
     assert (Hcast : rho (i + 1) (t_sort s2) = t_sort (sort_of (i + 1))).
     { replace (i + 1) with (S i) by lia. reflexivity. }
     destruct (le_lt_dec (i + 1) (deg A0)) as [HJge | HJlt].
@@ -2323,10 +2377,9 @@ Proof.
       * lia.
       * intros x Hx.
         assert (HBx : Γ0 ++ [(x, (s1, A0))] ⊢ open_var B0 s1 x ∈ t_sort s2) by (apply HB; exact Hx).
-        destruct (typing_lc _ _ _ HBx) as [Hlcx _].
-        assert (Hd : deg_aux ctx (open_var B0 s1 x) >= i + 1)
-          by (rewrite <- (deg_open B0 x s1 ctx Hlcx); exact Hdeg).
-        pose proof (IHB x Hx ctx Hd) as HIH.
+        assert (Hd : deg (open_var B0 s1 x) >= i + 1)
+          by (rewrite <- (deg_open B0 x s1 HTagB); exact Hdeg).
+        pose proof (IHB x Hx Hd) as HIH.
         rewrite Hcast in HIH. exact HIH.
 
     + (* j < i+1 *)
@@ -2336,7 +2389,7 @@ Proof.
       assert (Hjlt' : index_of s1 < i + 1) by lia.
       apply (rho_pi_domain_erased_below Γ0 x0 A0 B0 s1 (t_sort (sort_of (i + 1))) i
                Hx0dom HA Hjlt').
-      pose proof (IHB x0 Hx0L ctx Hdegopen) as HIH.
+      pose proof (IHB x0 Hx0L Hdegopen) as HIH.
       rewrite Hcast in HIH. exact HIH.
 
   - (* typing_lam *)
@@ -2350,9 +2403,8 @@ Proof.
     { intro Hc. apply (fresh_notin (dom Γ0 ++ L)).
       apply in_or_app. right. exact Hc. }
     assert (HMx0 : Γ0 ++ [(x0, (s1, A0))] ⊢ open_var M0 s1 x0 ∈ open_var B0 s1 x0) by (apply HM; exact Hx0L).
-    destruct (typing_lc _ _ _ HMx0) as [Hlcopen _].
-    assert (Hdegopen : deg_aux ctx (open_var M0 s1 x0) >= i + 1)
-      by (rewrite <- (deg_open M0 x0 s1 ctx Hlcopen); exact Hdeg).
+    assert (Hdegopen : deg (open_var M0 s1 x0) >= i + 1)
+      by (rewrite <- (deg_open M0 x0 s1 HTagM); exact Hdeg).
     destruct (le_lt_dec (i + 2) (deg A0)) as [HJge | HJlt].
 
     + (* deg C >= i+2 *)
@@ -2366,10 +2418,9 @@ Proof.
       * lia.
       * intros x Hx.
         assert (HMx : Γ0 ++ [(x, (s1, A0))] ⊢ open_var M0 s1 x ∈ open_var B0 s1 x) by (apply HM; exact Hx).
-        destruct (typing_lc _ _ _ HMx) as [Hlcx _].
-        assert (Hd : deg_aux ctx (open_var M0 s1 x) >= i + 1)
-          by (rewrite <- (deg_open M0 x s1 ctx Hlcx); exact Hdeg).
-        apply (IHM x Hx ctx Hd).
+        assert (Hd : deg (open_var M0 s1 x) >= i + 1)
+          by (rewrite <- (deg_open M0 x s1 HTagM); exact Hdeg).
+        apply (IHM x Hx Hd).
 
     + (* deg C < i+2 *)
       assert (Hcollapse1 : rho i (t_lam s1 A0 M0) = rho i M0)
@@ -2379,7 +2430,7 @@ Proof.
       rewrite Hcollapse1, Hcollapse2.
       assert (HJlt' : index_of s1 < i + 2) by lia.
       apply (rho_lam_domain_erased_below Γ0 x0 A0 M0 B0 s1 i Hx0dom HA HJlt').
-      apply (IHM x0 Hx0L ctx Hdegopen).
+      apply (IHM x0 Hx0L Hdegopen).
 
   - (* typing_app *)
     simpl in Hdeg.
@@ -2389,7 +2440,7 @@ Proof.
 
     + (* deg N >= i+1 *)
       apply (rho_app_tower Γ0 M0 N0 A0 B0 s1a i HM HN HNge).
-      exact (IHM ctx Hdeg).
+      exact (IHM Hdeg).
 
     + (* deg N < i+1 *)
       assert (Hcollapse_app : rho i (t_app M0 N0) = rho i M0)
@@ -2400,14 +2451,13 @@ Proof.
       assert (Htgt : rho (i + 1) (B0 ^^ N0) = rho (i + 1) (t_pi s1a A0 B0)).
       { rewrite Hcol2. apply (rho_erased_subst_below B0 N0 i HNlt). }
       rewrite Htgt.
-      exact (IHM ctx Hdeg).
+      exact (IHM Hdeg).
 
   - (* typing_conv *)
     simpl in Hdeg.
     (* Hdeg : deg_aux ctx M0 >= i + 1 *)
     destruct (typing_lc _ _ _ HM) as [HlcM _].
-    assert (HdegM0 : deg M0 >= i + 1).
-    { unfold deg. rewrite <- (deg_aux_ctx_indep M0 HlcM ctx []). exact Hdeg. }
+    assert (HdegM0 : deg M0 >= i + 1) by (lia).
     assert (HdegA0 : deg A0 = deg M0 + 1)
       by (pose proof (deg_typing_succ Γ0 M0 A0 HM); lia).
     assert (HdegAB : deg A0 = deg B0)
@@ -2421,9 +2471,9 @@ Proof.
     assert (HeqRho : rho (i + 1) A0 =b rho (i + 1) B0)
       by (apply (rho_commutes_beta_eq (i + 1) Hij A0 B0 HdegA0' Heq)).
     assert (HIH1 : rho_ctx (i + 1) Γ0 ⊢* rho i M0 ∈ rho (i + 1) A0)
-      by (exact (IHM ctx Hdeg)).
-    assert (HdegB0' : deg_aux (@nil Sort) B0 >= (i + 1) + 1) by (unfold deg in *; lia).
-    pose proof (IHouter (i + 1) Hlt Hij Γ0 B0 (t_sort s) HB (@nil Sort) HdegB0') as HIH2.
+      by (exact (IHM Hdeg)).
+    assert (HdegB0' : deg B0 >= (i + 1) + 1) by (lia).
+    pose proof (IHouter (i + 1) Hlt Hij Γ0 B0 (t_sort s) HB HdegB0') as HIH2.
     replace (i + 1 + 1) with (S (S i)) in HIH2 by lia.
     simpl in HIH2.
     replace (S (S i)) with (i + 2) in HIH2 by lia.
@@ -2433,15 +2483,6 @@ Proof.
                (rho_ctx_mono Γ0 (i + 1) (i + 2) ltac:(lia)) HIH2). }
     apply (typing_star_conv (rho_ctx (i + 1) Γ0) (rho i M0) (rho (i + 1) A0)
              (rho (i + 1) B0) (sort_of (i + 2)) HIH1 HeqRho HIH2').
-Qed.
-
-Lemma rho_commutes_typing :
-  forall i, 0 <= i <= n ->
-  forall Γ M N, Γ ⊢ M ∈ N -> 
-  deg M >= i + 1 ->
-  rho_ctx (i + 1) Γ ⊢* (rho i M) ∈ (rho (i + 1) N).
-Proof.
-  intros. apply rho_commutes_typing_aux with []; auto.
 Qed.
 
 (* ================================================================= *)
@@ -2495,7 +2536,7 @@ Fixpoint gamma_app_tel (M' N : term) (k : nat) : term :=
 Fixpoint gamma (M : term) : term :=
   match M with
   | t_sort s   => t_fvar (sort_of 1) bullet_var
-  | t_bvar k   => t_bvar k
+  | t_bvar s0 k => t_bvar s0 k
   | t_fvar s0 x => t_fvar (sort_of 1) (retag x (sort_of 1))
   | t_pi s A B =>
       t_app (t_app (t_app (t_fvar (sort_of 1) prod_var)
@@ -2549,7 +2590,7 @@ Qed.
 Definition T_prod : term :=
   t_pi (sort_of 2) (t_sort (sort_of 1))
     (t_pi (sort_of 1) (t_fvar (sort_of 2) zero_var)
-       (t_pi (sort_of 1) (t_bvar 1) (t_fvar (sort_of 2) zero_var))).
+       (t_pi (sort_of 1) (t_bvar (sort_of 2) 1) (t_fvar (sort_of 2) zero_var))).
 
 Lemma subcontext_app_l : forall Γ Δ', Γ ⊆ Γ ++ Δ'.
 Proof. intros Γ Δ' x T Hin. apply in_or_app. left. exact Hin. Qed.
@@ -2587,7 +2628,7 @@ Proof.
            [(zero_var, (sort_of 2, t_sort (sort_of 1))); (bullet_var, (sort_of 1, t_fvar (sort_of 2) zero_var))]
            (t_sort (sort_of 1))
            (t_pi (sort_of 1) (t_fvar (sort_of 2) zero_var)
-              (t_pi (sort_of 1) (t_bvar 1) (t_fvar (sort_of 2) zero_var)))
+              (t_pi (sort_of 1) (t_bvar (sort_of 2) 1) (t_fvar (sort_of 2) zero_var)))
            (sort_of 2) (sort_of 1) (sort_of 1)
            (dom [(zero_var, (sort_of 2, t_sort (sort_of 1))); (bullet_var, (sort_of 1, t_fvar (sort_of 2) zero_var))])).
   - exact HtsortA.
@@ -2790,8 +2831,8 @@ Proof.
     [ s s' HA
     | Γ0 x A0 s0 Hfresh HA IHA
     | Γ0 x B0 M0 A0 s0 Hfresh HM IHM HB IHB
-    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 s HM IHM Heq HB IHB ].
 
@@ -3190,7 +3231,7 @@ Axiom gamma_commutes_beta_base : forall s A M N,
 Lemma gamma_commutes_beta_aux :
   forall M N, M ->b N -> gamma M ->>+b gamma N.
 Proof.
-  induction M as [s | m | y | P IHP Q IHQ | s A IHA M' IHM' | s A IHA B IHB];
+  induction M as [s | s_m m | y | P IHP Q IHQ | s A IHA M' IHM' | s A IHA B IHB];
     intros N Hstep.
 
   - (* t_sort *) inversion Hstep.
@@ -3402,4 +3443,3 @@ Proof.
 Qed.
 
 End TPTS.
-

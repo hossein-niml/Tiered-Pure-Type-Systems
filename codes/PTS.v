@@ -51,7 +51,7 @@ Definition eq_var_dec : forall x y : var, {x = y} + {x <> y} := Nat.eq_dec.
 
 Inductive term : Type :=
     | t_sort : Sort -> term
-    | t_bvar : nat -> term
+    | t_bvar : Sort -> nat -> term
     | t_fvar : Sort -> var -> term
     | t_app  : term -> term -> term
     | t_lam  : Sort -> term -> term -> term
@@ -63,7 +63,7 @@ Inductive term : Type :=
 Fixpoint fv (t : term) : list var :=
     match t with
     | t_sort _   => []
-    | t_bvar _   => []
+    | t_bvar _ _ => []
     | t_fvar _ x => [x]
     | t_pi _ A B   => fv A ++ fv B
     | t_lam _ A M  => fv A ++ fv M
@@ -79,7 +79,7 @@ Fixpoint fv (t : term) : list var :=
 Fixpoint open_rec (k : nat) (u : term) (t : term) : term :=
   match t with
   | t_sort s   => t_sort s
-  | t_bvar n   => if Nat.eqb n k then u else t_bvar n
+  | t_bvar s n => if Nat.eqb n k then u else t_bvar s n
   | t_fvar s x => t_fvar s x
   | t_app M N  => t_app (open_rec k u M) (open_rec k u N)
   | t_pi s A B   => t_pi s (open_rec k u A) (open_rec (S k) u B)
@@ -103,8 +103,8 @@ Definition open_var (t : term) (s : Sort) (x : var) : term := open_rec 0 (t_fvar
 Fixpoint close_rec (k : nat) (x : var) (t : term) : term :=
   match t with
   | t_sort s   => t_sort s
-  | t_bvar n   => t_bvar n
-  | t_fvar s y => if eq_var_dec y x then t_bvar k else t_fvar s y
+  | t_bvar s n => t_bvar s n
+  | t_fvar s y => if eq_var_dec y x then t_bvar s k else t_fvar s y
   | t_app M N  => t_app (close_rec k x M) (close_rec k x N)
   | t_pi s A B   => t_pi s (close_rec k x A) (close_rec (S k) x B)
   | t_lam s A M  => t_lam s (close_rec k x A) (close_rec (S k) x M)
@@ -129,7 +129,7 @@ Reserved Notation "M ⁅ x ≔ N ⁆"
 Fixpoint subst_term (x : var) (N : term) (t : term) : term :=
   match t with
   | t_sort s   => t_sort s
-  | t_bvar n   => t_bvar n
+  | t_bvar s n => t_bvar s n
   | t_fvar s y => if eq_var_dec y x then N else t_fvar s y
   | t_app P Q  => t_app (P⁅x ≔ N⁆) (Q⁅x ≔ N⁆)
   | t_pi s A B   => t_pi s (A⁅x ≔ N⁆) (B⁅x ≔ N⁆)
@@ -142,8 +142,8 @@ Lemma subst_sort : forall s x N,
   (t_sort s)⁅x ≔ N⁆ = t_sort s.
 Proof. reflexivity. Qed.
 
-Lemma subst_bvar : forall n x N,
-  (t_bvar n)⁅x ≔ N⁆ = t_bvar n.
+Lemma subst_bvar : forall s n x N,
+  (t_bvar s n)⁅x ≔ N⁆ = t_bvar s n.
 Proof. reflexivity. Qed.
 
 Lemma subst_var : forall s y x N,
@@ -178,6 +178,42 @@ Inductive lc : term -> Prop :=
       (forall x, ~ In x L -> lc (open_var M s x)) ->
       lc (t_lam s A M).
 
+(* ================================================================= *)
+(** * Bound-variable tag well-formedness.
+
+    [t_bvar] carries its own [Sort] tag, mirroring [t_fvar], instead
+    of that information being read off an externally-threaded context
+    (see the degree computation in the Tiered PTS development, where
+    that external-context design was the source of a real bug: a
+    subterm's degree silently defaulted to [0] whenever it was not
+    itself closed, which is the case every time the tiering
+    translation recurses into a raw, unopened binder body).
+
+    [bvar_tag_ok k s t] says: wherever a spine walk through [t] would
+    reach a [t_bvar] node standing for the binder [k] levels out, that
+    node's own tag already agrees with [s]. This is what keeps a
+    bound-variable's declared tag trustworthy across opening: nothing
+    in [open_rec] itself enforces it (opening simply overwrites
+    whatever node it finds), so it has to be established once, where
+    the binder is introduced, and is threaded here as an explicit
+    premise of [typing_pi]/[typing_lam] -- structurally the same kind
+    of side-condition those rules already carry for the binder's own
+    domain sort [s1] itself. *)
+Fixpoint bvar_tag_ok (k : nat) (s : Sort) (t : term) : Prop :=
+  match t with
+  | t_sort _    => True
+  | t_bvar s' n => n = k -> s' = s
+  | t_fvar _ _  => True
+  | t_app M _   => bvar_tag_ok k s M
+  | t_lam _ _ M => bvar_tag_ok (S k) s M
+  | t_pi  _ _ B => bvar_tag_ok (S k) s B
+  end.
+
+(** [t_bvar] nodes are inert to [subst_term] (it only ever touches
+    [t_fvar]), so [bvar_tag_ok] survives substitution for free -- the
+    substitution lemma needs exactly this to keep constructing
+    [typing_pi]/[typing_lam] derivations after substituting into
+    their bodies. *)
 (* ================================================================= *)
 (** * Freshness of atoms (reused verbatim from the named-variable
       development: it never depended on how binders inside terms
@@ -234,7 +270,7 @@ Lemma open_rec_lc_core : forall t j v i u,
   open_rec j v t = open_rec i u (open_rec j v t) ->
   t = open_rec i u t.
 Proof.
-  induction t as [s | n | sx x | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
+  induction t as [s | sn n | sx x | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
     intros j v i u Hne Heq.
   - reflexivity.
   - destruct (Nat.eq_dec n j) as [Hnj | Hnj].
@@ -262,7 +298,7 @@ Qed.
 Lemma subst_fresh : forall t x u,
   ~ In x (fv t) -> t⁅x ≔ u⁆ = t.
 Proof.
-  induction t as [s | n | sy y | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
+  induction t as [s | sn n | sy y | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
     intros x u Hnotin; simpl in *.
   - reflexivity.
   - reflexivity.
@@ -310,7 +346,7 @@ Lemma subst_open_rec : forall t1 t2 x u k,
   lc u ->
   (open_rec k t2 t1)⁅x ≔ u⁆ = open_rec k (t2⁅x ≔ u⁆) (t1⁅x ≔ u⁆).
 Proof.
-  induction t1 as [s | n | sy y | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
+  induction t1 as [s | sn n | sy y | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
     intros t2 x u k Hlc; simpl.
   - reflexivity.
   - destruct (Nat.eqb n k) eqn:E; reflexivity.
@@ -395,7 +431,7 @@ Qed.
 Lemma fv_open_rec_incl : forall t k u,
   incl (fv t) (fv (open_rec k u t)).
 Proof.
-  induction t as [s | n | sy y | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
+  induction t as [s | sn n | sy y | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
     intros k u; simpl.
   - apply incl_refl.
   - apply incl_nil_l.
@@ -418,7 +454,7 @@ Proof. intros. apply fv_open_rec_incl. Qed.
 Lemma fv_open_rec_upper : forall t k u,
   incl (fv (open_rec k u t)) (fv t ++ fv u).
 Proof.
-  induction t as [s | n | sy y | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
+  induction t as [s | sn n | sy y | M IHM N IHN | sl A IHA M IHM | sp A IHA B IHB];
     intros k u; simpl.
   - apply incl_nil_l.
   - destruct (Nat.eqb n k); simpl.
@@ -572,7 +608,7 @@ Definition normal_form (M : term) : Prop :=
 Fixpoint has_redex (M : term) : Prop :=
   match M with
   | t_sort _    => False
-  | t_bvar _    => False
+  | t_bvar _ _  => False
   | t_fvar _ _  => False
   | t_app (t_lam _ _ _) _ => True
   | t_app P Q   => has_redex P \/ has_redex Q
@@ -646,6 +682,108 @@ Definition is_fresh (x : var) (Γ : context) :=
   ~ In x (dom Γ).
 
 (* ================================================================= *)
+(** * Establishing [bvar_tag_ok] from [lc].
+
+    [bvar_tag_ok k s t] can fail to hold at exactly the "own binder"
+    position ([lc]-opening simply overwrites that node, so it carries
+    no evidence either way about what tag was there before -- this is
+    exactly why [typing_pi]/[typing_lam] need it as an explicit new
+    premise, they cannot get it for free). But at every *other*
+    position -- anything [t] would reach at a depth strictly less than
+    [t]'s own local nesting, i.e. anything that would have to *escape*
+    all of [t]'s own binders to be seen -- [lc] already rules the
+    occurrence out entirely (an [lc] term contains no [t_bvar] node at
+    all, anywhere, since [lc] has no constructor for one). [closed_at]
+    tracks exactly that escape bound, along the same spine
+    [bvar_tag_ok] itself follows, which is what makes the bridge
+    below possible. *)
+Fixpoint closed_at (k : nat) (t : term) : Prop :=
+  match t with
+  | t_sort _    => True
+  | t_bvar _ n  => n < k
+  | t_fvar _ _  => True
+  | t_app M _   => closed_at k M
+  | t_lam _ _ M => closed_at (S k) M
+  | t_pi  _ _ B => closed_at (S k) B
+  end.
+
+Lemma closed_at_open_rec_inv : forall t k u,
+  closed_at k (open_rec k u t) ->
+  (forall s m, u <> t_bvar s m) ->
+  closed_at (S k) t.
+Proof.
+  induction t as [s0 | sn n | y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
+    intros k u Hc Hu; simpl in *; auto.
+  - destruct (Nat.eqb n k) eqn:Heqb.
+    + apply Nat.eqb_eq in Heqb. lia.
+    + apply Nat.eqb_neq in Heqb.
+      simpl in Hc. lia.
+  - eapply IHP; eauto.
+  - eapply IHM with (k := S k); eauto.
+  - eapply IHB with (k := S k); eauto.
+Qed.
+
+Lemma lc_closed_at : forall t, lc t -> closed_at 0 t.
+Proof.
+  intros t Hlc.
+  induction Hlc as [ s | x | M N HM IHM HN IHN
+                    | s A B L HA IHA HB IHB
+                    | s A M L HA IHA HM IHM ]; simpl; auto.
+  - remember (fresh L) as x0 eqn:Hx0def.
+    assert (Hx0L : ~ In x0 L) by (rewrite Hx0def; apply fresh_notin).
+    specialize (IHB x0 Hx0L).
+    unfold open_var in IHB.
+    apply (closed_at_open_rec_inv B 0 (t_fvar s x0) IHB).
+    intros sv m Hcontra. discriminate.
+  - remember (fresh L) as x0 eqn:Hx0def.
+    assert (Hx0L : ~ In x0 L) by (rewrite Hx0def; apply fresh_notin).
+    specialize (IHM x0 Hx0L).
+    unfold open_var in IHM.
+    apply (closed_at_open_rec_inv M 0 (t_fvar s x0) IHM).
+    intros sv m Hcontra. discriminate.
+Qed.
+
+Lemma closed_at_bvar_tag_ok : forall t m,
+  closed_at m t -> forall k s, m <= k -> bvar_tag_ok k s t.
+Proof.
+  induction t as [s0 | sn n | y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
+    intros m Hclosed k s Hmk; simpl in *; auto.
+  - intro Heq. subst n. lia.
+  - eapply IHP; eauto.
+  - eapply IHM; eauto. lia.
+  - eapply IHB; eauto. lia.
+Qed.
+
+(** The invariant [typing_pi]/[typing_lam] cannot get for free at a
+    binder's *own* position, they get for free at every *other*
+    position, straight from the cofinite [lc] premise they already
+    carry: [lc] alone forces the whole rest of the term to be tagged
+    consistently. *)
+Lemma lc_bvar_tag_ok : forall t, lc t -> forall k s, bvar_tag_ok k s t.
+Proof.
+  intros t Hlc k s.
+  apply (closed_at_bvar_tag_ok t 0); [apply lc_closed_at; exact Hlc | lia].
+Qed.
+
+(** [t_bvar] nodes are inert to [subst_term] (it only ever touches
+    [t_fvar]), so [bvar_tag_ok] survives substitution at every
+    position except where the substituted-in [N] itself lands -- and
+    there, [lc N] (via [lc_bvar_tag_ok]) covers it, since [N] is
+    always the already-typed, locally closed term being substituted
+    in throughout this development. This is exactly what the
+    substitution lemma below needs to keep constructing
+    [typing_pi]/[typing_lam] derivations after substituting into
+    their bodies. *)
+Lemma bvar_tag_ok_subst : forall t k s x N,
+  lc N -> bvar_tag_ok k s t -> bvar_tag_ok k s (t ⁅ x ≔ N ⁆).
+Proof.
+  induction t as [s0 | s_n n | sy y | P IHP Q IHQ | s1 A IHA M IHM | s1 A IHA B IHB];
+    intros k s x N HlcN Htag; simpl in *; auto.
+  - destruct (eq_var_dec y x); auto.
+    apply lc_bvar_tag_ok. exact HlcN.
+Qed.
+
+(* ================================================================= *)
 (** * Typing
 
     [t_pi]/[t_lam] no longer carry a binder name, so the rules that
@@ -676,6 +814,7 @@ Inductive typing : context -> term -> term -> Prop :=
 
   | typing_pi : forall Γ A B s1 s2 s3 L,
       Γ ⊢ A ∈ t_sort s1 ->
+      bvar_tag_ok 0 s1 B ->
       (forall x, ~ In x L ->
          Γ ++ [(x, (s1, A))] ⊢ (open_var B s1 x) ∈ t_sort s2) ->
       R s1 s2 s3 ->
@@ -683,6 +822,7 @@ Inductive typing : context -> term -> term -> Prop :=
 
   | typing_lam : forall Γ A M B s1 s3 L,
       Γ ⊢ A ∈ t_sort s1 ->
+      bvar_tag_ok 0 s1 M ->
       (forall x, ~ In x L ->
          Γ ++ [(x, (s1, A))] ⊢ (open_var M s1 x) ∈ (open_var B s1 x)) ->
       Γ ⊢ (t_pi s1 A B) ∈ (t_sort s3) ->
@@ -735,8 +875,8 @@ Proof.
     [ s s' HA
     | Γ0 x A0 s0 Hfresh HA IHA
     | Γ0 x B0 M0 A0 s0 Hfresh HM IHM HB IHB
-    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 s HM IHM Heq HB IHB ].
   - split; constructor.
@@ -794,8 +934,8 @@ Proof.
     [ s s' HA
     | Γ0 x A0 s0 Hfresh HA IHA
     | Γ0 x B0 M0 A0 s0 Hfresh HM IHM HB IHB
-    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 s HM IHM Heq HB IHB ].
   - split; apply incl_nil_l.
@@ -926,8 +1066,8 @@ Proof.
     [ s' s'' HA
     | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 s3 HM IHM Heq HB IHB ].
 
@@ -1012,8 +1152,8 @@ Proof.
     [ s s' HA
     | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 s1 s2 s3 L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 s1 s3 L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 s HM IHM Heq HB IHB ];
     intros Δ Hleg Hsub.
@@ -1033,6 +1173,7 @@ Proof.
 
   - apply (typing_pi Δ A0 B0 s1 s2 s3 (L ++ dom Δ)).
     + apply IHA; auto.
+    + exact HTagB.
     + intros x Hx.
       assert (HxL : ~ In x L).
       { intro Hc. apply Hx. apply in_or_app. left. exact Hc. }
@@ -1047,6 +1188,7 @@ Proof.
 
   - apply typing_lam with (s1 := s1) (s3 := s3) (L := L ++ dom Δ).
     + apply IHA; auto.
+    + exact HTagM.
     + intros x Hx.
       assert (HxL : ~ In x L).
       { intro Hc. apply Hx. apply in_or_app. left. exact Hc. }
@@ -1112,8 +1254,8 @@ Proof.
     [ sa sb HA
     | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 sa sb sc L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 sa sc L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 sa sb sc L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 sa sc L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ];
     inversion HeqT; subst.
@@ -1164,8 +1306,8 @@ Proof.
     [ sa sb HA
     | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 sa sb sc L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 sa sc L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 sa sb sc L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 sa sc L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ];
     inversion HeqT; subst.
@@ -1188,6 +1330,7 @@ Lemma generation_pi :
     Γ ⊢ t_pi s0 B C ∈ W ->
     exists s2 s3 L,
       Γ ⊢ B ∈ t_sort s0 /\
+      bvar_tag_ok 0 s0 C /\
       (forall x, ~ In x L -> Γ ++ [(x, (s0, B))] ⊢ open_var C s0 x ∈ t_sort s2) /\
       Sig.R s0 s2 s3 /\
       W =b t_sort s3.
@@ -1198,13 +1341,13 @@ Proof.
     [ sa sb HA
     | Γ0 x0 A0 s1 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s1 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 sa sb sc L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 sa sc L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 sa sb sc L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 sa sc L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ];
     inversion HeqT; subst.
 
-  - destruct (IHM0 eq_refl) as [s2 [s3 [L0 [HB1 [HB2 [HB3 HB4]]]]]].
+  - destruct (IHM0 eq_refl) as [s2 [s3 [L0 [HB1 [HTag1 [HB2 [HB3 HB4]]]]]]].
     assert (HBthin : Γ0 ++ [(x0, (s1, B0))] ⊢ B ∈ t_sort s0)
       by (apply typing_weak; auto).
     exists s2. exists s3. exists (L0 ++ dom (Γ0 ++ [(x0, (s1, B0))])).
@@ -1227,7 +1370,7 @@ Proof.
   - exists sb. exists sc. exists L.
     repeat split; auto. apply beq_refl.
 
-  - destruct (IHM eq_refl) as [s2 [s3 [L0 [HB1 [HB2 [HB3 HB4]]]]]].
+  - destruct (IHM eq_refl) as [s2 [s3 [L0 [HB1 [HTag1 [HB2 [HB3 HB4]]]]]]].
     exists s2. exists s3. exists L0.
     repeat split; auto. apply beq_trans with A0; auto. apply beq_sym; auto.
 Qed.
@@ -1256,8 +1399,8 @@ Proof.
     [ sa sb HA
     | Γ0 x0 A0 s1 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s1 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 sa sb sc L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 sa sc L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 sa sb sc L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 sa sc L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ];
     inversion HeqW; subst.
@@ -1308,8 +1451,8 @@ Proof.
     [ sa sb HA
     | Γ0 x0 A0 s1 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s1 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 sa sb sc L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 sa sc L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 sa sb sc L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 sa sc L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ];
     inversion HeqW; subst.
@@ -1378,8 +1521,8 @@ Proof.
     [ sa sb HA
     | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 sa sb sc L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 sa sc L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 sa sb sc L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 sa sc L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ].
 
@@ -1443,6 +1586,7 @@ Proof.
     apply (typing_pi (Γ ++ Δ ⌊ x ≔ N ⌋) (A0 ⁅ x ≔ N ⁆) (B0 ⁅ x ≔ N ⁆) sa sb sc
              (x :: L ++ fv N)).
     + rewrite <- (subst_sort sa x N). apply IHA. exact HZ.
+    + apply bvar_tag_ok_subst; [exact HlcN | exact HTagB].
     + intros y Hy.
       assert (Hyx : y <> x).
       { intro Heq. subst y. apply Hy. simpl. left. reflexivity. }
@@ -1459,6 +1603,7 @@ Proof.
     apply (typing_lam (Γ ++ Δ ⌊ x ≔ N ⌋) (A0 ⁅ x ≔ N ⁆) (M0 ⁅ x ≔ N ⁆) (B0 ⁅ x ≔ N ⁆)
              sa sc (x :: L ++ fv N)).
     + rewrite <- (subst_sort sa x N). apply IHA. exact HZ.
+    + apply bvar_tag_ok_subst; [exact HlcN | exact HTagM].
     + intros y Hy.
       assert (Hyx : y <> x).
       { intro Heq. subst y. apply Hy. simpl. left. reflexivity. }
@@ -1499,8 +1644,8 @@ Proof.
     [ sa sb HA
     | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
     | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
-    | Γ0 A0 B0 sa sb sc L HA IHA HB IHB HR
-    | Γ0 A0 M0 B0 sa sc L HA IHA HM IHM HPi IHPi
+    | Γ0 A0 B0 sa sb sc L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 sa sc L HA IHA HTagM HM IHM HPi IHPi
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ].
 
@@ -1522,7 +1667,7 @@ Proof.
     + discriminate Hs.
     + right.
       destruct (generation_pi Γ0 s1a A0 B0 (t_sort s) Hs)
-        as [s2 [s3 [L [HB1 [HB2 [HB3 HB4]]]]]].
+        as [s2 [s3 [L [HB1 [HTag1 [HB2 [HB3 HB4]]]]]]].
       exists s2.
       remember (fresh (L ++ fv B0)) as x0 eqn:Hx0def.
       assert (Hx0L : ~ In x0 L).
