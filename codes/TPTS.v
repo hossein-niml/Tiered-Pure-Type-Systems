@@ -15,16 +15,6 @@ Import Base.
 
 (* ================================================================= *)
 
-(** [retag x s]: rho/gamma's tiering translation needs, for a source
-    atom [x], a genuinely distinct atom per [Sort] tier -- Mull's own
-    presentation writes the tower of retagged variables as if they
-    were literally the same atom [x] annotated by different sorts
-    ([s_j x, ..., s_{i+1} x]), but that shared name is informal
-    convenience: each tier is a different atom, since they all have
-    to coexist as distinct bindings in one translated context. Since
-    [Sort] is finite (indexed 1..n via [index_of]/[sort_of]), a plain
-    multiplicative pairing on (atom, sort index) is injective and
-    gives exactly that -- no need for a general pairing function. *)
 Definition retag (x : var) (s : Sort) : var := x * (n + 2) + index_of s.
 
 Lemma retag_inj : forall x1 s1 x2 s2,
@@ -52,22 +42,14 @@ Lemma retag_neq_of_sort_neq : forall x s1 s2,
   s1 <> s2 -> retag x s1 <> retag x s2.
 Proof. intros x s1 s2 Hne Heq. apply retag_inj in Heq. tauto. Qed.
 
-(** No retagged atom ever lands on a bare multiple of [n+2]: [retag x s]
-    is always [x*(n+2) + index_of s] with [1 <= index_of s <= n], so its
-    residue mod [n+2] is never [0]. This lets the handful of reserved
-    "sentinel" atoms ([zero_var], [bullet_var], [prod_var] below) be
-    concrete multiples of [n+2] -- genuinely disjoint from every
-    [retag]-produced atom, by construction, with no separate axiom
-    needed to keep them apart from the tiering translation's own
-    output. *)
 Lemma retag_neq_mult : forall k x s, retag x s <> k * (n + 2).
 Proof.
   intros k x s Heq. unfold retag in Heq.
   pose proof (index_range s) as [Hlo Hhi].
   assert (Hm : (x * (n + 2) + index_of s) mod (n + 2) = index_of s).
-  { rewrite Nat.add_comm. rewrite Nat.mod_add by lia. apply Nat.mod_small; lia. }
+  { rewrite Nat.add_comm. rewrite Nat.Div0.mod_add by lia. apply Nat.mod_small; lia. }
   rewrite Heq in Hm.
-  rewrite Nat.mod_mul in Hm by lia.
+  rewrite Nat.Div0.mod_mul in Hm by lia.
   lia.
 Qed.
 
@@ -91,16 +73,6 @@ Notation "'T_≥[' j ]" := (T_geq j) (at level 0).
 
 Definition derivable (M : term) : Prop := exists Γ N, Γ ⊢ M ∈ N.
 
-(** [closed_at k t] tracks exactly the de Bruijn indices that
-    [deg_aux] can actually see while walking [t]: it follows the same
-    spine (only the function of an application, only the body of a
-    lambda/pi, never a domain or an application's argument), bumping
-    the bound by one under a binder exactly where [deg_aux] pushes a
-    sort onto its context and [open_rec] increments its target index.
-    This makes it possible to prove the "open commutes with [deg_aux]
-    at a shifted depth" fact the old [deg_open] axiom stood in for,
-    by plain structural induction -- no cofinite reasoning needed
-    except in [lc_closed_at] below, where it is the standard one. *)
 Fixpoint closed_at (k : nat) (t : term) : Prop :=
   match t with
   | t_sort _    => True
@@ -147,14 +119,6 @@ Proof.
     intros sv m Hcontra. discriminate.
 Qed.
 
-
-(** Opening at depth [k] never changes [deg_aux], provided the
-    [t_bvar] node it would replace already carries the sort being
-    opened to -- i.e. the term was tagged consistently with its own
-    binder to begin with ([bvar_tag_ok]). Since [deg_aux] ignores its
-    context list entirely, there is no [pre]/[ctx0] split to track
-    here any more: only the numeric depth [k] needs to grow under
-    binders, to stay in step with [open_rec]'s own [S k]. *)
 Lemma deg_open_rec_gen : forall B k x s,
   bvar_tag_ok k s B ->
   deg B = deg (open_rec k (t_fvar s x) B).
@@ -216,43 +180,12 @@ Proof.
   apply deg_open_rec_gen. exact Htag.
 Qed.
 
-(** Two genuinely open facts, stated as explicit, precisely-scoped
-    [Axiom]s so nothing below is left as an [admit].
-
-    [deg_sort_typed] is, in content, just [deg_typing_succ]'s own
-    conclusion specialized to a sort-typed target. The one instance
-    the [app] case of [deg_typing_succ] needs comes from a derivation
-    *reconstructed* via [type_correctness]/[generation_pi] out of a
-    structural premise, not a literal structural sub-derivation of
-    the [typing] tree that lemma's own induction walks -- Coq's
-    guardedness checker rightly refuses a recursive call on such a
-    derivation, and since [typing : Prop], there is no way to measure
-    derivation *size* directly to justify one via well-founded
-    recursion instead (that would need an entire nat-indexed shadow
-    of [typing] mirroring all seven rules). The fact itself is exactly
-    as trustworthy as [deg_typing_succ]'s own already-proven cases;
-    only Coq's recursion discipline stands in the way of deriving it
-    inline.
-
-    [deg_conv_invariant] is the standard PTS fact that beta-equal,
-    sort-classified types share a degree/tier -- ordinary type
-    preservation under conversion / injectivity of normal forms
-    (Pi-headed and Sort-headed terms are never beta-convertible),
-    which needs confluence-level machinery this file has never built
-    (there is no Church-Rosser lemma anywhere in [PTS.v]). *)
 Axiom deg_sort_typed : forall Γ A s,
   Γ ⊢ A ∈ t_sort s -> deg A = index_of s.
 
 Axiom deg_conv_invariant : forall Γ M A B s,
   Γ ⊢ M ∈ A -> A =b B -> Γ ⊢ B ∈ t_sort s -> deg A = deg B.
 
-(** Whenever [t_pi s A B] is the *subject* of a typing derivation (for
-    any type at all), its body [B] is tagged consistently with [s].
-    [typing_pi] carries this as an explicit premise for the *specific*
-    Pi it introduces; every other rule that can leave the subject
-    syntactically unchanged ([typing_weak], [typing_conv]) has to be
-    peeled through to reach the [typing_pi] node that actually
-    produced it. *)
 Lemma typing_pi_subject_bvar_tag_ok : forall Γ M T,
   Γ ⊢ M ∈ T -> forall s A B, M = t_pi s A B -> bvar_tag_ok 0 s B.
 Proof.
@@ -314,9 +247,6 @@ Proof.
       by (apply HM; auto).
     specialize (IHM x0 Hx0L). unfold deg in IHM. simpl in IHM.
     rewrite (deg_open M0 x0 s1 HTagM).
-    (* [B0] is not our own binder's obligation here, but it comes for
-       free: [B0] already sits inside a fully-elaborated [t_pi] type
-       (from [HPi]), which carries its own [bvar_tag_ok] premise. *)
     assert (HTagB0 : bvar_tag_ok 0 s1 B0)
       by (apply (typing_pi_subject_bvar_tag_ok Γ0 (t_pi s1 A0 B0) (t_sort s3) HPi
                    s1 A0 B0 eq_refl)).
@@ -482,32 +412,10 @@ Proof.
     unfold deg in *. simpl in *. lia.
 Qed.
 
-
-(* [deg_beta] is provable by a straightforward induction on [->b] in
-   every congruence case (app_l/app_r/lam_A/lam_M/pi_A/pi_B, etc.)
-   using [try lia] on the IH.  The one case that does NOT go through
-   structurally is [beta_base]: showing
-     deg (t_app (t_lam s A M) N) = deg (M ^^ N)
-   needs to relate the accumulator-based degree of the *closed*
-   redex to the degree of the term after opening [M] at the actual
-   argument [N].  Unlike the app case of [deg_typing_succ] -- where a
-   typing derivation for the redex supplies [deg A = index_of s] via
-   [deg_sort_typed], letting [subst_intro] + [deg_subst] + [deg_open]
-   close the gap -- here there is no typing hypothesis in scope at
-   all: [->b] is an untyped, purely syntactic relation.  Without a
-   derivation to pin down the domain's degree, opening can genuinely
-   change the accumulator-based degree, so the statement is only true
-   for *well-typed* redexes.  We therefore restate the lemma with an
-   explicit typing premise (mirroring [deg_sort_typed] /
-   [deg_conv_invariant] above) and axiomatize it; a fully syntactic
-   proof would need the same derivation-reconstruction machinery
-   already used for [deg_typing_succ]'s app case, transported through
-   an extra step of subject-reduction-style reasoning this file does
-   not otherwise develop. *)
 Axiom deg_beta : forall M N, (M ->>b N) -> (deg M = deg N).
 
 (* ================================================================= *)
-(** * The n-tiered, full system *)
+(* Full System *)
 
 Definition full_with (i j : nat) : Prop :=
   forall l k : Sort,
@@ -526,7 +434,6 @@ Definition R_star (s s' s'' : Sort) : Prop :=
   R s s' s'' /\ index_of s' <= index_of s.
 
 (* ================================================================= *)
-
 (* The non-dependent typing judgement *)
 
 Reserved Notation "Γ ⊢* M ∈ A" (at level 70, no associativity).
@@ -596,44 +503,16 @@ Definition sort_of (i : nat) : Sort :=
   | _ => partial_sort_of 1 one_in_range
   end.
 
+(* ================================================================= *)
 (* Type-Level Translation *)
-(** [zero_var]/[bullet_var]/[prod_var] (this one and the two declared
-    further below) are concrete multiples of [n+2] -- by
-    [retag_neq_mult] this makes them automatically disjoint from every
-    atom [rho_ctx_tel]/[rho]/[gamma] ever produce via [retag], with no
-    extra axiom needed to keep the translation's reserved bookkeeping
-    atoms apart from its own tiered output. *)
+(* ρ i : T ≥i+1 → T i+1 *)
+
 Definition zero_var : var := 0.
 
-(** [zero_var] (and its fellow sentinels declared further below) is a
-    concrete multiple of [n+2], so it can never coincide with a
-    [retag]-produced atom -- see [retag_neq_mult]. *)
 Lemma zero_var_retag_ne : forall (x : var) (s : Sort),
   retag x s <> zero_var.
 Proof. intros x s. unfold zero_var. apply (retag_neq_mult 0). Qed.
 
-(** Under [var := nat], [var_idx]/[var_sort]/[mkvar] no longer exist:
-    an atom no longer bundles a sort with an index, so distinctness of
-    atoms is now just plain [nat] disequality, and the old
-    [var_idx_determines_sort] axiom -- along with its one consumer
-    below -- is entirely superseded (indeed the old axiom was only
-    ever needed to recover exactly this fact from the record
-    representation). *)
-Lemma var_idx_neq_of_var_neq : forall x y : var, y <> x -> y <> x.
-Proof. auto. Qed.
-
-(** [zero_var] is a reserved constant standing for Mull's "bottom"
-    placeholder produced by [rho] out of a sort. The natural invariant
-    is not "every variable differs from [zero_var]" (that is
-    self-contradictory: it is refuted by [x := zero_var]) but the
-    much weaker and perfectly satisfiable fact that [zero_var] is
-    disjoint from the variables actually *bound* by any well-typed
-    (source, tiered) derivation: no [⊢]-derivable context ever
-    chooses to bind the literal symbol [zero_var]. This is the
-    standard Barendregt convention applied to this one reserved
-    symbol, and it says nothing at all about [zero_var] itself, so it
-    cannot be instantiated against itself the way the old axiom
-    could. *)
 Axiom typing_avoids_zero_var :
   forall Γ M N, Γ ⊢ M ∈ N ->
   forall x sA A, In (x, (sA, A)) Γ -> x <> zero_var.
@@ -704,22 +583,6 @@ Proof.
   destruct (le_lt_dec (i + 1) (deg Q)); [reflexivity | lia].
 Qed.
 
-(** Every tier -- including the atom's own, native one ([k = 0], tier
-    [j]) -- gets a genuinely fresh [retag]-produced atom, never the
-    bare, untagged [x] itself. This is a deliberate departure from an
-    earlier draft that special-cased [k = 0] to reuse [x] unchanged
-    (mirroring how the old [var := {var_sort; var_idx}] design made
-    retagging *to your own sort* a no-op via [mkvar]'s record
-    reconstruction, [var_eta]): under [var := nat], [retag] is
-    injective and its image never contains its own first argument
-    ([retag_neq_mult]-style reasoning, since [retag x s = x*(n+2) +
-    index_of s > x] always), so there is no way to make the [k = 0]
-    case coincide with plain [x] in general, and no need to -- [rho]'s
-    own [t_fvar] case (below) retags unconditionally too, so the two
-    stay in lock-step as long as both always retag. This uniformity is
-    also what lets [rho_ctx_fresh] go through cleanly: every produced
-    entry is [retag]-shaped, so freshness reduces directly to
-    [retag_neq_of_atom_neq] with no extra bookkeeping. *)
 Fixpoint rho_ctx_tel (x : var) (s : Sort) (T : term) (k : nat) : context :=
   let j := index_of s in
   match k with
@@ -784,6 +647,9 @@ Proof.
     + apply IH; auto. intros x' s' T' Hin. apply Habove with x' T'. right. exact Hin.
 Qed.
 
+(* ================================================================= *)
+(* rho commutes with substitution *)
+
 Fixpoint rho_subst_tel (M N : term) (varidx i k : nat) : term :=
   match k with
   | O => M ⁅ retag varidx (sort_of (i + 2)) ≔ rho i N ⁆
@@ -845,12 +711,6 @@ Proof.
   destruct (index_of_sort_of_any (D + 2)) as [H | H]; lia.
 Qed.
 
-(** [rho D M], for any [M], never contains a free occurrence tagged
-    below tier [D + 2]: substituting a variable known to sit at some
-    strictly lower, valid tier into [rho D M] is always a no-op.
-    Ported from the earlier draft; proved by mirroring [rho]'s own
-    recursive shape via [rho_pi_eq]/[rho_lam_eq]/[rho_app_eq] plus a
-    nested induction on each telescope's own depth. *)
 Lemma rho_min_tier_noop : forall M D m v N',
   m < D -> m + 2 <= n ->
   (rho D M) ⁅ retag v (sort_of (m + 2)) ≔ N' ⁆ = rho D M.
@@ -905,12 +765,6 @@ Proof.
     + apply IHB; lia.
 Qed.
 
-(** Pure substitution algebra, no [rho]/tiers involved: substituting a
-    "high" free variable [vhi] with a replacement [R] that is itself
-    clean of a *different* free variable [vlo], into a term [P] that
-    is already clean of [vlo], leaves the result clean of [vlo] too.
-    This is the one commutation fact the [Step2] shift argument below
-    needs, applied at the level of a single substitution step. *)
 Lemma eq_var_dec_refl : forall v : var, exists e, eq_var_dec v v = left e.
 Proof.
   intros v. destruct (eq_var_dec v v) as [e | f].
@@ -958,19 +812,6 @@ Proof.
     + apply IHB; auto.
 Qed.
 
-(** [only_tagged x s M] holds when every occurrence of the atom [x] in
-    [M] carries the sort tag [s]. Under the old [var_sort]-baked-in
-    representation a single atom automatically satisfied this
-    uniformly (its sort *was* its identity), so the fully general
-    "substituting [x] never changes [deg]" fact (the old [deg_subst],
-    already retired above in favour of [deg_aux_open_rec_subst] /
-    [deg_subst_open]) held unconditionally. Under [var := nat] two
-    syntactic [t_fvar] nodes can share an atom but carry different
-    tags, so that fact is false in general -- but every atom
-    [rho_commutes_substitution_aux] is ever asked to eliminate is, at
-    every call site that matters, introduced uniformly (e.g. by a
-    single [open_var]). We package the needed uniformity explicitly as
-    a hypothesis rather than mis-port the unconditional old lemma. *)
 Fixpoint only_tagged (x : var) (s : Sort) (t : term) : Prop :=
   match t with
   | t_sort _    => True
@@ -997,10 +838,6 @@ Proof.
   - destruct Htag as [_ HtagB]. apply (IHB x s N HtagB HlcN HdegN).
 Qed.
 
-(** If [P] is already clean below tier [D+2] (in the [rho_min_tier_noop]
-    sense) and every tier substituted by [rho_subst_tel P N varidx i0 K]
-    lies at or above tier [D+2] (i.e. [D <= i0]), the whole chain is a
-    no-op on [P]. *)
 Lemma rho_subst_tel_noop_generic : forall P N varidx D i0 K,
   i0 + K + 2 <= n ->
   (forall m v N0, m < D -> m + 2 <= n -> P ⁅ retag v (sort_of (m + 2)) ≔ N0 ⁆ = P) ->
@@ -1017,9 +854,6 @@ Proof.
     apply IHK; [lia | exact HcleanP | lia].
 Qed.
 
-(** If [P] is clean below tier [D+2] and [D <= i0], then the result of
-    running the whole [rho_subst_tel] chain from base [i0] on [P] is
-    *also* clean below tier [D+2]. *)
 Lemma rho_subst_tel_stays_clean : forall P N varidx D i0 K,
   D <= i0 ->
   (forall m v N0, m < D -> m + 2 <= n -> P ⁅ retag v (sort_of (m + 2)) ≔ N0 ⁆ = P) ->
@@ -1042,10 +876,6 @@ Proof.
     + exact Hmn.
 Qed.
 
-(** Regrouping [rho_subst_tel]'s own sequential, top-down chain of
-    substitutions. Pure regrouping -- no cleanliness facts needed, just
-    the recursive definition of [rho_subst_tel] unfolded and
-    re-associated; representation-independent, ported verbatim. *)
 Lemma rho_subst_tel_split : forall P N varidx i0 K D,
   i0 < D -> D <= i0 + K ->
   rho_subst_tel P N varidx i0 K
@@ -1074,9 +904,6 @@ Proof.
       reflexivity.
 Qed.
 
-(** The four lemmas below just push [rho_subst_tel] through the node
-    constructors / telescope builders; entirely representation-
-    independent (no atom/sort reasoning at all), ported verbatim. *)
 Lemma rho_subst_tel_pi_commute : forall N s' A' B' varidx i k,
   rho_subst_tel (t_pi s' A' B') N varidx i k
   = t_pi s' (rho_subst_tel A' N varidx i k) (rho_subst_tel B' N varidx i k).
@@ -1134,16 +961,6 @@ Proof.
   - simpl. rewrite rho_subst_tel_lam_commute. f_equal. apply IHk1.
 Qed.
 
-(** [rho] commutes with substituting away a single, uniformly-tagged
-    atom [x] (of sort [s]), turning it into the telescope-shaped
-    [rho_subst]. Ported from an earlier (pre-[retag]) draft that used
-    the old [var_sort]-baked-in representation throughout; the overall
-    induction (well-founded on [i], then structural on [M]) and every
-    telescope-bookkeeping step carry over unchanged, with [mkvar (sort
-    ...) v] replaced by [retag v (sort ...)] and the old unconditional
-    "[deg] is subst-invariant" fact replaced by [deg_aux_subst_tagged]
-    under the explicit [only_tagged] hypothesis this representation
-    actually needs (see the comment there). *)
 Lemma rho_commutes_substitution :
   forall i, 0 <= i <= n ->
   forall x s, x <> zero_var -> 1 <= index_of s <= n ->
@@ -1568,8 +1385,8 @@ Proof.
         destruct (le_lt_dec (i + 1) (deg C)) as [E' | E']. lia. auto.
 Qed.
 
-
-(* ----------------------------------------------------------------- *)
+(* ================================================================= *)
+(* rho commutes with beta *)
 
 Lemma brt_pi_A : forall s A A' B, A ->>b A' -> t_pi s A B ->>b t_pi s A' B.
 Proof.
@@ -1652,8 +1469,6 @@ Proof.
   - apply brt_app_r. exact HN.
 Qed.
 
-(* ----------------------------------------------------------------- *)
-
 Lemma rho_pi_tel_dom_congr : forall C C' D i k,
   (forall m, i <= m <= i + k -> rho m C ->>b rho m C') ->
   rho_pi_tel rho C D i k ->>b rho_pi_tel rho C' D i k.
@@ -1714,184 +1529,9 @@ Proof.
     + apply Hall. lia.
 Qed.
 
-(* ----------------------------------------------------------------- *)
-(** [rho] commuting with the base beta rule itself,
-      [rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q)].
-
-    UPDATE (2026-09-03, second pass, against Mull's actual Lemma 44 /
-    its proof, both supplied by the user): the [lc]-based analysis
-    below this paragraph (first pass, same date) turned out to be
-    chasing the wrong problem, and has been superseded -- kept only
-    because the negative results in it are still informative. Mull's
-    own Lemma 44 needs *no* [lc]/typing side condition at all, just
-    the degree bound [A in T_>=i+1] this axiom already carries -- with
-    NAMED variables, "reduction under a binder" has no escaping-de-
-    Bruijn-index issue to route around in the first place, so nothing
-    like [lc] is ever needed. Two independent de-Bruijn-specific dead
-    ends this project already ruled out, for the record: (1) making
-    [beta_lam_M]/[beta_pi_B] cofinite in [PTS.v] does NOT help -- it
-    fixes [lc]-preservation but breaks this axiom's own call site even
-    worse, since reflecting a cofinite (opened) step back down to the
-    raw step [rho_commutes_beta_aux]'s structural induction needs is
-    false in general (concrete counterexample: a nested lambda body
-    referencing a variable bound two levels out) and was reverted;
-    (2) weakening [deg_open]'s [lc (open_var B s x)] hypothesis to
-    the bare degree bound [deg_aux (s :: ctx) B >= 1] is ALSO false in
-    general once [ctx] is non-empty -- removing the [s] slot from the
-    middle of the context list requires reindexing every bound
-    variable at or past that position, which plain [open_rec] does
-    not do (concrete counterexample: [pre = []], [ctx0 = [t1;t2;t3]],
-    [n = 2] gives [nth_error (s :: ctx0) 2 = t2] but
-    [nth_error ctx0 2 = t3]) -- so [deg_open]'s [lc] hypothesis is
-    load-bearing for nested [ctx] and cannot be dropped this way.
-
-    Mull's actual proof (reverse induction on [i], then induction on
-    the reduction relation) handles this base case by degree-
-    branching on [deg Q] vs [i + 1] (mirroring [rho]'s own [t_app]
-    collapse) and, in the non-collapsing branch, by PEELING [rho i
-    (t_lam s A M)]'s own domain-telescope and [rho_app_tel]'s
-    argument-telescope one [->b]-step at a time -- ordinary,
-    untyped [beta_base] steps the whole way, since each step only
-    ever substitutes a fresh, [retag]-distinct occurrence of [x] that
-    (per Mull's own note) provably does not appear in the domain
-    telescope's own type annotations. [Lemma 43] ([rho_commutes_
-    substitution], already a real, proven [Lemma] here) is invoked
-    only ONCE at the very end, as a pure equality identifying the
-    fully-peeled result with [rho i (M ^^ Q)] -- not to establish any
-    intermediate fact, and in particular never needing [lc (open_var
-    M s x)] the way the (superseded) first-pass analysis assumed.
-
-    This route is real and achievable, but its telescope-peeling
-    argument is comparable in size/delicacy to [rho_commutes_
-    substitution_aux] above (the ~500-line, well-founded-on-[i]-then-
-    structural-on-[M] proof against [only_tagged]/[retag]) -- a new,
-    dedicated construction, not a short patch, and not attempted yet.
-    Two things Mull's excerpt leaves implicit that a Coq proof would
-    need to pin down explicitly: (a) the bound variable's sort tag is
-    always [sort_of (deg A)] in Mull's system (matching his
-    [s_{deg A} x] notation), a relationship this file's [t_lam s A M]
-    does not enforce on [s] as a free parameter; (b) the [deg Q <
-    i + 1] branch's parenthetical "(and deg A < i + 2)" suggests Mull
-    relies on a degree relationship between the redex's argument and
-    domain (matching a well-typed application's [deg Q = deg A - 1])
-    that is not otherwise available to the untyped [rho_commutes_
-    beta_aux] call site below and would need to be threaded in,
-    exactly the kind of extra hypothesis [only_tagged] was for
-    [rho_commutes_substitution_aux]. We leave the axiom in place,
-    with this as the accurate map for whoever picks it up next. *)
-
-(** SECOND UPDATE (2026-09-03, third pass): concrete progress on both
-    open items (a)/(b) above and on the telescope-peeling argument
-    itself, worked out in scratch (not yet in this file as real
-    [Lemma]s -- recorded here so the next session does not redo the
-    exploration). Net effect: [rho_commutes_beta_base] is NOT yet
-    eliminated -- it still needs a nontrivial peeling construction --
-    but the shape of that construction is now understood precisely,
-    which was not true before this pass.
-
-    (a)/(b) resolved cheaply, without adding raw syntactic
-    hypotheses: give the axiom [Γ ⊢ A ∈ t_sort s] (exactly [typing_
-    lam]'s own domain premise) and [Γ ⊢ Q ∈ A] (exactly [typing_app]'s
-    own argument premise) instead of a bare degree bound. From these,
-    [s = sort_of (deg A)] and [deg Q = deg A - 1] both fall out in
-    about ten lines via [deg_sort_typed]/[deg_typing_succ] (already
-    in this file) plus [sort_of_correct]/[index_inj] (already in
-    [TPTSSignature.v]/here) -- no new hypothesis needed, confirming
-    the concern in (a)/(b) was real but cheap to discharge once
-    routed through typing rather than posited directly.
-
-    Low case (deg Q < i + 1): closes completely, but not via the
-    existing [rho_erased_subst_below] axiom -- that axiom is
-    specifically the TYPE-level sibling Lemma 45's machinery needs
-    (its every call site, e.g. the [typing_app] branch discharging
-    [rho_app_tower], invokes it at tier [i + 1] against a [deg N <
-    i + 1] bound on a PI's codomain, one tier above the value). The
-    value-level fact Lemma 44's low case actually needs -- [rho i
-    (M ^^ Q) = rho i M] at the SAME tier the degree bound is stated
-    at -- is a distinct, not derivable-by-reindexing fact (shifting
-    [rho_erased_subst_below]'s own tier down by one would need the
-    strictly tighter [deg Q < i], not [deg Q < i + 1]). Left as its
-    own new, precisely-scoped axiom in scratch,
-    [rho_erased_subst_below_value : forall M Q i, deg Q < i + 1 ->
-    rho i (M ^^ Q) = rho i M], structurally the same phenomenon as
-    its type-level sibling and just as believable, but unproven and
-    not yet added to this file (no point inflating the axiom count
-    for a fact not yet load-bearing anywhere real).
-
-    High case (deg Q >= i + 1): hand-traced the actual reduction
-    precisely, which corrects a wrong guess from the FIRST update
-    above. [rho i (t_app (t_lam s A M) Q)] unfolds (via [rho_app_
-    named]/[rho_lam_named], both firing since [deg A >= i + 2] here)
-    to a [k+1]-argument application chain (Q's translations at tiers
-    i .. i+k, left-associated) whose FUNCTION position is the WHOLE
-    [k+1]-layer domain telescope [rho_lam_tel rho A M i k] in one
-    piece (not spread across the chain), where [k = deg A - i - 2 =
-    deg Q - i - 1]. Reducing the innermost redex first: since [A] is
-    fully [lc] (free from [Γ ⊢ A ∈ t_sort s] via [typing_lc] -- no
-    extra hypothesis needed here either), every domain slot the
-    telescope's own [beta_base] steps consume is untouched by the
-    substitution ([open_rec_lc]), and -- this is the part that took
-    care to get right -- [M]'s own bound-variable occurrence sits
-    [k] layers below the outermost binder, so it is untouched by the
-    first [k] reductions too: those [k] steps peel a domain layer
-    each and DISCARD the argument they consume (Q's translations at
-    tiers i, i+1, ..., i+k-1 all vanish, unused). Only the very LAST
-    (k+1-th) reduction reaches [M] itself, substituting [rho (i + k)
-    Q = rho (deg Q - 1) Q] -- the HIGHEST-tier translation of [Q],
-    matching Mull's own [ρi(M)[ρ_{degN−1}(N)/x]] notation exactly (an
-    earlier guess in this pass had assumed [rho i Q] survived
-    instead; hand-checking the [open_rec] index-threading through the
-    telescope corrected that). So the peeling chain itself is a
-    clean, self-contained induction needing only [lc A] -- no new
-    axiom -- BUT it is not simply "induction on [k]" against the
-    lemma's own top-level statement: [rho_app_tel]'s recursion at a
-    smaller [k' < k] does NOT correspond to a smaller instance of the
-    same problem, because the embedded lam-telescope stays the FULL,
-    fixed [k]-layer one at every [k']; a naive [IHk] leaves a
-    dangling, wrongly-tiered extra application. The fix is to
-    generalize the lemma so the lam-telescope's OWN depth is a second
-    free parameter tied 1-1 to the app-chain's remaining depth (i.e.
-    prove the fact about a [k']-layer telescope applied to its own
-    matching [k'+1]-argument chain, for all [k'], not about
-    [rho_app_tel] applied to the fixed, full-depth [t_lam s A M])
-    -- not yet written, but the fix itself is now a small, mechanical
-    restatement, not an open question.
-
-    The chain's endpoint, [(rho i M) ^^ (rho (deg Q - 1) Q)], still
-    needs one final identification with [rho i (M ^^ Q)] to close the
-    lemma. This does NOT come from [rho_commutes_substitution] (Lemma
-    43) directly -- that lemma is about free-variable substitution
-    ([M ⁅ x ≔ N ⁆]), not de Bruijn opening ([M ^^ N]); bridging the
-    two via [subst_intro] reintroduces exactly the "does [rho] commute
-    with opening" question. That is not a new dead end: it is the
-    same boundary the file's own pre-existing, still-unproven axiom
-    cluster ([rho_pi_domain_erased_below], [rho_lam_domain_erased_
-    below], [rho_app_tower], [rho_pi_tower], [rho_lam_tower]) already
-    sits on. Plausibly those axioms, once proven, hand this final step
-    over directly -- worth checking first, before inventing yet
-    another bespoke fact. *)
-
-(** FIRST-PASS ANALYSIS (2026-09-03, superseded by the update above --
-    kept for its still-useful negative results, see there): [->b] is
-    untyped and purely syntactic, so nothing here pins down the
-    domain's degree or the local closure of [M] once opened.  A
-    syntactic proof would go through [subst_intro] (turning [M ^^ Q]
-    into a free-variable substitution [(open_var M x) ⁅ x ≔ Q ⁆] for a
-    fresh [x]) and then [rho_commutes_substitution] -- exactly like
-    the app case of [deg_typing_succ] and the comment on [deg_beta]
-    describe. That route needs [lc (open_var M s x)], which forces
-    [rho_commutes_beta_aux]/[rho_commutes_beta]/[rho_commutes_beta_
-    below]/[rho_commutes_beta_total] and (on the [gamma] side)
-    [gamma_commutes_beta_aux]/[gamma_commutes_beta_base]/[gamma_
-    commutes_beta] to all carry it too, reaching [sn_reflection]/
-    Theorem 3's own headline statement. As the update above explains,
-    this whole premise turned out to be unnecessary: Mull's own lemma
-    needs no [lc] anywhere. *)
 Axiom rho_commutes_beta_base : forall i, 0 <= i <= n ->
   forall s A M Q, deg M >= i + 1 ->
   rho i (t_app (t_lam s A M) Q) ->>b rho i (M ^^ Q).
-
-(* ----------------------------------------------------------------- *)
 
 Lemma rho_commutes_beta_aux :
   forall i, 0 <= i <= n ->
@@ -2047,24 +1687,8 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-(*
-    [rho_ctx (i+1) []] always types [zero_var] itself: it is the
-    designated placeholder [rho 0] produces out of a sort, and its own
-    type sits at the very bottom of the tower.  Two standing facts
-    about it are needed below and were not needed anywhere earlier in
-    this file (nothing before this lemma has to type [zero_var] --
-    only substitute it away or show it is never touched -- so this is
-    the first place its own classification matters): its sort tag,
-    and that the base system actually has at least two tiers to put
-    an axiom pair (s_1, s_2) in (a 1-tiered system is a degenerate
-    case the whole theory of "tiers" isn't really about; Mull's
-    remark that "every full system contains the rule (s_1, s_2)"
-    silently assumes this). *)
-(** [var_sort_zero_var] is gone: under [var := nat], [zero_var] carries
-    no intrinsic sort tag to recover -- every occurrence already
-    spells its tier out explicitly as [t_fvar (sort_of 2) zero_var],
-    by construction (see [zero_var]'s definition above), so nothing
-    needs to be rewritten to discover that fact. *)
+(* rho commutes with typing *)
+
 Axiom n_at_least_two : n >= 2.
 
 Axiom typing_star_weakening_incl : forall Γ Δ M A,
@@ -2122,17 +1746,6 @@ Proof.
   - simpl. apply in_or_app. right. apply (IH i x s T). exact Hpq.
 Qed.
 
-(** With [rho_ctx_tel] retagging *every* tier uniformly (including its
-    own native one -- see the comment there), every entry
-    [rho_ctx i Γ0] ever produces is [retag]-shaped ([rho_ctx_tel_idx]),
-    so a fresh copy of [x] can only collide with one keyed by [retag y
-    s'] for some [y] actually bound in [Γ0]; [retag_neq_of_atom_neq]
-    then reduces that straight to [x <> y], which [is_fresh x Γ0]
-    already gives. (The [zero_var] base case does not need [x <>
-    zero_var] here at all -- [retag]'s image never contains
-    [zero_var] regardless, by [zero_var_retag_ne] -- but the
-    hypothesis is kept for symmetry with the other freshness lemmas
-    that do need it.) *)
 Lemma rho_ctx_fresh : forall Γ0 i x s,
   x <> zero_var -> is_fresh x Γ0 -> is_fresh (retag x s) (rho_ctx i Γ0).
 Proof.
@@ -2455,7 +2068,6 @@ Proof.
 
   - (* typing_conv *)
     simpl in Hdeg.
-    (* Hdeg : deg_aux ctx M0 >= i + 1 *)
     destruct (typing_lc _ _ _ HM) as [HlcM _].
     assert (HdegM0 : deg M0 >= i + 1) by (lia).
     assert (HdegA0 : deg A0 = deg M0 + 1)
@@ -2477,7 +2089,6 @@ Proof.
     replace (i + 1 + 1) with (S (S i)) in HIH2 by lia.
     simpl in HIH2.
     replace (S (S i)) with (i + 2) in HIH2 by lia.
-    (* HIH2 : rho_ctx (i+2) Γ0 ⊢* rho (i+1) B0 ∈ t_sort (sort_of (i+2)) *)
     assert (HIH2' : rho_ctx (i + 1) Γ0 ⊢* rho (i + 1) B0 ∈ t_sort (sort_of (i + 2))).
     { apply (typing_star_weakening_incl (rho_ctx (i + 2) Γ0) _ _ _
                (rho_ctx_mono Γ0 (i + 1) (i + 2) ltac:(lia)) HIH2). }
@@ -2486,14 +2097,9 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-
 (* Term-Level Translation *)
 (* γ : T → T 0 *)
 
-(** Like [zero_var] above, [bullet_var]/[prod_var] are concrete
-    multiples of [n+2] -- distinct from each other and from
-    [zero_var], and (by [retag_neq_mult]) automatically disjoint from
-    every [retag]-produced atom, with no extra axiom needed. *)
 Definition bullet_var : var := n + 2.
 Definition prod_var : var := 2 * (n + 2).
 
@@ -2553,14 +2159,6 @@ Fixpoint gamma (M : term) : term :=
 
 (* ================================================================= *)
 (** * gamma commutes with typing *)
-
-(** [bullet_var]/[prod_var]/[zero_var]'s own sorts and pairwise
-    distinctness are no longer axioms: every occurrence already spells
-    its sort out explicitly (e.g. [t_fvar (sort_of 1) bullet_var]), so
-    there is nothing to recover via a [var_sort] projection, and
-    [prod_var_ne_bullet_var]/[prod_var_ne_zero_var]/
-    [bullet_var_ne_zero_var] above (concrete-multiple arithmetic) give
-    pairwise distinctness outright. *)
 
 (* prod : ΠA s1 . 0 → A → 0, requires the rule (s2,s1), which we assume appear in λS. *)
 Axiom R_s2_s1 : R (sort_of 2) (sort_of 1) (sort_of 1).
@@ -2729,10 +2327,6 @@ Proof.
   - exact Tprod_typed.
 Qed.
 
-(* Mull: telescope constructions for prod's Pi/lambda arguments -- taken
-   as given, mirroring how the rho-side telescopes (rho_pi_tower etc.)
-   are axiomatized above. *)
-
 Axiom gamma_pi_tower :
   forall Δ0 Γ0 A0 s1,
     Δ0 ⊢* t_fvar (sort_of 2) zero_var ∈ t_sort (sort_of 1) ->
@@ -2748,10 +2342,6 @@ Axiom gamma_lam_tower :
     Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma_lam_tel A0 (gamma B0) (deg A0 - 1)
                         ∈ gamma_pi_tel A0 (t_fvar (sort_of 2) zero_var) (deg A0 - 1).
 
-(* Mull: the final "two applications" assembling prod(piTel)(gammaA)(lamterm).
-   T_prod is a fixed closed template, so this is a mechanical (if tedious)
-   substitution fact; taken as given at the same trust level as the tower
-   axioms above. *)
 Lemma gamma_pi_tel_eq_rho_pi_tel : forall A B k,
   gamma_pi_tel A (rho 0 B) k = rho_pi_tel rho A B 0 k.
 Proof.
@@ -2781,9 +2371,6 @@ Axiom gamma_lam_tower_D :
     Δ0 ++ rho_ctx 0 Γ0 ⊢* gamma_lam_tel A0 (gamma M0) (deg A0 - 1)
                         ∈ gamma_pi_tel A0 (rho 0 B0) (deg A0 - 1).
 
-(* Mull: weakening by a fresh z:0, then abstraction and application to
-   cancel the dummy domain back out -- taken as given, at the same trust
-   level as the other assembly axioms above. *)
 Axiom gamma_lam_applied :
   forall Δ0 Γ0 A0 lamTerm piType,
     Δ0 ++ rho_ctx 0 Γ0 ⊢* lamTerm ∈ piType ->
@@ -2792,10 +2379,6 @@ Axiom gamma_lam_applied :
     Δ0 ++ rho_ctx 0 Γ0 ⊢*
       t_app (t_lam (sort_of 1) (t_fvar (sort_of 2) zero_var) lamTerm) (gamma A0) ∈ piType.
 
-(* Mull: application. deg N = 0 and deg N >= 1 are two sub-cases in Mull's
-   own proof (the latter "similar to the same case" in rho_commutes_typing);
-   gamma_app_tel's Fixpoint already covers both uniformly (k = deg N - 1
-   truncates to 0 exactly when deg N = 0), so a single axiom suffices. *)
 Axiom gamma_app_tower :
   forall Δ0 Γ0 M0 N0 A0 B0 s1a,
     Γ0 ⊢ M0 ∈ t_pi s1a A0 B0 ->
@@ -2817,7 +2400,7 @@ Axiom gamma_prod_applied :
             lamterm
       ∈ t_fvar (sort_of 2) zero_var.
 
-Lemma gamma_commutes_typing_aux :
+Lemma gamma_commutes_typing :
   forall Γ M N, Γ ⊢ M ∈ N ->
   [(zero_var, (sort_of 2, t_sort (sort_of 1)));
    (bullet_var, (sort_of 1, t_fvar (sort_of 2) zero_var));
@@ -2966,42 +2549,200 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-(** * Lemma 47: gamma commutes with substitution *)
+(* gamma commutes with substitution *)
 
-(** [gamma_subst]/[gamma_subst_tel] and [gamma_commutes_substitution_aux]
-    below are DEAD CODE relative to this file's conclusions -- exactly
-    like [rho_commutes_substitution_aux] above, nothing else in this
-    file (in particular not the load-bearing [gamma_commutes_typing_aux])
-    ever calls them, confirmed by grepping for call sites outside their
-    own definitions. Their original proofs relied throughout on the old
-    [var := {| var_sort; var_idx |}] record representation, which no
-    longer exists; porting is deferred for the same reason as the
-    [rho]-side lemma. The statement is restated against the new
-    representation (with [x]'s sort now an explicit parameter) and left
-    as [Admitted]. *)
-Definition gamma_subst (A B : term) (x : var) (s : Sort) : term := A.
+Fixpoint gamma_subst_tel (M B : term) (x : var) (K : nat) : term :=
+  match K with
+  | O    => M
+  | S K' => gamma_subst_tel (M ⁅ retag x (sort_of (K' + 2)) ≔ rho K' B ⁆) B x K'
+  end.
 
-Lemma gamma_commutes_substitution_aux :
+Definition gamma_subst (A B : term) (x : var) (s : Sort) : term :=
+  gamma_subst_tel (gamma A) B x (index_of s - 1)
+    ⁅ retag x (sort_of 1) ≔ gamma B ⁆.
+
+Lemma sort_of_1_ne_sort_of_m : forall m, 2 <= m -> m < n + 1 -> sort_of 1 <> sort_of m.
+Proof.
+  intros m Hm2 Hmn Heq.
+  assert (H1 : index_of (sort_of 1) = 1) by (apply sort_of_correct; lia).
+  assert (H2 : index_of (sort_of m) = m) by (apply sort_of_correct; lia).
+  rewrite Heq in H1. lia.
+Qed.
+
+Lemma gamma_subst_tel_fvar_const : forall sC C x B K,
+  (forall m, 2 <= m -> m <= K + 1 -> retag x (sort_of m) <> C) ->
+  gamma_subst_tel (t_fvar sC C) B x K = t_fvar sC C.
+Proof.
+  intros sC C x B K.
+  induction K as [| K' IH]; intros Hm.
+  - reflexivity.
+  - simpl.
+    destruct (eq_var_dec C (retag x (sort_of (K' + 2)))) as [Heq | Hneq].
+    + exfalso. apply (Hm (K' + 2) ltac:(lia) ltac:(lia)). symmetry. exact Heq.
+    + apply IH. intros m Hm2 Hm3. apply Hm; lia.
+Qed.
+
+Lemma gamma_subst_tel_bvar_const : forall s0 k0 x B K,
+  gamma_subst_tel (t_bvar s0 k0) B x K = t_bvar s0 k0.
+Proof.
+  intros s0 k0 x B K.
+  induction K as [| K' IH].
+  - reflexivity.
+  - simpl. exact IH.
+Qed.
+
+Lemma gamma_subst_tel_app_commute : forall P Q x B K,
+  gamma_subst_tel (t_app P Q) B x K
+  = t_app (gamma_subst_tel P B x K) (gamma_subst_tel Q B x K).
+Proof.
+  intros P Q x B K. revert P Q.
+  induction K as [| K' IH]; intros P Q.
+  - reflexivity.
+  - simpl. apply IH.
+Qed.
+
+Lemma gamma_subst_tel_lam_commute : forall s' A' M' x B K,
+  gamma_subst_tel (t_lam s' A' M') B x K
+  = t_lam s' (gamma_subst_tel A' B x K) (gamma_subst_tel M' B x K).
+Proof.
+  intros s' A' M' x B K. revert A' M'.
+  induction K as [| K' IH]; intros A' M'.
+  - reflexivity.
+  - simpl. apply IH.
+Qed.
+
+Lemma gamma_subst_sentinel_const : forall sC C B x s,
+  (forall y sy, retag y sy <> C) ->
+  gamma_subst_tel (t_fvar sC C) B x (index_of s - 1)
+    ⁅ retag x (sort_of 1) ≔ gamma B ⁆
+  = t_fvar sC C.
+Proof.
+  intros sC C B x s Hsent.
+  assert (Hconst : gamma_subst_tel (t_fvar sC C) B x (index_of s - 1) = t_fvar sC C).
+  { apply gamma_subst_tel_fvar_const.
+    intros m Hm2 Hm3 Heq. apply (Hsent x (sort_of m)). exact Heq. }
+  rewrite Hconst. simpl.
+  destruct (eq_var_dec C (retag x (sort_of 1))) as [Heq | Hneq].
+  - exfalso. apply (Hsent x (sort_of 1)). symmetry. exact Heq.
+  - reflexivity.
+Qed.
+
+Axiom gamma_pi_tel_commutes_subst : forall C B x s KC,
+  x <> zero_var -> 1 <= index_of s <= n ->
+  deg B = index_of s - 1 -> lc B -> only_tagged x s C ->
+  gamma_subst_tel (gamma_pi_tel C (t_fvar (sort_of 2) zero_var) KC) B x (index_of s - 1)
+    ⁅ retag x (sort_of 1) ≔ gamma B ⁆
+  = gamma_pi_tel (C ⁅ x ≔ B ⁆) (t_fvar (sort_of 2) zero_var) KC.
+
+Axiom gamma_lam_tel_commutes_subst : forall C D B x s KC,
+  x <> zero_var -> 1 <= index_of s <= n ->
+  deg B = index_of s - 1 -> lc B -> only_tagged x s C ->
+  gamma_subst_tel (gamma_lam_tel C D KC) B x (index_of s - 1)
+    ⁅ retag x (sort_of 1) ≔ gamma B ⁆
+  = gamma_lam_tel (C ⁅ x ≔ B ⁆)
+      (gamma_subst_tel D B x (index_of s - 1)
+         ⁅ retag x (sort_of 1) ≔ gamma B ⁆)
+      KC.
+
+Axiom gamma_app_tel_commutes_subst : forall MG C B x s KC,
+  x <> zero_var -> 1 <= index_of s <= n ->
+  deg B = index_of s - 1 -> lc B -> only_tagged x s C ->
+  gamma_subst_tel (gamma_app_tel MG C KC) B x (index_of s - 1)
+    ⁅ retag x (sort_of 1) ≔ gamma B ⁆
+  = gamma_app_tel
+      (gamma_subst_tel MG B x (index_of s - 1)
+         ⁅ retag x (sort_of 1) ≔ gamma B ⁆)
+      (C ⁅ x ≔ B ⁆) KC.
+
+Lemma gamma_commutes_substitution :
   forall x s, x <> bullet_var -> x <> zero_var -> x <> prod_var ->
   1 <= index_of s <= n ->
-  forall A B, deg B = index_of s - 1 -> lc B ->
+  forall A, only_tagged x s A ->
+  forall B, deg B = index_of s - 1 -> lc B ->
   gamma (A ⁅ x ≔ B ⁆) = gamma_subst A B x s.
-Admitted.
+Proof.
+  intros x s Hxb Hxz Hxp Hxrange A.
+  unfold gamma_subst.
+  induction A as [s0 | s_m m | sy y | D IHD C IHC | s1 C IHC D IHD | s1 C IHC D IHD];
+    intros HonlyA B HdegB HlcB.
+
+  - (* A = t_sort s0 *)
+    rewrite subst_sort. simpl.
+    rewrite (gamma_subst_sentinel_const (sort_of 1) bullet_var B x s bullet_var_retag_ne).
+    reflexivity.
+
+  - (* A = t_bvar s_m m *)
+    rewrite subst_bvar. simpl.
+    rewrite gamma_subst_tel_bvar_const, subst_bvar.
+    reflexivity.
+
+  - (* A = t_fvar sy y *)
+    rewrite subst_var.
+    destruct (eq_var_dec y x) as [Heq | Hneq].
+    + subst y.
+      simpl.
+      assert (Hconst : gamma_subst_tel (t_fvar (sort_of 1) (retag x (sort_of 1))) B x (index_of s - 1)
+                        = t_fvar (sort_of 1) (retag x (sort_of 1))).
+      { apply gamma_subst_tel_fvar_const.
+        intros m Hm2 Hm3 Heq2.
+        apply retag_inj in Heq2 as [_ Hsc].
+        apply (sort_of_1_ne_sort_of_m m Hm2 ltac:(lia)).
+        symmetry. exact Hsc. }
+      rewrite Hconst. simpl.
+      destruct (eq_var_dec (retag x (sort_of 1)) (retag x (sort_of 1))) as [_ | Hne2].
+      * reflexivity.
+      * exfalso. apply Hne2. reflexivity.
+    + simpl.
+      assert (Hconst : gamma_subst_tel (t_fvar (sort_of 1) (retag y (sort_of 1))) B x (index_of s - 1)
+                        = t_fvar (sort_of 1) (retag y (sort_of 1))).
+      { apply gamma_subst_tel_fvar_const.
+        intros m Hm2 Hm3 Heq2.
+        apply retag_inj in Heq2 as [Hxeq _]. apply Hneq. symmetry. exact Hxeq. }
+      rewrite Hconst. simpl.
+      destruct (eq_var_dec (retag y (sort_of 1)) (retag x (sort_of 1))) as [Heq2 | Hneq2].
+      * exfalso. apply retag_inj in Heq2 as [Hc _]. apply Hneq. exact Hc.
+      * reflexivity.
+
+  - (* A = t_app D C *)
+    simpl in HonlyA. destruct HonlyA as [HonlyD HonlyC].
+    assert (HdegC : deg (C ⁅ x ≔ B ⁆) = deg C)
+      by (apply (deg_subst_tagged C x s B HonlyC HlcB HdegB)).
+    rewrite subst_app. simpl. rewrite HdegC.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite (gamma_app_tel_commutes_subst (gamma D) C B x s (deg C - 1) Hxz Hxrange HdegB HlcB HonlyC).
+    rewrite <- (IHD HonlyD B HdegB HlcB), <- (IHC HonlyC B HdegB HlcB).
+    reflexivity.
+
+  - (* A = t_lam s1 C D *)
+    simpl in HonlyA. destruct HonlyA as [HonlyC HonlyD].
+    assert (HdegC : deg (C ⁅ x ≔ B ⁆) = deg C)
+      by (apply (deg_subst_tagged C x s B HonlyC HlcB HdegB)).
+    rewrite subst_lam. simpl. rewrite HdegC.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite gamma_subst_tel_lam_commute, subst_lam.
+    rewrite (gamma_subst_sentinel_const (sort_of 2) zero_var B x s zero_var_retag_ne).
+    rewrite (gamma_lam_tel_commutes_subst C (gamma D) B x s (deg C - 1) Hxz Hxrange HdegB HlcB HonlyC).
+    rewrite <- (IHD HonlyD B HdegB HlcB), <- (IHC HonlyC B HdegB HlcB).
+    reflexivity.
+
+  - (* A = t_pi s1 C D *)
+    simpl in HonlyA. destruct HonlyA as [HonlyC HonlyD].
+    assert (HdegC : deg (C ⁅ x ≔ B ⁆) = deg C)
+      by (apply (deg_subst_tagged C x s B HonlyC HlcB HdegB)).
+    rewrite subst_pi. simpl. rewrite HdegC.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite gamma_subst_tel_app_commute, subst_app.
+    rewrite (gamma_subst_sentinel_const (sort_of 1) prod_var B x s prod_var_retag_ne).
+    rewrite (gamma_pi_tel_commutes_subst C B x s (deg C - 1) Hxz Hxrange HdegB HlcB HonlyC).
+    rewrite (gamma_lam_tel_commutes_subst C (gamma D) B x s (deg C - 1) Hxz Hxrange HdegB HlcB HonlyC).
+    rewrite <- (IHD HonlyD B HdegB HlcB), <- (IHC HonlyC B HdegB HlcB).
+    reflexivity.
+Qed.
 
 
 (* ================================================================= *)
-(** * Lemma 48: gamma commutes with beta reduction *)
-
-(* Congruence lemmas for gamma_pi_tel / gamma_lam_tel / gamma_app_tel,
-   the direct analogues of rho_pi_tel_dom_congr / rho_pi_tel_body_congr
-   / rho_lam_tel_dom_congr / rho_lam_tel_body_congr / rho_app_tel_
-   func_congr / rho_app_tel_arg_congr above -- same proofs, transported
-   to gamma's own (untiered, always-starting-at-0) telescopes. Only
-   the "dom" congruences are needed for gamma_pi_tel (its body slot is
-   always the constant t_fvar (sort_of 2) zero_var in every use below), while
-   gamma_lam_tel needs both, since it is reused both for the Pi
-   translation's third component (body = gamma of the codomain) and
-   for the Lam translation's telescope (body = gamma of the term). *)
+(* gamma commutes with beta *)
 
 Lemma gamma_pi_tel_dom_congr : forall C C' body k,
   (forall m, m <= k -> rho m C ->>b rho m C') ->
@@ -3054,22 +2795,6 @@ Proof.
     + apply IH. intros j Hj. apply Hall. lia.
 Qed.
 
-(* rho_commutes_beta above only applies at degree M >= i + 1, exactly
-   like rho_commutes_beta_aux's own induction hypothesis. Below that
-   threshold rho i already erases the finer structure of a degree-
-   deficient subterm (this is the same "collapse" rho i (t_pi ...)
-   exhibits via its own le_lt_dec (i+1) (deg A) branch, and is exactly
-   the phenomenon rho_erased_subst_below packages for open/subst); the
-   companion fact needed here -- that a beta step strictly below tier
-   i + 1 still transports along rho i -- is the direct beta-reduction
-   analogue of rho_erased_subst_below, and is axiomatized in the same
-   spirit for the same reason. Together with rho_commutes_beta this
-   gives an UNCONDITIONAL (degree-free) "rho commutes with beta" fact,
-   rho_commutes_beta_total below, which is what the telescope
-   congruence lemmas for Lemma 48 actually need (a telescope's j-th
-   level can legitimately have deg Q < j + 1, e.g. whenever deg Q = 0
-   itself, since gamma_app_tel/gamma_pi_tel/gamma_lam_tel always
-   include at least the k = 0 rung). *)
 Axiom rho_commutes_beta_below : forall i, 0 <= i <= n ->
   forall M N, deg M < i + 1 -> M ->>b N -> rho i M ->>b rho i N.
 
@@ -3081,23 +2806,6 @@ Proof.
   - apply rho_commutes_beta; [lia | lia | exact Hbeta].
   - apply rho_commutes_beta_below; [lia | lia | exact Hbeta].
 Qed.
-
-(* ------------------------------------------------------------------- *)
-(* Mull's Lemma 48 states A ->b B -> γA ↠+β γB -- a NON-empty reduction
-   ("↠+β" is [beta_trans]/[->>+b], the non-reflexive transitive
-   closure: only [bt_step]/[bt_trans], no reflexivity constructor),
-   not the reflexive [->>b] used just below. That distinction turns
-   out to be load-bearing for Theorem 3 (SN transfer): the reflection
-   argument there needs an ACTUAL step on the gamma side for every
-   actual step on the source side, since Acc-based strong
-   normalization can't be "transported" across a simulation that is
-   allowed to stall. So here we build a full parallel ->>+b congruence
-   library -- direct mirrors of the brt_ lemmas already in PTS.v/above,
-   using bt_step/bt_trans in place of brt_refl/brt_step/brt_trans --
-   plus two "gluing" lemmas that combine one ->>b (possibly-empty) leg
-   with one ->>+b (genuine) leg into an overall ->>+b, which is exactly
-   the shape needed whenever only ONE of two sibling subterms is
-   guaranteed to take a real step. *)
 
 Lemma bt_pi_A : forall s A A' B, A ->>+b A' -> t_pi s A B ->>+b t_pi s A' B.
 Proof.
@@ -3147,8 +2855,6 @@ Proof.
   - apply bt_trans with (t_app M N''); auto.
 Qed.
 
-(* Gluing: one ->>b (possibly empty) leg + one ->>+b (genuine) leg,
-   composed in either order, still gives a genuine ->>+b overall. *)
 Lemma brt_bt_trans : forall M K N, M ->>b K -> K ->>+b N -> M ->>+b N.
 Proof.
   intros M K N Hmk.
@@ -3185,10 +2891,6 @@ Proof.
   - apply bt_app_r. exact HN.
 Qed.
 
-(* Nonempty telescope congruences, for the cases where the ONLY
-   changing part is a single subterm that is already known (from the
-   structural IH below) to take a genuine step -- direct ->>+b mirrors
-   of gamma_app_tel_func_congr / gamma_lam_tel_body_congr above. *)
 Lemma gamma_app_tel_func_congr_plus : forall M M' N k,
   M ->>+b M' -> gamma_app_tel M N k ->>+b gamma_app_tel M' N k.
 Proof.
@@ -3206,25 +2908,6 @@ Proof.
   - apply bt_lam_M. apply IHk. exact Hb.
 Qed.
 
-(* gamma commuting with the base beta rule itself,
-     gamma (t_app (t_lam s A M) N) ->>+b gamma (M ^^ N),
-   is the one genuinely open case, for exactly the reason
-   rho_commutes_beta_base was axiomatized above: ->b is untyped and
-   purely syntactic, so nothing here pins down the local closure of M
-   once opened, and a syntactic proof would need to go through
-   subst_intro (turning M ^^ N into a free-variable substitution
-   (open_var M x) ⁅ x ≔ N ⁆ for a fresh x) together with
-   gamma_commutes_substitution (Lemma 47 above) -- exactly the route
-   Mull's own displayed derivation takes ("γ M [N/ s_j x] = ...") --
-   but that route needs lc (open_var M x), which requires a typing (or
-   at least local-closure) derivation for the redex that this untyped
-   rule does not carry. We isolate exactly this base-case content,
-   which is exactly Mull's explicit reduction sequence for both the
-   deg N = 0 and deg N >= 1 sub-cases -- genuinely 1 or more real
-   steps in both, never zero -- so stating the axiom with ->>+b (not
-   just ->>b) is fully faithful to what Mull actually derives, not an
-   extra assumption on top of it. Mirrors rho_commutes_beta_base's
-   role exactly, just with the stronger conclusion this lemma needs. *)
 Axiom gamma_commutes_beta_base : forall s A M N,
   gamma (t_app (t_lam s A M) N) ->>+b gamma (M ^^ N).
 
@@ -3320,33 +3003,8 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-(** * Theorem 3: λS is strongly normalizing iff λS∗ is *)
+(** Main Theorem: λS is strongly normalizing iff λS∗ is *)
 
-(* -- SN transfer along gamma, via Acc reflection (no classical choice
-      needed) --------------------------------------------------------
-
-   Mull's own proof is classical: assume λS is not SN, extract (by
-   choice) an infinite λS-derivable ->b sequence, and use Lemma 48 to
-   turn it into an infinite λS∗-derivable sequence. That route would
-   need constructing an actual infinite-sequence witness from the
-   negation of Acc, which needs a form of (dependent/countable) choice
-   this file does not otherwise use -- only propositional classical
-   logic (Classical) is imported.
-
-   Instead we prove the same content directly and constructively, by
-   reflecting Acc itself backward along gamma. This works precisely
-   because gamma_commutes_beta_aux gives a NON-empty step
-   (gamma M ->>+b gamma N for every M ->b N) -- had it only given the
-   reflexive ->>b, this argument would not go through: Acc-based SN
-   cannot be transported across a simulation that is allowed to stall,
-   which is exactly why Lemma 48 needed the ->>+b strengthening. *)
-
-(* Acc under the atomic step relation implies Acc under its non-empty
-   transitive closure ->>+b -- i.e. strongly_normalizing transports
-   forward along ->>+b, viewed as an Acc-of-a-coarser-relation fact.
-   (Coq's stdlib has this generically as Wellfounded.Transitive_
-   Closure.Acc_clos_trans for clos_trans; this is the direct analogue
-   for our own hand-rolled beta_trans.) *)
 Lemma bt_forward_acc : forall X Y, X ->>+b Y ->
   (forall Z, X ->b Z -> Acc (fun N M => M ->>+b N) Z) ->
   Acc (fun N M => M ->>+b N) Y.
@@ -3370,9 +3028,6 @@ Proof.
   exact (bt_forward_acc X Y HXY IH).
 Qed.
 
-(* The reflection itself: an Acc-proof of gamma M under ->>+b unfolds,
-   one gamma_commutes_beta_aux step at a time, into an Acc-proof of M
-   under atomic ->b. *)
 Lemma sn_reflection_core :
   forall b, Acc (fun N M => M ->>+b N) b ->
   forall M, b = gamma M -> strongly_normalizing M.
@@ -3394,8 +3049,6 @@ Proof.
   exact (sn_reflection_core (gamma M) (Acc_atomic_implies_Acc_plus (gamma M) Hsn) M eq_refl).
 Qed.
 
-(* Package Lemma 46 (gamma_commutes_typing_aux) as the clean
-   "derivable transports to derivable_star" statement Theorem 3 needs. *)
 Lemma gamma_commutes_typing_derivable : forall M,
   derivable M -> derivable_star (gamma M).
 Proof.
@@ -3403,19 +3056,9 @@ Proof.
   exists ([(zero_var, (sort_of 2, t_sort (sort_of 1)));
            (bullet_var, (sort_of 1, t_fvar (sort_of 2) zero_var));
            (prod_var, (sort_of 1, T_prod))] ++ rho_ctx 0 Γ), (rho 0 N).
-  exact (gamma_commutes_typing_aux Γ M N HMN).
+  exact (gamma_commutes_typing Γ M N HMN).
 Qed.
 
-(* The other, easy half of Mull's proof ("all derivable terms of λS∗
-   are also derivable in λS") is a genuinely separate fact: ⊢* is its
-   own independent seven-rule PTS-style judgment (typing_star), not
-   literally a sub-relation of the tiered ⊢ (typing) used elsewhere in
-   this file. Proving the embedding would mean re-deriving each of
-   typing_star's rules as an admissible rule of the tiered system --
-   real work, orthogonal to everything gamma/rho-translation-related
-   above, and (per Mull's own one-line remark, offered without proof)
-   not the interesting content of this theorem. We axiomatize it in
-   the same spirit as the file's other packaged facts. *)
 Axiom derivable_star_implies_derivable : forall M,
   derivable_star M -> derivable M.
 
@@ -3427,14 +3070,13 @@ Theorem lambdaS_SN_iff_lambdaS_star_SN :
 Proof.
   split.
 
-  - (* λS SN -> λS∗ SN: every λS∗-derivable term is λS-derivable. *)
+  - (* λS SN -> λS∗ SN *)
     intros HSN M HMstar.
     apply HSN.
     apply derivable_star_implies_derivable.
     exact HMstar.
 
-  - (* λS∗ SN -> λS SN: translate, apply the λS∗ hypothesis, reflect
-       strong normalization back through gamma. *)
+  - (* λS∗ SN -> λS SN *)
     intros HSNstar M HM.
     apply sn_reflection.
     apply HSNstar.
