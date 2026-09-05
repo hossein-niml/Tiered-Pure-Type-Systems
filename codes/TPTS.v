@@ -1,16 +1,21 @@
 From Stdlib Require Import List.
 From Stdlib Require Import Classical.
 From Stdlib Require Import Logic.IndefiniteDescription.
-Import ListNotations.
 From Stdlib.Program Require Import Program Wf.
 From Stdlib Require Import Lia.
-Require Import Stdlib.Arith.Arith.
+From Stdlib Require Import Arith.Arith.
+From Stdlib Require Import ZArith.
+Import ListNotations.
+
 Require Import Thesis.TPTSSignature.
 Require Import Thesis.PTS.
 
 Module TPTS (Sig : TPTS_SIGNATURE).
+
 Import Sig.
+
 Module Base := PTS Sig.
+  
 Import Base.
 
 (* ================================================================= *)
@@ -2558,8 +2563,7 @@ Fixpoint gamma_subst_tel (M B : term) (x : var) (K : nat) : term :=
   end.
 
 Definition gamma_subst (A B : term) (x : var) (s : Sort) : term :=
-  gamma_subst_tel (gamma A) B x (index_of s - 1)
-    ⁅ retag x (sort_of 1) ≔ gamma B ⁆.
+  (gamma_subst_tel (gamma A) B x (index_of s - 1)) ⁅ retag x (sort_of 1) ≔ gamma B ⁆.
 
 Lemma sort_of_1_ne_sort_of_m : forall m, 2 <= m -> m < n + 1 -> sort_of 1 <> sort_of m.
 Proof.
@@ -2613,7 +2617,7 @@ Qed.
 
 Lemma gamma_subst_sentinel_const : forall sC C B x s,
   (forall y sy, retag y sy <> C) ->
-  gamma_subst_tel (t_fvar sC C) B x (index_of s - 1)
+  (gamma_subst_tel (t_fvar sC C) B x (index_of s - 1))
     ⁅ retag x (sort_of 1) ≔ gamma B ⁆
   = t_fvar sC C.
 Proof.
@@ -2630,27 +2634,27 @@ Qed.
 Axiom gamma_pi_tel_commutes_subst : forall C B x s KC,
   x <> zero_var -> 1 <= index_of s <= n ->
   deg B = index_of s - 1 -> lc B -> only_tagged x s C ->
-  gamma_subst_tel (gamma_pi_tel C (t_fvar (sort_of 2) zero_var) KC) B x (index_of s - 1)
+  (gamma_subst_tel (gamma_pi_tel C (t_fvar (sort_of 2) zero_var) KC) B x (index_of s - 1))
     ⁅ retag x (sort_of 1) ≔ gamma B ⁆
   = gamma_pi_tel (C ⁅ x ≔ B ⁆) (t_fvar (sort_of 2) zero_var) KC.
 
 Axiom gamma_lam_tel_commutes_subst : forall C D B x s KC,
   x <> zero_var -> 1 <= index_of s <= n ->
   deg B = index_of s - 1 -> lc B -> only_tagged x s C ->
-  gamma_subst_tel (gamma_lam_tel C D KC) B x (index_of s - 1)
+  (gamma_subst_tel (gamma_lam_tel C D KC) B x (index_of s - 1))
     ⁅ retag x (sort_of 1) ≔ gamma B ⁆
   = gamma_lam_tel (C ⁅ x ≔ B ⁆)
-      (gamma_subst_tel D B x (index_of s - 1)
+      ((gamma_subst_tel D B x (index_of s - 1))
          ⁅ retag x (sort_of 1) ≔ gamma B ⁆)
       KC.
 
 Axiom gamma_app_tel_commutes_subst : forall MG C B x s KC,
   x <> zero_var -> 1 <= index_of s <= n ->
   deg B = index_of s - 1 -> lc B -> only_tagged x s C ->
-  gamma_subst_tel (gamma_app_tel MG C KC) B x (index_of s - 1)
+  (gamma_subst_tel (gamma_app_tel MG C KC) B x (index_of s - 1))
     ⁅ retag x (sort_of 1) ≔ gamma B ⁆
   = gamma_app_tel
-      (gamma_subst_tel MG B x (index_of s - 1)
+      ((gamma_subst_tel MG B x (index_of s - 1))
          ⁅ retag x (sort_of 1) ≔ gamma B ⁆)
       (C ⁅ x ≔ B ⁆) KC.
 

@@ -1,11 +1,11 @@
-Require Import List.
-Require Import Classical.
+From Stdlib Require Import List.
+From Stdlib Require Import Classical.
 From Stdlib Require Import Logic.IndefiniteDescription.
-Import ListNotations.
 From Stdlib.Program Require Import Program Wf.
 From Stdlib Require Import Lia.
-Require Import Coq.Arith.Arith.
-Require Import ZArith.
+From Stdlib Require Import Arith.Arith.
+From Stdlib Require Import ZArith.
+Import ListNotations.
 
 Require Import Thesis.PTSSignature.
 
@@ -16,38 +16,9 @@ Import Sig.
 (* ================================================================= *)
 (** * Syntax *)
 
-(** Variables (atoms).  Each atom is tagged with the [Sort] it is
-    meant to inhabit; this is unchanged from the named-variable
-    development and is preserved here at the user's request: free
-    variables still carry their sort, it is only bound variables that
-    lose their identity (they become de Bruijn indices, which carry
-    no sort of their own). *)
-
-(** Atoms are bare naturals: standard locally-nameless practice is
-    that a free variable is a pure, tag-free identifier with no
-    semantic content of its own (equality/freshness never look past
-    it). The [Sort] a free variable inhabits is not part of its
-    identity; it is carried as an explicit annotation on each
-    [t_fvar] occurrence instead -- exactly the way [t_pi]/[t_lam]
-    already annotate their bound variable's sort at the binding
-    site. This is what lets [eq_var_dec] and freshness be decided by
-    plain [nat] equality, with no possibility of two distinct atoms
-    ever colliding on "the same identity, different sort": there is
-    only one field to agree or disagree on. *)
 Definition var := nat.
 
 Definition eq_var_dec : forall x y : var, {x = y} + {x <> y} := Nat.eq_dec.
-
-(** Locally nameless terms: bound variables are de Bruijn indices
-    ([t_bvar]), free variables are atoms ([t_fvar]).  [t_pi]/[t_lam]
-    no longer carry a binder *name* -- the name is only ever visible
-    through [open]/[close] at the boundary with a context.  They do,
-    however, still carry the domain's [Sort] as an explicit tag (the
-    first argument): unlike a binder's name, this is inert data with
-    no capture/alpha-equivalence concerns (substitution and opening
-    simply leave it untouched), and it is needed downstream (in the
-    Tiered PTS development) to compute a term's "degree" without
-    first having to open it against a typing derivation. *)
 
 Inductive term : Type :=
     | t_sort : Sort -> term
@@ -73,9 +44,6 @@ Fixpoint fv (t : term) : list var :=
 (* ================================================================= *)
 (** * Opening *)
 
-(** [open_rec k u t] replaces the de Bruijn index [k] by [u],
-    incrementing [k] every time we go under a binder. *)
-
 Fixpoint open_rec (k : nat) (u : term) (t : term) : term :=
   match t with
   | t_sort s   => t_sort s
@@ -88,17 +56,10 @@ Fixpoint open_rec (k : nat) (u : term) (t : term) : term :=
 
 Notation "t ^^ u" := (open_rec 0 u t) (at level 67).
 
-(** Opening now takes the [Sort] to tag the freshly-exposed
-    occurrence with explicitly -- there is no [var_sort] to read it
-    off from any more. In every use below, that sort is simply the
-    binder's own domain sort, exactly as it already was written on
-    the [t_pi]/[t_lam] itself. *)
 Definition open_var (t : term) (s : Sort) (x : var) : term := open_rec 0 (t_fvar s x) t.
 
 (* ================================================================= *)
-(** * Closing (the inverse of opening a fresh atom; kept for
-      completeness, it is not needed by the lemmas below but is
-      standard LN kit and costs nothing to have on hand). *)
+(** * Closing *)
 
 Fixpoint close_rec (k : nat) (x : var) (t : term) : term :=
   match t with
@@ -113,18 +74,10 @@ Fixpoint close_rec (k : nat) (x : var) (t : term) : term :=
 Definition close (x : var) (t : term) : term := close_rec 0 x t.
 
 (* ================================================================= *)
-(** * Substitution for a free variable.
-
-    This is the operation that used to hurt: with named variables it
-    needed a fresh renaming of the binder on every recursive call
-    into a [t_pi]/[t_lam], tracked by a well-founded recursion on
-    [size].  With locally nameless terms, bound variables are inert
-    to substitution (they are just numbers), so this is a plain
-    structural recursion -- no measure, no freshening, no axioms for
-    its defining equations (they are all just [reflexivity]). *)
+(** * Substitution for a free variable *)
 
 Reserved Notation "M ⁅ x ≔ N ⁆"
-  (at level 20, left associativity).
+  (at level 1, left associativity).
 
 Fixpoint subst_term (x : var) (N : term) (t : term) : term :=
   match t with
@@ -179,26 +132,7 @@ Inductive lc : term -> Prop :=
       lc (t_lam s A M).
 
 (* ================================================================= *)
-(** * Bound-variable tag well-formedness.
-
-    [t_bvar] carries its own [Sort] tag, mirroring [t_fvar], instead
-    of that information being read off an externally-threaded context
-    (see the degree computation in the Tiered PTS development, where
-    that external-context design was the source of a real bug: a
-    subterm's degree silently defaulted to [0] whenever it was not
-    itself closed, which is the case every time the tiering
-    translation recurses into a raw, unopened binder body).
-
-    [bvar_tag_ok k s t] says: wherever a spine walk through [t] would
-    reach a [t_bvar] node standing for the binder [k] levels out, that
-    node's own tag already agrees with [s]. This is what keeps a
-    bound-variable's declared tag trustworthy across opening: nothing
-    in [open_rec] itself enforces it (opening simply overwrites
-    whatever node it finds), so it has to be established once, where
-    the binder is introduced, and is threaded here as an explicit
-    premise of [typing_pi]/[typing_lam] -- structurally the same kind
-    of side-condition those rules already carry for the binder's own
-    domain sort [s1] itself. *)
+(** * Bound-variable tag well-formedness. *)
 Fixpoint bvar_tag_ok (k : nat) (s : Sort) (t : term) : Prop :=
   match t with
   | t_sort _    => True
@@ -209,15 +143,8 @@ Fixpoint bvar_tag_ok (k : nat) (s : Sort) (t : term) : Prop :=
   | t_pi  _ _ B => bvar_tag_ok (S k) s B
   end.
 
-(** [t_bvar] nodes are inert to [subst_term] (it only ever touches
-    [t_fvar]), so [bvar_tag_ok] survives substitution for free -- the
-    substitution lemma needs exactly this to keep constructing
-    [typing_pi]/[typing_lam] derivations after substituting into
-    their bodies. *)
 (* ================================================================= *)
-(** * Freshness of atoms (reused verbatim from the named-variable
-      development: it never depended on how binders inside terms
-      were represented). *)
+(** * Freshness of atoms *)
 
 Fixpoint max_var_idx (xs : list var) : nat :=
   match xs with
@@ -487,7 +414,7 @@ Qed.
 Lemma subst_open_var_eq : forall t s x u,
   ~ In x (fv t) ->
   lc u ->
-  open_var t s x ⁅x ≔ u⁆ = t ^^ u.
+  (open_var t s x) ⁅x ≔ u⁆ = t ^^ u.
 Proof. intros. symmetry. apply subst_intro; auto. Qed.
 
 (* ================================================================= *)
@@ -655,15 +582,6 @@ Qed.
 (* ================================================================= *)
 (** * Contexts *)
 
-(** Each context entry pairs an atom with the [Sort] it was bound at
-    together with its type.  Storing the sort in the entry (rather
-    than, as before, inside the atom itself) is what lets a lookup in
-    a possibly-different-but-legal super-context recover the *same*
-    sort that a fixed term's [t_fvar] annotation already commits to -
-    freshness itself still only inspects the atom ([dom]/[is_fresh]
-    below project past the sort, so no bundling issue is
-    reintroduced). *)
-
 Definition context := list (var * (Sort * term)).
 
 Fixpoint lookup (c : context) (x : var) : option (Sort * term) :=
@@ -682,21 +600,7 @@ Definition is_fresh (x : var) (Γ : context) :=
   ~ In x (dom Γ).
 
 (* ================================================================= *)
-(** * Establishing [bvar_tag_ok] from [lc].
-
-    [bvar_tag_ok k s t] can fail to hold at exactly the "own binder"
-    position ([lc]-opening simply overwrites that node, so it carries
-    no evidence either way about what tag was there before -- this is
-    exactly why [typing_pi]/[typing_lam] need it as an explicit new
-    premise, they cannot get it for free). But at every *other*
-    position -- anything [t] would reach at a depth strictly less than
-    [t]'s own local nesting, i.e. anything that would have to *escape*
-    all of [t]'s own binders to be seen -- [lc] already rules the
-    occurrence out entirely (an [lc] term contains no [t_bvar] node at
-    all, anywhere, since [lc] has no constructor for one). [closed_at]
-    tracks exactly that escape bound, along the same spine
-    [bvar_tag_ok] itself follows, which is what makes the bridge
-    below possible. *)
+(** * Establishing [bvar_tag_ok] from [lc] *)
 Fixpoint closed_at (k : nat) (t : term) : Prop :=
   match t with
   | t_sort _    => True
@@ -754,26 +658,12 @@ Proof.
   - eapply IHB; eauto. lia.
 Qed.
 
-(** The invariant [typing_pi]/[typing_lam] cannot get for free at a
-    binder's *own* position, they get for free at every *other*
-    position, straight from the cofinite [lc] premise they already
-    carry: [lc] alone forces the whole rest of the term to be tagged
-    consistently. *)
 Lemma lc_bvar_tag_ok : forall t, lc t -> forall k s, bvar_tag_ok k s t.
 Proof.
   intros t Hlc k s.
   apply (closed_at_bvar_tag_ok t 0); [apply lc_closed_at; exact Hlc | lia].
 Qed.
 
-(** [t_bvar] nodes are inert to [subst_term] (it only ever touches
-    [t_fvar]), so [bvar_tag_ok] survives substitution at every
-    position except where the substituted-in [N] itself lands -- and
-    there, [lc N] (via [lc_bvar_tag_ok]) covers it, since [N] is
-    always the already-typed, locally closed term being substituted
-    in throughout this development. This is exactly what the
-    substitution lemma below needs to keep constructing
-    [typing_pi]/[typing_lam] derivations after substituting into
-    their bodies. *)
 Lemma bvar_tag_ok_subst : forall t k s x N,
   lc N -> bvar_tag_ok k s t -> bvar_tag_ok k s (t ⁅ x ≔ N ⁆).
 Proof.
@@ -784,15 +674,7 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-(** * Typing
-
-    [t_pi]/[t_lam] no longer carry a binder name, so the rules that
-    introduce a bound variable ([typing_pi], [typing_lam]) quantify
-    cofinitely: instead of picking one fixed name [x] for the bound
-    variable, they require the property to hold for every atom
-    outside a finite exclusion set [L].  This is what lets the
-    substitution lemma below go through without ever needing to
-    rename a binder. *)
+(** * Typing *)
 
 Reserved Notation "Γ ⊢ M ∈ A" (at level 70, no associativity).
 
@@ -845,10 +727,7 @@ Definition legal (Γ : context) : Prop :=
   exists M N, Γ ⊢ M ∈ N.
 
 (* ================================================================= *)
-(** * Regularity: typing derivations only ever involve locally-closed
-      terms, and their free variables live in the context's domain.
-      These two facts are what let the substitution lemma below use
-      [subst_open]/[subst_fresh] without any renaming. *)
+(** * Regularity *)
 
 Lemma lc_pi_body : forall s A B,
   lc (t_pi s A B) -> exists L, forall x, ~ In x L -> lc (open_var B s x).
@@ -1133,12 +1012,6 @@ Proof.
   apply H.
 Qed.
 
-Axiom thinning_fresh : forall Γ Δ x T M N,
-  legal Δ ->
-  Γ ⊆ Δ ->
-  Γ ++ [(x, T)] ⊢ M ∈ N ->
-  is_fresh x Δ.
-
 Lemma thinning :
   forall Γ Δ M N,
     legal Δ ->
@@ -1207,7 +1080,7 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-(** * Generation (inversion) lemmas *)
+(** * Generation lemmas *)
 
 Lemma app_singleton_injective :
   forall (Γ Δ : context)
@@ -1474,23 +1347,13 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-(** * The substitution lemma.
-
-    This is the theorem that used to be stuck: with named variables,
-    the [t_pi]/[t_lam] cases needed a fresh renaming of the bound
-    variable to avoid capturing free variables of [N], which the
-    original development could not push through (both cases were
-    left as [admit]s, and the [t_app]/[typing_conv] cases were never
-    even reached).  With locally nameless terms there is no binder to
-    rename: opening a cofinite premise at a fresh atom and closing
-    the argument with [subst_open_var] is enough, so all seven cases
-    go through. *)
+(** * Substitution lemma*)
 
 Definition subst_decl (x : var) (N : term) '(y,(s,T)) : (var * (Sort * term)) := (y, (s, T⁅x ≔ N⁆)).
 
 Definition subst_context (x : var) (N : term) (Γ : context) := map (subst_decl x N) Γ.
 
-Notation "Γ ⌊ x ≔ N ⌋" := (subst_context x N Γ) (at level 20, left associativity).
+Notation "Γ ⌊ x ≔ N ⌋" := (subst_context x N Γ) (at level 1, left associativity).
 
 Lemma subst_context_snoc : forall x N Δ y s A,
   (Δ ++ [(y, (s, A))]) ⌊ x ≔ N ⌋ = Δ ⌊ x ≔ N ⌋ ++ [(y, (s, A ⁅ x ≔ N ⁆))].
@@ -1629,10 +1492,6 @@ Proof.
     + rewrite <- (subst_sort sd x N). apply IHB. exact HZ.
 Qed.
 
-(** With the substitution lemma finally available, [type_correctness]
-    -- stuck in the original development exactly because it needed a
-    working substitution -- goes through completely. *)
-
 Lemma type_correctness:
   forall Γ M N,
     Γ ⊢ M ∈ N ->
@@ -1689,13 +1548,7 @@ Proof.
 Qed.
 
 (* ================================================================= *)
-(** * Sort-order metatheory (unchanged)
-
-    Everything below concerns the abstract [Sort]/[A]/[R] relations
-    only -- it never touches term syntax, substitution, or typing,
-    so it is carried over verbatim from the named-variable
-    development (the only edit anywhere below is renaming the one
-    occurrence of [t_var] to [t_fvar] in [top_sort_lemma]). *)
+(** * Sort-order metatheory *)
 
 Axiom permutation :
   forall Γ Δ x y sx sy Tx Ty M C,
