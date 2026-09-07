@@ -1,6 +1,953 @@
-\chapter{عنوان فصل}\label{S3}
+\chapter{ترجمه حذف وابستگی}\label{S3}
 \pagestyle{plain}
 
+\section{مقدمه}
 
-فصل سوم معمولا اوج پایان‌نامه و پرداختن به مطالب اصلی مقاله اصلی پایان‌نامه است. 
+در چند دهه اخیر، روش‌های متعددی برای اثبات نرمال‌سازی سیستم‌های موجود در مکعب
+$\lambda$
+و گسترش آنان ارائه شده است، اما بسیاری از این روش‌ها به سیستم‌های نوع محض تعمیم داده نشده‌اند. هدف ما در این بخش، تعمیم یکی از این روش‌ها به نام ترجمه‌ حذف وابستگی است.
 
+ایده کلی چنین است که به منظور نشان دادن آنکه یک سیستم دارای خاصیت نرمال‌سازی قوی است، کافی‌ست یک ترجمه، با خواص حفظ نوع و حفظ مسیرهای کاهش نامتنهاهی، از آن سیستم به سیستم دیگری که می‌دانیم دارای خاصیت نرمال‌سازی قوی است، ارائه کنیم.
+
+\lr{Harper} و همکارانش
+\cite{harper1993}
+چنین ترجمه‌ای از
+$\lambda P$ به $\lambda_\to$
+را ارائه کردند و
+\lr{Guevers} و \lr{Nederhof} \cite{geuvers1991}
+این ترجمه را به ترجمه‌ای از 
+$\lambda C$ به $\lambda \omega$
+تعمیم دادند. هر دو این ترجمه‌ها را می‌توان به عنوان حذف قانون وابسته در سیستم مربوطه در نظر گرفت، به طور دقیق‌تر قانون
+$(*,\Box)$
+که اجازه می‌دهد نوع به عبارت وابسته باشد.
+
+برای سیستم‌های نوع محض که به اندازه کافی خوش‌ساختار هستند، این مفهوم وابسگی را می‌توان گسترش داد، همانطور که
+\lr{Barthe} و همکارانش \cite{barthe2001}
+برای تعریف سیستم‌های نوع محض غیروابسته تعمیم‌یافته‌شان انجام داده‌اند
+(که مشابه تعریف سیستم‌های نوع محض غیروابسته منطقی است که توسط \lr{Coquand} و \lr{Herbelin} \cite{coquand1994} ارائه شده است).
+
+در ادامع قصد داریم ترجمه‌های مذکور را به سیستم‌های نوع محض به گونه‌ای گسترش دهیم که ویژگی حذف قاعده وابسته را حفظ کند. این ترجمه را می‌توان با ترجمه
+\cite{barthe2001}
+ترکیب کرد تا شواهدی را برای حدس
+\lr{BGK}
+ارائه داد.
+
+\section{هدف}
+طبق
+\ref{non-dependent}،
+می‌دانیم یک سیستم نوع محض لایه‌ای، غیروابسته است؛ هرگاه قوانین آن غیروابسته باشد. یعنی
+\begin{equation*}
+(s,s') \in \mathcal{R} \implies s \ge_\mathcal{A} s'
+\end{equation*}
+
+ترجمه معرفی شده در این بخش، بخش وابسته یک سیستم نوع محض لایه‌ای را حذف می‌کند. این مورد ما را به سمت تعریف پیش‌رو سوق می‌دهد.
+
+\begin{defn}[نسخه غیروابسته سیستم نوع محض لایه‌ای]
+نسخه غیروابسته یک سیستم نوع محض لایه‌ای
+$\lambda S$
+که با
+$\lambda S^*$
+نشان داده می‌شود، سیستمی با مشخصات زیر است
+\begin{align*}
+S_{\lambda S^*} &= S_{\lambda S}\\
+\mathcal{A}_{\lambda S^*} &= \mathcal{A}_{\lambda S}\\
+\mathcal{R}_{\lambda S^*} &= \{(s,s',s') \in \mathcal{R}_{\lambda S} \mid (s \ge s')\}
+\end{align*}
+\end{defn}
+
+می‌خواهیم یک ترجمه از سیستم نوع محض غیروابسته
+$\lambda S$
+به نسخه غیروابسته آن، یعنی
+$\lambda S^*$
+ارائه کنیم؛ به طوری که خواص حفظ نوع و حفظ مسیرهای کاهش نامتنهاهی را دارا باشد. الزامات روی ساختار غیروابسته کاملاً قوی خواهند بود.
+
+ترجمه در سطح بالا، استفاده‌های وابسته از قاعده تولید در 
+\ref{pts_rules}
+را حذف می‌کند. اما چون باید مسیرهای کاهش نامتناهی را نیز حفظ کند، نمی‌تواند اطلاعات زیرعبارات را بیش از حد حذف کند؛ زیرا حذف این زیرعبارت‌ها ممکن است باعث حذف انتزاع‌هایی شود که مسئول مسیرهای کاهش در عبارت پیش از ترجمه هستند.
+ایده کلی این است که تمام رده‌ها را به پایین‌ترین رده ($s_1$) ترجمه کنیم،
+به طوری که وقتی عبارت
+$M$
+از نوع
+$\Pi x^A.B$
+وجود دارد،
+شکل ترجمه‌شده آن، که اکنون با
+$\rho(B)$
+نشان داده می‌شود، از رده
+$s_1$
+است، که تضمین می‌کند هر تشکیل نوع با
+$\rho(B)$
+بعنوان نوع هدف، قطعاً غیروابسته است (زیرا هیچ رده‌ای پایین‌تر از آن وجود ندارد).
+
+مسئله اول این است که عبارات ترجمه‌شده، باید با استفاده از انواع ترجمه‌شده، نوع‌پذیر باشند؛ که نشان می‌دهد نیاز به دو ترجمه جداگانه است، یک ترجمه برای عبارات و یک ترجمه برای انواع.
+مسئله دوم این است که برخی از انواع، شامل عبارت هستند (مثل $(\lambda x^{s_i}.x)A$ زمانی که $\Gamma \vdash A:s_i$) که نشان می‌دهد به ترجمه‌ای مجزا برای این عبارات نیاز داریم.
+همچنین فرآیند مذکور باید تا بالاترین رده تکرار شود،
+
+بنابراین ترجمه در دو گام تعریف می‌شود. اول، دنباله‌ای از ترجمه‌ها را تعریف می‌کنیم که در ترجمه
+$\rho_0$
+برای انواع به پایان می‌رسد. هر ترجمه، رده‌ها را به رده‌ای پایین‌تر نگاشت می‌کند و نهایتاً به یک نوع
+\lr{0} (یک متغیر منحصر به‌ فرد)
+از رده
+$s_1$
+می‌رسیم. سپس ترجمه
+$\gamma$
+را برای عبارات تعریف می‌کنیم، به طوری که
+\begin{equation*}
+\forall \Gamma,M,A. \quad \Gamma \vdash M:A \implies \exists \Gamma^*.\; \Gamma^* \vdash \gamma(M) : \rho_0(A)
+\end{equation*}
+
+الزام قوی روی بخش غیروابسته
+$\lambda S$
+از این واقعیت ناشی می‌شود که هر ترجمه بعدی متغیر جدیدی را در زمینه اضافه می‌کند، و با اضافه شدن متغیرهای بیشتر در زمینه، متغیرهای بیشتری نیز باید در انتزاع دخیل شوند تا اطلاعات زیرعبارات از دست نرود. این امر تعریف پیش‌رو را توجیح می‌کند.
+
+\begin{defn}[سیستم نوع محض لایه‌ای کامل]
+یک سیستم نوع محض لایه‌ای،
+$(i,j)$-کامل \footnote{$(i,j)-full$}
+است، اگر قوانین آن شامل
+\begin{equation*}
+\{(s_l,s_k) \mid (l \le i) \land (l \le k \le j)\}
+\end{equation*}
+باشد؛ و کامل است، هرگاه ویژگی بسته بودن زیر را برآورده کند
+\begin{equation*}
+(s_i,s_j) \in \mathcal{R}_{\lambda S} \implies \lambda S \; \text{is} \; (j,i)-full
+\end{equation*}
+\end{defn}
+
+می‌توانیم ببینیم که این تعریف چقدر محدودکننده است. سیستمی که برای
+$i \ge 2$
+و
+$j \ge 3$،
+$(i,j)$-کامل است،
+شامل
+$\lambda U$ می‌شود و بنابراین ناسازگار خواهد بود.
+قوی‌ترین سیستم نوع محض $n$-لایه‌ای کامل سازگار، دارای قوانین زیر است
+\begin{equation*}
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}
+\end{equation*}
+
+برای باقی این بخش، یک سیستم نوع محض $n$-لایه‌ای کامل $\lambda S$ را ثابت فرض کنید.
+
+\section{ترجمه سطح نوع}
+
+\begin{defn}[تابع ترجمه سطح نوع]
+برای هر
+$0 \le i \le n$،
+تابع
+$\rho_i : \mathrm{T}_{\ge i+1} \to \mathrm{T}_{i+1}$
+به صورت استقرایی زیر تعریف می‌شود.
+\begin{align*}
+\rho_i(s_j) &= 
+    \begin{cases}
+        0 &i = 0\\
+        s_i &\text{o.w.}
+    \end{cases}\\
+\rho_i({}^{s_j}x) &= {}^{s_{i+2}}x \quad (j \ge i+2)\\
+\rho_i(\Pi x^A.B) &= \Pi x^{\rho_{\operatorname{deg} A-1}(A)} \dots \Pi x^{\rho_{i}(A)}.\rho_i(B)\\
+\rho_i(\lambda x^A.M) &= \lambda x^{\rho_{\operatorname{deg} A-1}(A)} \dots \lambda x^{\rho_{i+1}(A)}.\rho_i(M)\\
+\rho_i(MN) &= \rho_i(M) \rho_{\operatorname{deg} N-1}(N) \dots \rho_i(N)
+\end{align*}
+که در آن
+\lr{0}
+یک متغیر منحصر به فرد است.
+
+تعریف هر ترجمه محدود به مواردی است که برای آن‌ها عباراتی در دامنه مورد نظر وجود دارد. برای مثال، پایه‌ای‌ترین ترجمه
+$\rho_n : \mathrm{T}_{\ge n+1} \to \mathrm{T}_{n+1}$
+فقط بر روی
+$\{s_n\}$
+با ضابطه
+$\rho_n(s_n) = s_n$
+تعریف می‌شود و بقیه حالات نادیده گرفته می‌شوند. این ترجمه‌ها به زمینه‌ها نیز به شرح زیر گسترش می‌یابند.
+\begin{align*}
+\rho_i(\varnothing) &= (0 : s_1)\\
+\rho_i(\Gamma,{}^{s_{j}}x:A) &= \rho_i(\Gamma), {}^{s_{j}}x:\rho_{j-1}(A), \dots, {}^{s_{i+1}}x:\rho_{i}(A) &(j \ge i+1)
+\end{align*}
+\end{defn}
+
+توجه کنید که اگر
+$i < j$
+آنگاه
+$\rho_j(\Gamma) \subset \rho_i(\Gamma)$،
+این مورد اغلب در ترکیب با لم تضعیف
+\ref{thinning}
+استفاده می‌شود.
+
+سه لم زیر ویژگی‌های کلیدی این ترجمه را توصیف می‌کنند.
+
+نخست اینکه، ترجمه و عمل جانشینی، به نوعی دارای خاصیت جابه‌جایی هستند.
+
+\begin{lmm}[ترجمه با جانشینی]\label{rho_commutes_subst}
+برای هر
+$0 \le i \le n$
+و هر
+$1 \le j \le n$
+و هر عبارت
+$A$ و $B$،
+اگر
+$A \in \mathrm{T}_{\ge i+1}$ و $\operatorname{deg} B = j-1$، آنگاه
+\begin{equation*}
+\rho_i(A[B/{}^{s_j}x]) = \rho_i(A)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+\end{equation*}
+\end{lmm}
+
+\begin{proof}
+روی
+$i$
+استقرای معکوس می‌زنیم.
+حکم به وضوح برای
+$\rho_n$
+برقرار است.
+
+برای یک
+$i$
+ثابت، روی ساختار
+$A$
+استقرا می‌زنیم.
+
+\begin{itemize}
+\item رده
+
+فرض کنید
+$A$
+به فرم
+$s_k$
+باشد
+($k \ge i$).
+از آنجایی که
+$s_k$
+متغیر آزاد ندارد و
+\lr{0}
+یک متغیر منحصر به فرد است، آنگاه
+\begin{align*}
+\rho_i(s_k[B/{}^{s_j}x]) &= \rho_i(s_k) \\ &= \rho_i(s_k)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+\end{align*}
+
+\item متغیر
+
+فرض کنید
+$A$
+به فرم
+${}^{s_k}y$
+باشد
+($k \ge i + 2$).
+اگر
+$j < i + 2$،
+آنگاه
+\begin{align*}
+\rho_i({}^{s_k}y[B/{}^{s_j}x]) &= \rho_i({}^{s_k}y)
+\end{align*}
+اگر
+$j \ge i + 2$ و ${}^{s_k}y = {}^{s_j}x$،
+آنگاه
+\begin{align*}
+\rho_i({}^{s_j}x[B/{}^{s_j}x]) 
+&= \rho_i(B) \\ 
+&= {}^{s_{i+2}}x [\rho_i(B)/{}^{s_{i+2}}x] \\
+&= \rho_i({}^{s_j}x)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+\end{align*}
+اگر
+$j \ge i + 2$ و ${}^{s_k}y \neq {}^{s_j}x$،
+آنگاه
+\begin{align*}
+\rho_i({}^{s_k}y[B/{}^{s_j}x]) 
+&= \rho_i({}^{s_k}y) \\ 
+&= \rho_i({}^{s_k}y)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+\end{align*}
+
+\item عبارت $\Pi$
+
+فرض کنید
+$A$
+به فرم
+$\Pi y^C.D$
+باشد.
+
+\textit{(حالت اول)}
+
+اگر
+$\operatorname{deg} C < i + 1$،
+آنگاه
+\begin{align*}
+\rho_i((\Pi y^C.D)[B/{}^{s_j}x]) 
+&= \rho_i(\Pi y^{C[B/{}^{s_j}x]}.D[B/{}^{s_j}x]) \\ 
+&= \rho_i(D[B/{}^{s_j}x])
+\end{align*}
+اگر
+$j < i + 2$،
+آنگاه طبق فرض استقرا داریم
+\begin{align*}
+\rho_i(D[B/{}^{s_j}x]) &= \rho_i(D) = \rho_i(\Pi y^C.D)
+\end{align*}
+و اگر
+$j \ge i + 2$،
+به طور مشابه داریم
+\begin{align*}
+\rho_i(D[B/{}^{s_j}x]) 
+&= \rho_i(D)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x] \\
+&= \rho_i(\Pi y^C.D)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+\end{align*}
+
+\textit{(حالت دوم)}
+
+اگر
+$\operatorname{deg} C \ge i + 1$،
+آنگاه
+\begin{align*}
+\rho_i&((\Pi y^C.D)[B/{}^{s_j}x]) \\
+&= \rho_i(\Pi y^{C[B/{}^{s_j}x]}.D[B/{}^{s_j}x]) \\ 
+&= \Pi y^{\rho_{\operatorname{deg} C-1}(C[B/{}^{s_j}x])} \dots \Pi y^{\rho_{i}(C[B/{}^{s_j}x])}.\rho_i(D[B/{}^{s_j}x])
+\end{align*}
+اگر
+$j < i + 2$،
+آنگاه طبق فرض استقرا داریم
+\begin{align*}
+\rho_i&(\Pi y^{C[B/{}^{s_j}x]}.D[B/{}^{s_j}x]) \\ 
+&= \Pi y^{\rho_{\operatorname{deg} C-1}(C[B/{}^{s_j}x])} \dots \Pi y^{\rho_{i}(C[B/{}^{s_j}x])}.\rho_i(D[B/{}^{s_j}x]) \\
+&= \Pi y^{\rho_{\operatorname{deg} C-1}(C)} \dots \Pi y^{\rho_{i}(C)}.\rho_i(D) \\
+&= \rho_i(\Pi y^C.D)
+\end{align*}
+و اگر
+$j \ge i + 2$،
+به طور مشابه داریم
+\begin{align*}
+\rho_i&(\Pi y^{C[B/{}^{s_j}x]}.D[B/{}^{s_j}x]) \\ 
+&= \Pi y^{\rho_{\operatorname{deg} C-1}(C[B/{}^{s_j}x])} \dots \Pi y^{\rho_{i}(C[B/{}^{s_j}x])}.\rho_i(D[B/{}^{s_j}x]) \\
+&= \Pi y^{\rho_{\operatorname{deg} C-1}(C)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]} \dots \Pi y^{\rho_{i}(C)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]} \\ 
+& \quad \quad .(\rho_i(D)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]) \\
+&= (\Pi y^{\rho_{\operatorname{deg} C-1}(C)} \dots \Pi y^{\rho_{i}(C)}.\rho_i(D))[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x] \\
+&= \rho_i(\Pi y^C.D)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+\end{align*}
+توجه داشته باشید که در اینجا ما به طور ضمنی از این لم استفاده کردیم که اگر
+$\rho_k(C[B/{}^{s_j}x]) = \rho_k(C)$،
+آنگاه
+\begin{align*}
+\rho_k(C) = \rho_k(C)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+\end{align*}
+
+\item عبارت $\lambda$
+
+فرض کنید
+$A$
+به فرم
+$\lambda y^C.D$
+باشد.
+
+\textit{(حالت اول)}
+
+اگر
+$\operatorname{deg} C < i + 2$،
+آنگاه
+\begin{align*}
+\rho_i((\lambda y^C.D)[B/{}^{s_j}x]) 
+&= \rho_i(\lambda y^{C[B/{}^{s_j}x]}.D[B/{}^{s_j}x]) \\ 
+&= \rho_i(D[B/{}^{s_j}x])
+\end{align*}
+باقی‌ اثبات این حالت، مشابه اثبات مربوط به عبارت $\Pi$ است.
+
+\textit{(حالت دوم)}
+
+اگر
+$\operatorname{deg} C \ge i + 2$،
+آنگاه
+\begin{align*}
+\rho_i&((\lambda y^C.D)[B/{}^{s_j}x]) \\
+&= \rho_i(\lambda y^{C[B/{}^{s_j}x]}.D[B/{}^{s_j}x]) \\ 
+&= \lambda y^{\rho_{\operatorname{deg} C-1}(C[B/{}^{s_j}x])} \dots \lambda y^{\rho_{i}(C[B/{}^{s_j}x])}.\rho_i(D[B/{}^{s_j}x])
+\end{align*}
+باقی‌ اثبات این حالت، مشابه اثبات مربوط به عبارت $\Pi$ است.
+
+\item کاربرد
+
+فرض کنید
+$A$
+به فرم
+$MN$
+باشد.
+
+\textit{(حالت اول)}
+
+اگر
+$\operatorname{deg} N < i + 1$،
+آنگاه
+\begin{align*}
+\rho_i((MN)[B/{}^{s_j}x]) 
+&= \rho_i((M[B/{}^{s_j}x])(N[B/{}^{s_j}x])) \\ 
+&= \rho_i(M[B/{}^{s_j}x])
+\end{align*}
+باقی‌ اثبات این حالت، مشابه اثبات مربوط به عبارت $\Pi$ است.
+
+\textit{(حالت دوم)}
+
+اگر
+$\operatorname{deg} N \ge i + 1$،
+آنگاه
+\begin{align*}
+\rho_i((MN)[B/{}^{s_j}x]) 
+&= \rho_i((M[B/{}^{s_j}x])(N[B/{}^{s_j}x])) \\ 
+&= \rho_i(M[B/{}^{s_j}x]) \rho_{\operatorname{deg} N - 1}(N[B/{}^{s_j}x]) \dots \rho_{i}(N[B/{}^{s_j}x])
+\end{align*}
+باقی‌ اثبات این حالت، مشابه اثبات مربوط به عبارت $\Pi$ است.
+\end{itemize}
+\end{proof}
+
+لم بعدی بیان می‌کند که این ترجمه، کاهش‌های
+$\beta$
+را حفظ می‌کند. این ویژگی برای ترجمه قواعد تبدیل ضروری است؛ چرا که باید بتوانیم پس از اعمال ترجمه، نوع‌های
+$\beta$-هم‌ارز
+را جایگزین یکدیگر کنیم.
+
+شایان ذکر است که این لم لزوما به معنای حفظ مسیرهای کاهش نامتناهی توسط ترجمه نیست.
+دلیل این امر آن است که در جریان ترجمه، اطلاعات مربوط به زیرعبارت‌ها از دست می‌رود؛
+برای مثال درمورد یک کاربرد، ممکن است داشته باشیم
+$\rho_i(MN) = \rho_i(M)$،
+و در نتیجه امیدی به حفظ یک دنباله کاهش نامتناهی مربوط به زیرعبارت
+$N$
+وجود نخواهد داشت.
+
+\begin{lmm}[حفظ مسیر کاهش]\label{rho_commutes_beta}
+برای هر
+$0 \le i \le n$
+و هر عبارت
+$A$ و $B$،
+اگر
+$A \in \mathrm{T}_{\ge i+1}$ و $A \twoheadrightarrow_\beta B$، آنگاه
+\begin{equation*}
+\rho_i(A) \twoheadrightarrow_\beta \rho_i(B)
+\end{equation*}
+\end{lmm}
+
+\begin{proof}
+
+روی
+$i$
+استقرای معکوس می‌زنیم.
+حکم به وضوح برای
+$\rho_n$
+برقرار است.
+برای یک
+$i$
+ثابت، با استفاده از استقرا روی تعریف بستار بازتابی-تعدی رابطه کاهش
+$\beta$
+پیش می‌رویم.
+
+درمورد حاصل کاهش:
+\begin{equation*}
+\rho_i((\lambda x^A.M)N) \rightarrow_{\beta} \rho_i(M[N/{}^{s_{\operatorname{deg} A}} x])
+\end{equation*}
+
+اگر
+$\operatorname{deg} N < i + 1$ (و $\operatorname{deg} A < i + 2$)،
+آنگاه
+\begin{align*}
+\rho_i((\lambda x^A.M)N)
+&= \rho_i(\lambda x^A.M) \\
+&= \rho_i(M) \\
+&= \rho_i(M[N/{}^{s_{\operatorname{deg} A}} x])
+\end{align*}
+که تساوی آخر از لم
+\ref{rho_commutes_subst}
+حاصل شده است.
+
+و اگر
+$\operatorname{deg} N \ge i + 1$ (و $\operatorname{deg} A \ge i + 2$)،
+آنگاه
+\begin{align*}
+\rho_i((\lambda x^A.M)N)
+&= \rho_i(\lambda x^A.M) \rho_{\operatorname{deg} N - 1}(N) \dots \rho_{i}(N) \\
+&= (\lambda x^{\rho_{\operatorname{deg} A - 1}(A)} \dots \lambda x^{\rho_{i+1}(A)}.\rho_i(M)) \rho_{\operatorname{deg} N - 1}(N) \dots \rho_{i}(N) \\
+&\twoheadrightarrow_\beta \rho_i(M) [\rho_{\operatorname{deg} N - 1}(N)/{}^{s_{\operatorname{deg} A}} x] \dots [\rho_i(N)/{}^{s_{i+2}} x]
+\end{align*}
+توجه داشته باشید که در اینجا ما به طور ضمنی از این لم استفاده کردیم که
+${}^{s_{\operatorname{deg} A}} x$ در $A$
+ظاهر نمی‌شود، پس
+\begin{equation*}
+\rho_k(A)[\rho_l(N)/{}^{l + 2} x] = \rho_k(A)
+\end{equation*}
+به طوری که
+$i + 1 \le k \le \operatorname{deg} A - 1$
+و
+$i \le l \le \operatorname{deg} N - 1$.
+بنابراین هیچ‌یک از کاهش‌های
+$\beta$
+بعدی، نوع‌ها را در عبارات
+$\lambda$
+مرتبط تغییر نمی‌دهند.
+
+به‌سادگی می‌توان بررسی کرد که این ترجمه، کاهش‌های
+$\beta$
+را نسبت به سازگاری حفظ می‌کند. برای مثال، فرض کنید
+$A$
+به فرم
+$\Pi x^C.D$
+و
+$B$
+به فرم
+$\Pi x^{C'}.D$
+هستند، به طوری که
+$C \twoheadrightarrow_{\beta} C'$.
+
+اگر
+$\operatorname{deg} C < i + 1$،
+آنگاه
+\begin{equation*}
+\rho_i(\Pi x^C.D) = \rho_i(D) = \rho_i(\Pi x^{C'}.D)
+\end{equation*}
+
+اگر
+$\operatorname{deg} C \ge i + 1$،
+آنگاه
+\begin{align*}
+\rho_i(\Pi x^C.D) 
+&= \Pi x^{\rho_{\operatorname{deg} C - 1}(C)} \dots \Pi x^{\rho_{i}(C)}.\rho_i(D) \\
+&\twoheadrightarrow_{\beta} \Pi x^{\rho_{\operatorname{deg} C - 1}(C')} \dots \Pi x^{\rho_{i}(C')}.\rho_i(D) \\
+&=\rho_i(\Pi x^{C'}.D)
+\end{align*}
+که
+\begin{equation*}
+\rho_i(C) \twoheadrightarrow_{\beta} \rho_i(C')
+\end{equation*}
+از طریق استقرا روی بستار بازتابی-تعدی رابطه کاهش
+$\beta$
+و همچنین
+\begin{equation*}
+\rho_k(C) \twoheadrightarrow_{\beta} \rho_k(C')
+\end{equation*}
+برای
+$k > i$
+از طریق استقرا روی
+$i$.
+توجه داشته باشید که به طور ضمنی از این نکته استفاده کردیم که
+$\operatorname{deg} C = \operatorname{deg} C'$ (\ref{lmm11}).
+
+\end{proof}
+
+در نهایت، ترجمه باید خاصیت نوع‌پذیری را حفظ کند. این امر تضمین می‌کند که این ترجمه، هنگام ترکیب با ترجمه‌ عبارات که در بخش بعدی معرفی می‌شود، انواع خوش‌تعریفی را به وجود می‌آورد. به یاد داشته باشید که
+$\lambda S^*$
+همان نسخه غیروابسته
+$\lambda S$
+است.
+
+\begin{lmm}[حفظ نوع]
+برای هر
+$0 \le i \le n$،
+اگر
+$\Gamma$ یک زمینه و
+$A$ و $B$ عباراتی باشند که
+$A \in \mathrm{T}_{\ge i+1}$ و $\Gamma \vdash_{\lambda S} A : B$، آنگاه
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_i(A) : \rho_{i+1}(B)
+\end{equation*}
+\end{lmm}
+
+\begin{proof}
+
+روی
+$i$
+استقرای معکوس می‌زنیم.
+حکم به وضوح برای
+$\rho_n$
+برقرار است.
+برای یک
+$i$
+ثابت، با استفاده از استقرا روی قضاوت نوع پیش می‌رویم.
+
+\begin{itemize}
+    
+\item اصل
+
+فرض کنید قضاوت به فرم
+\begin{equation*}
+\vdash_{\lambda S} s_j : s_{j+1}
+\end{equation*}
+باشد که
+$j \ge i$.
+اگر
+$i \ge 1$ آنگاه حاصل ترجمه معادل است با
+\begin{equation*}
+0 : s_1 \vdash_{\lambda S^*} s_i : s_{i+1}
+\end{equation*}
+و در غیر این صورت
+\begin{equation*}
+0 : s_1 \vdash_{\lambda S^*} 0 : s_1
+\end{equation*}
+از آنجایی که هر سیستم کامل، شامل رابطه
+$(s_1, s_2)$
+است، این قضاوت قابل استنتاج است.
+
+\item شروع
+
+فرض کنید آخرین استنتاج به فرم
+\begin{prooftree}
+\AxiomC{$\Gamma' \vdash_{\lambda S} B:s_j$}
+\UnaryInfC{$\Gamma',{}^{s_j}x:B \vdash_{\lambda S} {}^{s_j}x:B$}
+\end{prooftree}
+باشد که
+$j \ge i + 2$ (پس $\operatorname{deg}({}^{s_j}x) \ge i + 1$).
+طبق فرض استقرا، برای هر
+$i \le k \le j - 1$
+داریم
+\begin{equation*}
+\rho_{k+1}(\Gamma') \vdash_{\lambda S^*} \rho_k(B) : s_{k+1}
+\end{equation*}
+و آنجا که زمینه
+$\rho_{i+1}(\Gamma')$
+معتبر است، با استفاده از تضعیف، داریم
+\begin{equation*}
+\rho_{i+1}(\Gamma') \vdash_{\lambda S^*} \rho_k(B) : s_{k+1}
+\end{equation*}
+اکنون با استفاده‌ مکرر از تضعیف می‌توانیم بنویسیم
+\begin{equation*}
+\rho_{i+1}(\Gamma'), {}^{s_j}x:\rho_{j-1}(B), \dots, {}^{s_{i+3}}x:\rho_{i+2}(B) \vdash_{\lambda S^*} \rho_{i+1}(B) : s_{i+2}
+\end{equation*}
+در نهایت با استفاده از قاعده شروع داریم
+\begin{equation*}
+\rho_{i+1}(\Gamma'), {}^{s_j}x:\rho_{j-1}(B), \dots, {}^{s_{i+2}}x:\rho_{i+1}(B) \vdash_{\lambda S^*} {}^{s_{i+2}}x : \rho_{i+1}(B)
+\end{equation*}
+
+\item تضعیف
+
+فرض کنید آخرین استنتاج به فرم
+\begin{prooftree}
+\AxiomC{$\Gamma' \vdash_{\lambda S} C:s_j$}
+\AxiomC{$\Gamma' \vdash_{\lambda S} A:B$}
+\BinaryInfC{$\Gamma',{}^{s_j}x:C \vdash_{\lambda S} A:B$}
+\end{prooftree}
+باشد.
+
+اگر
+$j < i + 2$،
+با اعمال فرض استقرا بر حکم مقدم سمت چپ داریم
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_i(A) : \rho_{i+1}(B)
+\end{equation*}
+دقت کنید که متغیر
+${}^{s_j}x$
+توسط ترجمه
+$\rho_{i+1}$
+حذف می‌شود.
+
+اگر
+$j \ge i + 2$،
+از روشی مشابه آنچه در حالت شروع در بالا ذکر شد، استفاده می‌کنیم؛ یعنی برای هر
+$k$
+که
+$i \le k \le j - 1$
+و سپس با استفاده مکرر از تضعیف
+\begin{equation*}
+\rho_{i+1}(\Gamma'), {}^{s_j}x:\rho_{j-1}(C), \dots, {}^{s_{i+2}}x:\rho_{i+1}(C) \vdash_{\lambda S^*} \rho_i(A) : \rho_{i+1}(B)
+\end{equation*}
+
+\item تولید
+
+فرض کنید آخرین استنتاج به فرم
+\begin{prooftree}
+\AxiomC{$\Gamma,{}^{s_j}x:C \vdash_{\lambda S} D:s_k$}
+\AxiomC{$\Gamma \vdash_{\lambda S} C:s_j$}
+\BinaryInfC{$\Gamma \vdash_{\lambda S} (\Pi x^C.D):s_k$}
+\end{prooftree}
+باشد که
+$k \ge i + 1$.
+
+اگر
+$j < i + 1$،
+با اعمال فرض استقرا بر حکم مقدم سمت راست، داریم
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_i(D) : s_{i + 1}
+\end{equation*}
+
+اگر
+$j \ge i + 1$،
+برای هر
+$k$
+که
+$i \le k \le j - 1$
+داریم
+\begin{equation*}
+\rho_{k+1}(\Gamma) \vdash_{\lambda S^*} \rho_k(C) : s_{k + 1}
+\end{equation*}
+و هر یک از این قضاوت‌ها را می‌توان به صورت زیر تضعیف کرد
+\begin{equation*}
+\rho_{i+1}(\Gamma), {}^{s_j}x:\rho_{j-1}(C), \dots, {}^{s_{k+2}}x:\rho_{k+1}(C) \vdash_{\lambda S^*} \rho_k(C) : s_{k+1}
+\end{equation*}
+سپس با استفاده مکرر از قاعده تولید به همراه
+\begin{equation*}
+\rho_{i+1}(\Gamma), {}^{s_j}x:\rho_{j-1}(C), \dots, {}^{s_{i+2}}x:\rho_{i+1}(C) \vdash_{\lambda S^*} \rho_i(D) : s_{i+1}
+\end{equation*}
+می‌توانیم بنویسیم
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \Pi x^{\rho_{j-1}(C)} \dots \Pi x^{\rho_{i+1}(C)}.(\rho_i(C) \rightarrow \rho_i(D)) : s_{i+1}
+\end{equation*}
+اینجا از این فرض استفاده می‌کنیم که
+$\lambda S^*$
+برای هر
+$k \ge i + 1$
+دارای روابط
+$(s_k,s_{i+1},s_{i+1})$
+است.
+همچنین درمورد استفاده از نمادگذاری تابع توجه کنید که عبارت
+$\rho_i(C)$
+در زمینه پیشین ظاهر نشده است.
+
+\item انتزاع
+
+فرض کنید آخرین استنتاج به فرم
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash_{\lambda S} \Pi x^C.D:s_k$}
+\AxiomC{$\Gamma,{}^{s_{j}}x:C \vdash_{\lambda S} M:D$}
+\BinaryInfC{$\Gamma \vdash_{\lambda S} (\lambda x^C.M):(\Pi x^C.D)$}
+\end{prooftree}
+باشد که
+$k \ge i+2$.
+
+اگر
+$\operatorname{deg} C < i + 2$ (یعنی اگر $j < i+2$)،
+از آنجا که متغیر
+${}^{s_{j}}x$
+توسط ترجمه
+$\rho_{i+1}$
+حذف می‌شود، استنتاج متناظر عبارت است از
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_i(M) : \rho_{i+1}(B)
+\end{equation*}
+
+اگر
+$\operatorname{deg} C \ge i + 2$،
+می‌توانیم بنویسیم
+\begin{equation*}
+\rho_{i+1}(\Gamma), {}^{s_j}x:\rho_{j-1}(C), \dots, {}^{s_{i+2}}x:\rho_{i+1}(C) \vdash_{\lambda S^*} \rho_i(M) : \rho_{i+1}(D)
+\end{equation*}
+و
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \Pi x^{\rho_{j-1}(C)} \dots \Pi x^{\rho_{i+1}(C)}.\rho_{i+1}(D) : s_{i+2}
+\end{equation*}
+بنابراین اگر
+$\operatorname{deg} C \ge i + 3$،
+با استفاده مکرر از لم تولید
+(\ref{generation})
+می‌توانیم برای هر
+$i+1 \le k \le j-2$
+نتیجه بگیریم
+\begin{equation*}
+\rho_{i+1}(\Gamma), {}^{s_j}x:\rho_{j-1}(C), \dots, {}^{s_{k+2}}x:\rho_{k+1}(C) \vdash_{\lambda S^*} \Pi x^{\rho_{k}(C)} \dots \Pi x^{\rho_{i+1}(C)}.\rho_{i+1}(D) : s_{i+2}
+\end{equation*}
+و بدین ترتیب، با استفاده مکرر از قاعده انتزاع، می‌توانیم استنتاج کنیم
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} (\lambda x^{\rho_{j-1}(C)} \dots \lambda x^{\rho_{i+1}(C)}.\rho_{i}(M)) : (\Pi x^{\rho_{j-1}(C)} \dots \Pi x^{\rho_{i+1}(C)}.\rho_{i+1}(D))
+\end{equation*}
+
+\item کاربرد
+
+فرض کنید آخرین استنتاج به فرم
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash_{\lambda S} N:C$}
+\AxiomC{$\Gamma \vdash_{\lambda S} M:(\Pi x^C.D)$}
+\BinaryInfC{$\Gamma \vdash_{\lambda S} MN:D[N/x]$}
+\end{prooftree}
+باشد.
+
+چون
+$\operatorname{deg}(MN) = \operatorname{deg} M$،
+با اعمال فرض استقرا بر حکم مقدم سمت چپ داریم
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_{i}(M) : \rho_{i+1}(\Pi x^C.D)
+\end{equation*}
+
+اگر
+$\operatorname{deg} N < i + 1$ (و $\operatorname{deg} C < i + 2$)،
+آنگاه
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_{i}(M) : \rho_{i+1}(D)
+\end{equation*}
+
+اگر
+$\operatorname{deg} N \ge i + 1$ (و $\operatorname{deg} C \ge i + 2$)،
+آنگاه داریم
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_{i}(M) : \Pi x^{\rho_{\operatorname{deg} C - 1}(C)} \dots \Pi x^{\rho_{i+1}(C)}.\rho_{i+1}(D)
+\end{equation*}
+و برای هر
+$i \le k \le \operatorname{deg} N - 1$
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_{k}(N) : \rho_{k+1}(C)
+\end{equation*}
+اولین کاربرد
+$\rho_i(M)\rho_{\operatorname{deg} N - 1}(N)$
+دارای نوع زیر است
+\begin{equation*}
+\Pi x^{\rho_{\operatorname{deg} C - 2}(C)[\rho_{\operatorname{deg} C - 2}(N)/{}^{s_{\operatorname{deg}C}}x]} \dots \Pi x^{\rho_{i+1}(C)[\rho_{\operatorname{deg} C - 2}(N)/{}^{s_{\operatorname{deg}C}}x]}.(\rho_{i+1}(D)[\rho_{\operatorname{deg} N - 1}(N)/{}^{s_{\operatorname{deg}C}}x])
+\end{equation*}
+عبارت
+$\rho_{\operatorname{deg} C - 2}(C)$
+متغیر
+${}^{s_{\operatorname{deg}C}}x$
+را ندارد، لذا این نوع ساده می‌شود به
+\begin{equation*}
+\Pi x^{\rho_{\operatorname{deg} C - 2}(C)} \dots \Pi x^{\rho_{i+1}(C)}.(\rho_{i+1}(D)[\rho_{\operatorname{deg} N - 1}(N)/{}^{s_{\operatorname{deg}C}}x])
+\end{equation*}
+با تکرار این فرآیند، داریم
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_{i}(M) \rho_{j-1}(N) \dots \rho_{i}(N) : \rho_{i+1}(D) [\rho_{\operatorname{deg} N - 1}(N)/{}^{s_{\operatorname{deg}C}}x] \dots [\rho_{i}(N)/{}^{s_{i+2}}x]
+\end{equation*}
+از آنجایی که
+${}^{s_{i+2}}x$
+در
+$\rho_{i+1}(D)$
+ظاهر نمی‌شود، نوع مذکور معادل است با
+\begin{equation*}
+\rho_{i+1}(D) [\rho_{\operatorname{deg} N - 1}(N)/{}^{s_{\operatorname{deg}C}}x] \dots [\rho_{i+1}(N)/{}^{s_{i+3}}x]
+\end{equation*}
+که طبق لم
+\ref{rho_commutes_subst}
+معادل
+$\rho_{i+1}(D[N/x])$
+است.
+
+\item تبدیل
+
+فرض کنید آخرین استنتاج به فرم
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash_{\lambda S} B:s_k$}
+\AxiomC{$\Gamma \vdash_{\lambda S} A:C$}
+\BinaryInfC{$\Gamma \vdash_{\lambda S} A:B$}
+\end{prooftree}
+است که
+$k \ge i+2$.
+آنگاه استنتاج متناظر به صورت زیر است
+\begin{prooftree}
+\AxiomC{$\rho_{i+2}(\Gamma) \vdash_{\lambda S^*} \rho_{i+1}(B) : s_{i+2}$}
+\UnaryInfC{$\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_{i+1}(B) : s_{i+2}$}
+\AxiomC{$\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_{i}(A) : \rho_{i+1}(C)$}
+\BinaryInfC{$\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_{i}(A) : \rho_{i+1}(B)$}
+\end{prooftree}
+که در آن طبق لم
+\ref{rho_commutes_beta}
+داریم:
+$\rho_{i+1}(B) = \rho_{i+1}(C)$
+\end{itemize}
+
+\end{proof}
+
+\section{ترجمه سطح عبارت}
+
+در ادامه تابع ترجمه
+$\gamma : \mathrm{T} \to \mathrm{T}_0$
+را بر روی همه عبارات تعریف می‌کنیم.
+این ترجمه، یک تفاوت اصلی با ترجمه
+\lr{Geuvers-Nederhof} \cite{geuvers1991}
+دارد. در ترجمه آن‌ها، متغیرها گاهی از طریق افزودن عبارات
+$\bot$
+به زمینه، با عبارت‌های ساختگی جایگزین می‌شدند. از آنجا که
+$(s_2,s_1) \in \mathcal{R}_{\lambda \omega}$،
+مورد مذکور شدنی است. استفاده مستقیم از این تکنیک، به قوانین
+$(s_{i+1},s_i)$ برای $i \in [n-1]$ نیاز دارد.
+با این حال، به دلیل کامل بودن،
+$(s_j,s_k) \in \mathcal{R}_{\lambda S}$
+نیازمند این است که برای
+$l \in [k]$
+داشته باشیم
+$(s_l,s_1) \in \mathcal{R}_{\lambda S}$،
+که به ما اجازه استفاده از متغیر
+$\operatorname{prod} : \Pi A^{s_1}.0 \to A \to 0$
+که فقط نیازمند قانون
+$(s_2,s_1)$ است را می‌دهد.
+ما فرض می‌کنیم که این قانون در
+$\lambda S$ موجود است.
+
+\begin{defn}[تابع ترجمه سطح عبارت]
+تابع
+$\gamma : \mathrm{T} \to \mathrm{T}$
+به صورت استقرایی زیر تعریف می‌شود.
+\begin{align*}
+\gamma(s_i) &= \bullet\\
+\gamma({}^{s_i}x) &= {}^{s_1}x\\
+\gamma(\Pi x^A.B) &= \operatorname{prod}(\Pi x^{\rho_{deg A - 1}(A)} \dots \Pi x^{\rho_{0}(A)}.0) \gamma(A) (\lambda x^{\rho_{deg A - 1}(A)} \dots \lambda x^{\rho_{0}(A)}.\gamma(B))\\
+\gamma(\lambda x^A.M) &= (\lambda z^0.\lambda x^{\rho_{deg A - 1}(A)} \dots \lambda x^{\rho_{0}(A)}.\gamma(M)) \gamma(A)\\
+\gamma(MN) &= \gamma(M) \rho_{degN-1}(N) \dots \rho_{0}(N) \gamma(N)
+\end{align*}
+که در آن
+$\{\operatorname{prod}, \bullet, z\}$
+متغیرهای منحصر به فردی هستند.
+\end{defn}
+
+سه لمی که در بخش قبل بررسی کردیم، برای ترجمه سطح عبارت نیز قابل بیان هستند.
+
+\begin{lmm}[حفظ نوع]\label{preserve_type}
+برای هر عبارت
+$A$ و $B$،
+اگر $\Gamma \vdash_{\lambda S} A:B$، آنگاه
+\begin{equation*}
+0 : s_1,\; \bullet : 0,\; \operatorname{prod} : \Pi A^{s_1}.0 \to A \to 0,\; \rho_0(\Gamma) \; \vdash_{\lambda S^*} \; \gamma(A) : \rho_0(B)
+\end{equation*}
+\end{lmm}
+
+\begin{lmm}[ترجمه با جانشینی]
+برای هر
+$1 \le j \le n$،
+و هر عبارت
+$A$ و $B$ که $deg(B) = j-1$، داریم
+\begin{equation*}
+\gamma(A[B/{}^{s_{j}}x]) = \gamma(A) [\rho_{j-2}(B)/{}^{s_{j}}x] \dots [\rho_{0}(B)/{}^{s_{2}}x] [\gamma(B)/{}^{s_{1}}x]
+\end{equation*}
+\end{lmm}
+
+\begin{lmm}[حفظ مسیر کاهش]\label{preserve_reduction}
+برای هر عبارت
+$A$ و $B$، اگر $A \to_\beta B$، آنگاه
+\begin{equation*}
+\gamma(A) \twoheadrightarrow^+_\beta \gamma(B)
+\end{equation*}
+\end{lmm}
+
+\section{نتیجه اصلی}
+
+\begin{thm}
+فرض کنید
+$\lambda S$
+یک سیستم نوع محض
+$n$-لایه‌ای
+است که تا یک مقدار
+$i$
+کامل است ($i<n$).
+$\lambda S$ دارای خاصیت نرمال‌سازی قوی است، اگر و تنها اگر $\lambda S^*$ چنین باشد.
+\end{thm}
+
+\begin{proof}
+از آنجایی که همه عبارات
+$\lambda S^*$، در $\lambda S$ نیز ساخته می‌شوند،
+اگر $\lambda S$ دارای خاصیت نرمال‌سازی قوی باشد آنگاه $\lambda S^*$ نیز دارای این خاصیت خواهد بود.\\
+حال فرض کنید
+$\lambda S$ دارای خاصیت نرمال‌سازی قوی نباشد. پس یک دنباله کاهش نامتناهی مانند
+\begin{equation*}
+M_1 \to_\beta M_2 \to_\beta \dots
+\end{equation*}
+در آن وجود دارد.
+طبق لم‌های \ref{preserve_type} و \ref{preserve_reduction}، می‌توان گفت دنباله کاهش نامتناهی
+\begin{equation*}
+\gamma(M_1) \twoheadrightarrow^+_\beta \gamma(M_2) \twoheadrightarrow^+_\beta \dots
+\end{equation*}
+در
+$\lambda S^*$
+یافت می‌شود، که با فرض آنکه
+$\lambda S^*$
+دارای خاصیت نرمال‌سازی قوی است، در تناقض است.
+\end{proof}
+
+در واقع قضیه فوق بیان می‌کند که خاصیت نرمال‌سازی قوی برای سیستم نوع محض
+$n$-لایه‌ای
+با قوانین
+\begin{equation*}
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}
+\end{equation*}
+معادل با خاصیت نرمال‌سازی قوی برای سیستمی است که دارای قوانین
+\begin{equation*}
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_2,s_2)\}
+\end{equation*}
+است.
+
+\begin{cor}
+در سیستم نوع محض
+$n$-لایه‌ای
+با قوانین
+\begin{equation*}
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}
+\end{equation*}
+نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی است.
+\end{cor}
