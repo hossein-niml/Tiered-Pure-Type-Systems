@@ -90,10 +90,16 @@ $\rho_0$
 $s_1$
 می‌رسیم. سپس ترجمه
 $\gamma$
-را برای عبارات تعریف می‌کنیم، به طوری که
-\begin{equation*}
-\forall \Gamma,M,A. \quad \Gamma \vdash M:A \implies \exists \Gamma^*.\; \Gamma^* \vdash \gamma(M) : \rho_0(A)
-\end{equation*}
+را برای عبارات تعریف می‌کنیم، به طوری که برای هر زمینه
+$\Gamma$
+و عبارات
+$M$ و $A$
+که
+$\Gamma \vdash_{\lambda S} M:A$،
+زمینه‌ای مانند
+$\Gamma^*$
+طوری یافت شود که
+$\Gamma^* \vdash_{\lambda S^*} \gamma(M) : \rho_0(A)$.
 
 الزام قوی روی بخش غیروابسته
 $\lambda S$
@@ -106,10 +112,10 @@ $(i,j)$-کامل \footnote{$(i,j)-full$}
 \begin{equation*}
 \{(s_l,s_k) \mid (l \le i) \land (l \le k \le j)\}
 \end{equation*}
-باشد؛ و کامل است، هرگاه ویژگی بسته بودن زیر را برآورده کند
-\begin{equation*}
-(s_i,s_j) \in \mathcal{R}_{\lambda S} \implies \lambda S \; \text{is} \; (j,i)-full
-\end{equation*}
+باشد؛ و کامل است، هرگاه به ازای هر
+$(s_i,s_j) \in \mathcal{R}_{\lambda S}$،
+این سیستم
+$(j,i)$-کامل باشد.
 \end{defn}
 
 می‌توانیم ببینیم که این تعریف چقدر محدودکننده است. سیستمی که برای

@@ -72,7 +72,7 @@ $n$-لایه‌ای
 
 \textbf{مثال}
 \begin{enumerate}
-\item تنها سیستم نوع محض ۰-لایه‌ای، سیستم نوع محض خالی است؛
+\item تنها سیستم نوع محض ۰-لایه‌ای، سیستم نوع محض تهی است؛
 \begin{equation*}
 \mathcal{S}=\mathcal{A}=\mathcal{R}=\emptyset    
 \end{equation*}
@@ -97,10 +97,16 @@ $n$-لایه‌ای
 \end{defn}
 
 \begin{lmm}[یکتایی نوع]
-در یک سیستم نوع محض تابعی، نوع هر عبارت نوع‌پذیر، یکتاست. یعنی
-\begin{equation*}
-\forall \Gamma, M, A, B.\quad (\Gamma \vdash M : A) \land (\Gamma \vdash M : B) \implies A =_\beta B
-\end{equation*}
+در یک سیستم نوع محض تابعی، نوع هر عبارت نوع‌پذیر، یکتاست. یعنی برای هر زمینه
+$\Gamma$
+و عبارات
+$M$ و $A$ و $B$،
+اگر
+$\Gamma \vdash M : A$
+و
+$\Gamma \vdash M : B$
+آنگاه
+$A =_\beta B$.
 \end{lmm}
 
 \begin{defn}[رده‌های بالا و پایین]
@@ -108,16 +114,16 @@ $n$-لایه‌ای
 \begin{itemize}
 \item رده
 $s$
-یک رده بالا است هرگاه
-\begin{equation*}
-\nexists s' \in \mathcal{S}.\; (s,s') \in \mathcal{A}
-\end{equation*}
+یک رده بالا است هرگاه رده‌ای مانند
+$s'$
+یافت نشود که
+$(s,s') \in \mathcal{A}$.
 \item رده
 $s$
-یک رده پایین است هرگاه
-\begin{equation*}
-\nexists s' \in \mathcal{S}.\; (s',s) \in \mathcal{A}
-\end{equation*}
+یک رده پایین است هرگاه رده‌ای مانند
+$s'$
+یافت نشود که
+$(s',s) \in \mathcal{A}$.
 \end{itemize}
 \end{defn}
 
@@ -207,9 +213,13 @@ $s$
 \begin{defn}[دنباله رده]
 طبق تعریف قبل، می‌نویسیم
 $s \le_\mathcal{A} t$
-اگر و تنها اگر دنباله‌ای از رده‌ها به صورت زیر موجود باشد
+اگر و تنها اگر دنباله‌ای از رده‌ها به صورت
+$\{t_1 \dots t_k\}$
+موجود باشد که
 \begin{align*}
-\exists t_1,\dots,t_k \in \mathcal{S}.\quad (t_1 = s) \land (t_k = t) \land (\forall i \in [k-1].\; (t_i,t_{i+1}) \in \mathcal{A})
+t_1 &= s\\
+t_k &= t\\
+(t_i,t_{i+1}) &\in \mathcal{A} \quad (i \in [k-1])
 \end{align*}
 دنباله مذکور را یک دنباله به طول
 $k-1$
@@ -243,17 +253,17 @@ $s$
 \end{prop}
 
 \begin{defn}[سیستم نوع محض تفکیک‌پذیر]
-یک سیستم نوع محض را تفکیک‌پذیر گوییم، هرگاه
-\begin{equation*}
-\forall s,s' \in \mathcal{S}.\quad (s,s') \in \mathcal{R} \implies s \approx_\mathcal{A} s'
-\end{equation*}
+یک سیستم نوع محض را تفکیک‌پذیر گوییم، هرگاه برای هر
+$(s,s') \in \mathcal{R}$
+داشته باشیم:
+$s \approx_\mathcal{A} s'$.
 \end{defn}
 
 \begin{defn}[سیستم نوع محض اتمی]
-یک سیستم نوع محض را اتمی گوییم، هرگاه
-\begin{equation*}
-\forall s,s' \in \mathcal{S}.\quad s \approx_\mathcal{A} s'
-\end{equation*}
+یک سیستم نوع محض را اتمی گوییم، هرگاه برای هر رده
+$s$ و $s'$
+داشته باشیم:
+$s \approx_\mathcal{A} s'$.
 \end{defn}
 
 \begin{defn}[سیستم نوع محض کراندار]
@@ -280,10 +290,10 @@ s > s' > s'' > \dots
 \end{defn}
 
 \begin{defn}[سیستم نوع محض ضعیفاً غیروابسته]\label{non-dependent}
-یک سیستم نوع محض، ضعیفاً (یا به طور ضعیف) غیروابسته است؛ هرگاه
-\begin{equation*}
-(s,s',s'') \in \mathcal{R} \implies s \ge s' \ge s''
-\end{equation*}
+یک سیستم نوع محض، ضعیفاً (یا به طور ضعیف) غیروابسته است؛ هرگاه برای هر
+$(s,s',s'') \in \mathcal{R}$
+داشته باشیم:
+$s \ge s' \ge s''$.
 \end{defn}
 
 اصطلاح «سلسله مراتبی» در ادامه به معنای دارا بودن ساختار ترتیبی روی وابستگی‌هاست و با مفهوم «لایه‌ای» که قبل‌تر دیدیم مرتبط است، اما عیناً یکسان نیست.
@@ -455,10 +465,10 @@ $A$،
 \end{align*}
 \end{lmm}
 
-کاربرد خاص لم فوق چنین است که
-\begin{equation*}
-\forall \Gamma,M,A.\quad \Gamma \vdash M:A \implies \operatorname{deg}(A) = \operatorname{deg}(M) + 1
-\end{equation*}
+کاربرد خاص لم فوق چنین است که اگر
+$\Gamma \vdash M:A$
+آنگاه
+$\operatorname{deg}(A) = \operatorname{deg}(M) + 1$.
 
 \begin{lmm}\label{lmm11}
 \begin{align*}

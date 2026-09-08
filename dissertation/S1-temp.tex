@@ -843,58 +843,172 @@ $\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*:\Box)\}$&$\{(*,\Bo
 \hfill
 \begin{itemize}
 
-\item \emph{رده:}
+\item \emph{رده}
+
+برای هر زمینه
+$\Gamma$،
+عبارت
+$A$
+و رده
+$s$،
+اگر
+$\Gamma \vdash s : A$،
+آنگاه رده‌ای مانند
+$s'$
+چنان یافت می‌شود که
+$A =_\beta s'$
+و
+$(s,s') \in \mathcal{A}$.
+
+\item \emph{متغیر}
+
+برای هر زمینه
+$\Gamma$،
+عبارت
+$A$
+و متغیر
+$x$، اگر
+$\Gamma \vdash x : A$،
+آنگاه عبارتی مانند
+$B$
+چنان یافت می‌شود که
+$A =_\beta B$
+و
+$(x:B) \in \Gamma$.
+
+\item \emph{عبارت $\Pi$}
+
+برای هر زمینه
+$\Gamma$،
+عبارات
+$A$ و $B$ و $C$،
+رده
+$s$
+و متغیر
+${}^sx$،
+اگر
+$\Gamma \vdash (\Pi ^sx^B.C):A$،
+آنگاه
 \begin{equation*}
-\forall s \in \mathcal{S}.\quad \Gamma \vdash s : A \implies \exists s' \in \mathcal{S}.\; (A =_\beta s') \land ((s,s') \in \mathcal{A})    
+\Gamma \vdash B:s
 \end{equation*}
-
-\item \emph{متغیر:}
-\begin{equation*}
-\forall {}^sx \in V.\quad \Gamma \vdash {}^sx : A \implies \exists B.\; (A =_\beta B) \land ((^sx:B) \in \Gamma)
-\end{equation*}
-
-\item \emph{عبارت $\Pi$:}
+و همچنین رده‌های
+$s'$ و $s''$
+چنان یافت می‌شوند که
 \begin{align*}
-\forall s \in \mathcal{S},B,C.\quad &\Gamma \vdash (\Pi ^sx:B.C):A \implies\\ 
-&\exists s',s'' \in \mathcal{S}.\; (\Gamma \vdash B:s) \land (\Gamma,^sx:B \vdash C:s') \land ((s,s',s'') \in \mathcal{R}) \land (A =_\beta s'')
+&\Gamma,^sx:B \vdash C:s' \\
+&(s,s',s'') \in \mathcal{R} \\
+&A =_\beta s''
 \end{align*}
 
-\item \emph{عبارت $\lambda$:}
+\item \emph{عبارت $\lambda$}
+
+برای هر زمینه
+$\Gamma$،
+عبارات
+$A$ و $B$ و $M$،
+رده
+$s$
+و متغیر
+${}^sx$،
+اگر
+$\Gamma \vdash (\lambda ^sx^B.M):A$،
+آنگاه رده
+$s'$
+و عبارت
+$C$
+چنان یافت می‌شوند که
 \begin{align*}
-\forall s \in \mathcal{S},B,M.\quad &\Gamma \vdash (\lambda ^sx:B.M):A \implies\\ 
-&\exists s' \in \mathcal{S},C.\; (\Gamma \vdash (\Pi ^sx:B.C):s') \land (\Gamma,^sx:B \vdash M:C) \land (A =_\beta \Pi ^sx:B.C)
+&\Gamma \vdash (\Pi ^sx:B.C):s'\\
+&\Gamma,^sx:B \vdash M:C\\
+&A =_\beta \Pi ^sx^B.C
 \end{align*}
 
-\item \emph{کاربرد:}
-\begin{align*}
-\forall M,N.\quad &\Gamma \vdash MN:A \implies\\ 
-&\exists s \in \mathcal{S},B,C.\; (\Gamma \vdash M:(\Pi ^sx:B.C)) \land (\Gamma \vdash N:B) \land (A =_\beta C[N/{}^sx])
-\end{align*}
+\item \emph{کاربرد}
 
+برای هر زمینه
+$\Gamma$
+و عبارات
+$A$ و $M$ و $N$،
+اگر
+$\Gamma \vdash MN:A$،
+آنگاه متغیر
+${}^sx$
+و عبارات
+$B$ و $C$
+چنان یافت می‌شوند که
+\begin{align*}
+&\Gamma \vdash M:(\Pi ^sx^B.C)\\
+&\Gamma \vdash N:B\\
+&A =_\beta C[N/{}^sx]
+\end{align*}
 \end{itemize}
 \end{lmm}
 
 \begin{lmm}[جانشینی]
-\begin{align*}
-\forall \Gamma,\Delta,M,N,A,B.\quad (\Gamma, x:A, \Delta \vdash M:B) \land (\Gamma \vdash N:A) \implies \Gamma, \Delta[N/x] \vdash M[N/x] : B[N/x]
-\end{align*}
+برای هر زمینه
+$\Gamma$ و $\Delta$،
+عبارات
+$A$ و $B$ و $M$ و $N$
+و متغیر
+$x$،
+اگر
+$\Gamma, x:A, \Delta \vdash M:B$
+و
+$\Gamma \vdash N:A$
+آنگاه
+\begin{equation*}
+\Gamma, \Delta[N/x] \vdash M[N/x] : B[N/x]
+\end{equation*}
 \end{lmm}
 
 \begin{lmm}[صحت نوع]
-\begin{equation*}
-\forall \Gamma,M,A.\quad \Gamma \vdash M:A \implies (A \in \mathcal{S}) \lor (\exists s \in \mathcal{S}.\; \Gamma \vdash A:s)
-\end{equation*}
+نوع هر عبارت نوع‌پذیر، یا رده است و یا خود دارای نوع رده است.
+به بیان دیگر؛
+برای هر زمینه
+$\Gamma$
+و عبارات
+$M$ و $A$،
+اگر
+$\Gamma \vdash M:A$
+آنگاه
+$A \in \mathcal{S}$
+یا رده‌ای مانند
+$s$
+چنان یافت می‌شود که
+$\Gamma \vdash A:s$.
 \end{lmm}
 
 \begin{lmm}[تضعیف]\label{thinning}
-\begin{equation*}
-\forall \Gamma,\Delta,M,A.\quad (\Gamma \subset \Delta) \land (\Gamma \vdash M : A) \implies \Delta \vdash M : A
-\end{equation*}
+برای هر زمینه
+$\Gamma$ و $\Delta$
+و عبارات
+$M$ و $A$،
+اگر
+$\Gamma \subset \Delta$
+و
+$\Gamma \vdash M : A$
+آنگاه
+$\Delta \vdash M : A$.
 \end{lmm}
 
 \begin{lmm}[جابه‌جایی]
-\begin{align*}
-\forall \Gamma,\Delta,x,y,A,B,C,M.\quad (x \notin FV(B)) \land (&\Gamma,x:A,y:B,\Delta \vdash M:C) \\
-\implies &\Gamma,y:B,x:A,\Delta \vdash M:C
-\end{align*}
+برای هر زمینه
+$\Gamma$ و $\Delta$
+و متغیرهای
+$x$ و $y$
+و عبارات
+$A$ و $B$ و $C$ و $M$،
+اگر
+\begin{equation*}
+\Gamma,x:A,y:B,\Delta \vdash M:C    
+\end{equation*}
+و
+$x$
+متغیر آزاد
+$B$ نباشد،
+آنگاه
+\begin{equation*}
+\Gamma,y:B,x:A,\Delta \vdash M:C
+\end{equation*}
 \end{lmm}
