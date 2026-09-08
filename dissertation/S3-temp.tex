@@ -415,7 +415,6 @@ $A \in \mathrm{T}_{\ge i+1}$ و $A \twoheadrightarrow_\beta B$، آنگاه
 \end{lmm}
 
 \begin{proof}
-
 روی
 $i$
 استقرای معکوس می‌زنیم.
@@ -424,11 +423,11 @@ $\rho_n$
 برقرار است.
 برای یک
 $i$
-ثابت، با استفاده از استقرا روی تعریف بستار بازتابی-تعدی رابطه کاهش
+ثابت، با استفاده از استقرا روی تعریف رابطه کاهش
 $\beta$
-پیش می‌رویم.
+چندگامه، پیش می‌رویم.
 
-درمورد حاصل کاهش:
+درمورد کاهش به فرم
 \begin{equation*}
 \rho_i((\lambda x^A.M)N) \rightarrow_{\beta} \rho_i(M[N/{}^{s_{\operatorname{deg} A}} x])
 \end{equation*}
@@ -504,9 +503,9 @@ $\operatorname{deg} C \ge i + 1$،
 \begin{equation*}
 \rho_i(C) \twoheadrightarrow_{\beta} \rho_i(C')
 \end{equation*}
-از طریق استقرا روی بستار بازتابی-تعدی رابطه کاهش
+از طریق استقرا روی تعریف رابطه کاهش
 $\beta$
-و همچنین
+چندگامه و همچنین
 \begin{equation*}
 \rho_k(C) \twoheadrightarrow_{\beta} \rho_k(C')
 \end{equation*}
@@ -525,7 +524,7 @@ $\lambda S^*$
 $\lambda S$
 است.
 
-\begin{lmm}[حفظ نوع]
+\begin{lmm}[حفظ نوع]\label{rho_commutes_typing}
 برای هر
 $0 \le i \le n$،
 اگر
@@ -878,15 +877,206 @@ $A$ و $B$،
 \end{equation*}
 \end{lmm}
 
+\begin{proof}
+
+بر روی استنتاج‌ها استقرا می‌زنیم.
+مواردی که در آن‌ها آخرین گام استنتاج، شروع یا تضعیف است، مشابه موارد متناظر در لم
+\ref{rho_commutes_typing}
+هستند.
+
+در ادامه، فرض کنید
+\begin{equation*}
+\Delta := (0 : s_1,\; \bullet : 0,\; \operatorname{prod} : \Pi A^{s_1}.0 \to A \to 0)
+\end{equation*}
+
+\begin{itemize}
+\item اصل
+
+اگر استنتاج به فرم
+\begin{equation*}
+\vdash s_i : s_{i+1}
+\end{equation*}
+باشد، آنگاه استنتاج ترجمه‌شده به شکل زیر است
+\begin{equation*}
+\Delta \vdash \bullet : 0
+\end{equation*}
+که به وضوح برقرار است.
+
+\item تولید
+
+فرض کنید آخرین استنتاج به شکل زیر باشد
+\begin{prooftree}
+\AxiomC{$\Gamma,{}^{s_i}x:C \vdash D:s_j$}
+\AxiomC{$\Gamma \vdash C:s_i$}
+\BinaryInfC{$\Gamma \vdash (\Pi x^C.D):s_j$}
+\end{prooftree}
+بنا بر فرض استقرا
+\begin{align*}
+\Delta, \rho_0(\Gamma) &\vdash \gamma(C) : 0 \\
+\Delta, \rho_0(\Gamma), {}^{s_i}x : \rho_{i-1}(C), \dots {}^{s_1}x : \rho_0(C) &\vdash \gamma(D) : 0
+\end{align*}
+به کمک تضعیف، داریم
+\begin{equation*}
+\Delta, \rho_0(\Gamma), {}^{s_i}x : \rho_{i-1}(C), \dots {}^{s_1}x : \rho_0(C) \vdash 0 : s_1
+\end{equation*}
+توجه داشته باشید که به دلیل کامل بودن، از آنجا که
+$(s_i,s_j) \in \mathcal{R_{\lambda S}}$،
+آنگاه
+\begin{equation*}
+\forall k \in [i], (s_k,s_1) \in \mathcal{R_{\lambda S}}
+\end{equation*}
+بدین ترتیب، با استفاده مکرر از تولید، که همگی با استفاده از ترجمه‌های از پیش تعریف‌شده صورت می‌گیرد؛
+\begin{equation*}
+\rho_{k+1}(\Gamma) \vdash \rho_k(C) : s_{k+1}
+\end{equation*}
+می‌توانیم برای هر
+$1 \le k \le i$
+بنویسیم
+\begin{equation*}
+\Delta, \rho_0(\Gamma), {}^{s_i}x : \rho_{i-1}(C), \dots {}^{s_{k+1}}x : \rho_k(C) \vdash \Pi {}^{s_k}x^{\rho_{k-1}(C)} \dots \Pi {}^{s_1}x^{\rho_{0}(C)}.0 : s_1
+\end{equation*}
+همچنین
+\begin{equation*}
+\Delta, \rho_0(\Gamma) \vdash \lambda {}^{s_i}x^{\rho_{i-1}(C)} \dots \lambda {}^{s_1}x^{\rho_{0}(C)}.\gamma(D) : 0
+\end{equation*}
+در نهایت با دو کاربرد با استفاده از استنتاج‌های تعریف‌شده‌ی قبلی، داریم
+\begin{equation*}
+\Delta, \rho_0(\Gamma) \vdash \operatorname{prod}(\Pi {}^{s_i}x^{\rho_{i-1}(C)} \dots \Pi {}^{s_1}x^{\rho_{0}(C)}.0) \gamma(A) (\lambda {}^{s_i}x^{\rho_{i-1}(C)} \dots \lambda {}^{s_1}x^{\rho_{0}(C)}.\gamma(D)) : 0
+\end{equation*}
+
+\item انتزاع
+
+فرض کنید آخرین استنتاج به فرم زیر باشد
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash \Pi x^C.D:s_j$}
+\AxiomC{$\Gamma,{}^{s_{i}}x:C \vdash M:D$}
+\BinaryInfC{$\Gamma \vdash \lambda x^C.M : \Pi x^C.D$}
+\end{prooftree}
+مشابه مورد متناظر در اثبات لم
+\ref{rho_commutes_typing}،
+داریم
+\begin{equation*}
+\rho_0(\Gamma) \vdash (\lambda x^{\rho_{i-1}(C)} \dots \lambda x^{\rho_{0}(C)}.\gamma(D)) : (\Pi x^{\rho_{i-1}(C)} \dots \Pi x^{\rho_{0}(C)}.\rho_0(D))
+\end{equation*}
+و به کمک تضعیف، برای یک متغیر جدید
+$z$
+داریم
+\begin{equation*}
+\rho_0(\Gamma), z : 0 \vdash (\lambda x^{\rho_{i-1}(C)} \dots \lambda x^{\rho_{0}(C)}.\gamma(D)) : (\Pi x^{\rho_{i-1}(C)} \dots \Pi x^{\rho_{0}(C)}.\rho_0(D))
+\end{equation*}
+بنابراین
+\begin{prooftree}
+\AxiomC{$\rho_0(\Gamma) \vdash 0 : s_1$}
+\AxiomC{$\rho_0(\Gamma) \vdash (\Pi x^{\rho_{i-1}(C)} \dots \Pi x^{\rho_{0}(C)}.\rho_0(D)) : s_1$}
+\BinaryInfC{$\rho_0(\Gamma) \vdash (0 \rightarrow \Pi x^{\rho_{i-1}(C)} \dots \Pi x^{\rho_{0}(C)}.\rho_0(D)) : s_1$}
+\end{prooftree}
+پس با استفاده از انتزاع و کاربرد می‌توانیم بنویسیم
+\begin{equation*}
+\rho_0(\Gamma) \vdash ((\lambda z^0.\lambda x^{\rho_{i-1}(C)} \dots \lambda x^{\rho_{0}(C)}.\gamma(D))\gamma(C)) : (\Pi x^{\rho_{i-1}(C)} \dots \Pi x^{\rho_{0}(C)}.\rho_0(D))
+\end{equation*}
+
+\item کاربرد
+
+فرض کنید آخرین استنتاج به فرم زیر باشد
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash N:C$}
+\AxiomC{$\Gamma \vdash M:(\Pi x^C.D)$}
+\BinaryInfC{$\Gamma \vdash MN:D[N/{}^{s_{\operatorname{deg} C}}x]$}
+\end{prooftree}
+اگر
+$\operatorname{deg} N = 0$،
+آنگاه داریم
+\begin{prooftree}
+\AxiomC{$\rho_0(\Gamma) \vdash \gamma(N):\rho_0(C)$}
+\AxiomC{$\rho_0(\Gamma) \vdash \gamma(M):\rho_0(C) \rightarrow \rho_0(D)$}
+\BinaryInfC{$\rho_0(\Gamma) \vdash \gamma(M)\gamma(N):\rho_0(D)$}
+\end{prooftree}
+توجه کنید که به کمک لم
+\ref{rho_commutes_subst}،
+از این نکته استفاده کردیم که
+$\rho_0(D[N/{}^{s_{1}}x]) = \rho_0(D)$.
+
+حالتی که
+$\operatorname{deg} N \ge 1$
+باشد، مشابه حالت متناظر در اثبات لم
+\ref{rho_commutes_typing}
+است.
+
+\item تبدیل
+
+فرض کنید آخرین استنتاج به فرم زیر باشد
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash B:s_i$}
+\AxiomC{$\Gamma \vdash A:C$}
+\BinaryInfC{$\Gamma \vdash A:B$}
+\end{prooftree}
+طبق لم
+\ref{rho_commutes_beta}،
+می‌دانیم
+$\rho_0(C) = \rho_0(B)$.
+پس داریم
+\begin{prooftree}
+\AxiomC{$\rho_1(\Gamma) \vdash \rho_0(B):s_1$}
+\UnaryInfC{$\rho_0(\Gamma) \vdash \rho_0(B):s_1$}
+\AxiomC{$\rho_0(\Gamma) \vdash \gamma(A):\rho_0(C)$}
+\BinaryInfC{$\rho_0(\Gamma) \vdash \gamma(A):\rho_0(B)$}
+\end{prooftree}
+\end{itemize}
+\end{proof}
+
+در ادامه، مجدد نشان می‌دهیم که عمل جانشینی با ترجمه جابه‌جا می‌شود.
+این نتیجه بیشتر جنبه کمکی دارد، چرا که برای لم بعدی که درمورد حفظ کاهش
+$\beta$
+است، به آن نیازمندیم.
+
 \begin{lmm}[ترجمه با جانشینی]
 برای هر
 $1 \le j \le n$،
 و هر عبارت
-$A$ و $B$ که $deg(B) = j-1$، داریم
+$A$ و $B$ که $\operatorname{deg}(B) = j-1$، داریم
 \begin{equation*}
 \gamma(A[B/{}^{s_{j}}x]) = \gamma(A) [\rho_{j-2}(B)/{}^{s_{j}}x] \dots [\rho_{0}(B)/{}^{s_{2}}x] [\gamma(B)/{}^{s_{1}}x]
 \end{equation*}
 \end{lmm}
+
+\begin{proof}
+روی ساختار
+$A$
+استقرا می‌زنیم.
+حالاتی که در آن‌ها،
+$A$
+یک رده یا یک متغیر است، ساده هستند.
+
+\begin{itemize}
+\item عبارت $\Pi$
+
+فرض کنید
+$A$
+به فرم
+$\Pi y^C.D$
+باشد. در ادامه از نمادگذاری مشابه
+\cite{barendregt}
+استفاده می‌کنیم:
+\begin{equation*}
+M^+ \equiv M[B/{}^{s_j}x]
+\end{equation*}
+
+داریم
+\begin{align*}
+\gamma&((\Pi y^C.D)^+) \\
+&= \gamma(\Pi y^{C^+}.D^+) \\
+&= \operatorname{prod}
+(\Pi {}^{s_{\operatorname{deg}(C^+)}}x^{\rho_{\operatorname{deg}(C^+)-1}(C^+)} \dots \Pi {}^{s_{1}}x^{\rho_{0}(C^+)}.0) \\
+&\qquad \gamma(A)
+(\lambda {}^{s_{\operatorname{deg}(C^+)}}x^{\rho_{\operatorname{deg}(C^+)-1}(C^+)} \dots \lambda {}^{s_{1}}x^{\rho_{0}(C^+)}.\gamma(D^+))
+\end{align*}
+از آنجا که تمام جانشینی‌ها جابه‌جا می‌شوند، چه بر اساس فرض استقرا و چه از طریق لم
+\ref{rho_commutes_subst}،
+حکم برقرار است.
+
+\item حالات عبارت $\lambda$ و کاربرد، به شیوه مشابه اثبات می‌شوند.
+\end{itemize}
+\end{proof}
 
 \begin{lmm}[حفظ مسیر کاهش]\label{preserve_reduction}
 برای هر عبارت
@@ -896,9 +1086,52 @@ $A$ و $B$، اگر $A \to_\beta B$، آنگاه
 \end{equation*}
 \end{lmm}
 
+\begin{proof}
+روی تعریف رابطه کاهش
+$\beta$
+چندگامه، استقرا می‌زنیم. درمورد کاهش به فرم
+\begin{equation*}
+(\lambda x^A.M)N \rightarrow_{\beta} M[N/{}^{s_{\operatorname{deg} A}} x]
+\end{equation*}
+اگر
+$\operatorname{deg} N = 0$ (و $\operatorname{deg} A = 1$)،
+آنگاه
+\begin{align*}
+\gamma((\lambda x^A.M)N)
+&= \gamma(\lambda x^A.M) \gamma(N) \\
+&= (\lambda z^0.\lambda x^{\rho_0(A)}.\gamma(M)) \gamma(A) \gamma(N) \\
+&\rightarrow_{\beta} (\lambda x^{\rho_0(A)}.\gamma(M)) \gamma(N) \\
+&\rightarrow_{\beta} \gamma(M)[\gamma(N)/{}^{s_1}x] \\
+&= \gamma(M[N/{}^{s_1}x])
+\end{align*}
+
+اگر
+$\operatorname{deg} N \ge 1$،
+آنگاه
+\begin{align*}
+\gamma((\lambda x^A.M)N)
+&= \gamma(\lambda x^A.M) \rho_{\operatorname{deg} N - 1}(N) \dots \rho_{0}(N) \gamma(N) \\
+&= (\lambda z^0.\lambda x^{\rho_{\operatorname{deg} A - 1}(A)} \dots \lambda x^{\rho_{0}(A)}.\gamma(M)) \gamma(A) \rho_{\operatorname{deg} N - 1}(N) \dots \rho_{0}(N) \gamma(N) \\
+&\rightarrow_{\beta} (\lambda x^{\rho_{\operatorname{deg} A - 1}(A)} \dots \lambda x^{\rho_{0}(A)}.\gamma(M)) \rho_{\operatorname{deg} N - 1}(N) \dots \rho_{0}(N) \gamma(N) \\
+&\twoheadrightarrow_{\beta} \gamma(M) [\rho_{\operatorname{deg} N - 1}(N)/{}^{s_{\operatorname{deg} A}}x] \dots [\rho_{0}(N)/{}^{s_{2}}x] [\gamma(N)/{}^{s_{1}}x] \\
+&= \gamma(M[N/{}^{s_{\operatorname{deg} A}}x])
+\end{align*}
+
+مشابه اثبات لم
+\ref{rho_commutes_beta}،
+اثبات اینکه ترجمه، کاهش‌های
+$\beta$
+را از نظر سازگاری حفظ می‌کند، ساده و سرراست است. نکته کلیدی این است که
+$\gamma$
+بر تک تک زیرعبارت‌های عبارت پیش‌تر ترجمه‌شده اعمال می‌شود؛ بنابراین، سازگاری، کاهش‌های
+$\beta$
+غیرصفر را حفظ می‌کند.
+
+\end{proof}
+
 \section{نتیجه اصلی}
 
-\begin{thm}
+\begin{thm}\label{main_thm}
 فرض کنید
 $\lambda S$
 یک سیستم نوع محض
@@ -910,8 +1143,8 @@ $\lambda S$ دارای خاصیت نرمال‌سازی قوی است، اگر �
 \end{thm}
 
 \begin{proof}
-از آنجایی که همه عبارات
-$\lambda S^*$، در $\lambda S$ نیز ساخته می‌شوند،
+از آنجایی که همه عبارات قابل استنتاج
+$\lambda S^*$، در $\lambda S$ نیز استنتاج می‌شوند،
 اگر $\lambda S$ دارای خاصیت نرمال‌سازی قوی باشد آنگاه $\lambda S^*$ نیز دارای این خاصیت خواهد بود.\\
 حال فرض کنید
 $\lambda S$ دارای خاصیت نرمال‌سازی قوی نباشد. پس یک دنباله کاهش نامتناهی مانند
@@ -930,17 +1163,25 @@ $\lambda S^*$
 دارای خاصیت نرمال‌سازی قوی است، در تناقض است.
 \end{proof}
 
-در واقع قضیه فوق بیان می‌کند که خاصیت نرمال‌سازی قوی برای سیستم نوع محض
+تنها سیستم واقعا جالبی که این قضیه بر آن قابل اعمال است، سیستم
 $n$-لایه‌ای
-با قوانین
+با قوانین زیر است
 \begin{equation*}
 \{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}
 \end{equation*}
-معادل با خاصیت نرمال‌سازی قوی برای سیستمی است که دارای قوانین
+و همچنین هر زیرسیستمی از آن که دارای همان قوانین غیروابسته باشد.
+قضیه
+\ref{main_thm}
+بیان می‌کند که خاصیت نرمال‌سازی قوی برای این سیستم، معادل همین خاصیت برای سیستم با قوانین زیر است.
 \begin{equation*}
 \{(s_k,s_1) \mid k \in [n]\} \cup \{(s_2,s_2)\}
 \end{equation*}
-است.
+هرچند می‌توان این نتیجه را به‌صورت صوری نیز اثبات کرد، بررسی اجمالی این روش نشان می‌دهد که از دیدگاه فرا‌نظری، این روش ضعیف است و می‌توان آن را در حساب پئانو اجرا کرد.
+ازاین‌رو، با ترکیب این نتیجه با نتیجه‌ی
+\cite{barthe2001}،
+به حالت خاصی از حدس قوی
+\lr{BGK}
+دست می‌یابیم.
 
 \begin{cor}
 در سیستم نوع محض
@@ -949,5 +1190,5 @@ $n$-لایه‌ای
 \begin{equation*}
 \{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}
 \end{equation*}
-نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی است.
+نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی است. همچنین، این اثبات را می‌توان در حساب پئانو انجام داد.
 \end{cor}
