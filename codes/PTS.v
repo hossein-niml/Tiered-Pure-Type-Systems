@@ -152,10 +152,6 @@ Fixpoint max_var_idx (xs : list var) : nat :=
   | v :: xs => Nat.max v (max_var_idx xs)
   end.
 
-(** [fresh] no longer needs a [Sort] argument: generating a new atom
-    is purely about the index, since the atom carries no sort of its
-    own any more. Whoever calls [fresh] separately picks whatever
-    [Sort] they want to tag the resulting [t_fvar] occurrence with. *)
 Definition fresh (xs : list var) : var := S (max_var_idx xs).
 
 Lemma max_var_idx_ge : forall xs v,

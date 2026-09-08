@@ -19,6 +19,7 @@
 \usepackage{lipsum}
 \usepackage{perpage}
 \usepackage{bussproofs}
+\usepackage{minted}
 
 \usepackage{listings}
 \lstset{language=R,                                     % set programming language
@@ -125,6 +126,7 @@
 %{\end{minipage}\end{Sbox}\fbox{\TheSbox}}
 %\setlength\belowcaptionskip{0pt}
 %\setlength\abovecaptionskip{0pt}
+\renewcommand{\theFancyVerbLine}{\LR{\arabic{FancyVerbLine}}}
 
 
 \begin{document}
@@ -173,7 +175,7 @@
 \end{center}
 
 \begin{center}
-بهار ۱۴۰۵ 
+تابستان ۱۴۰۵ 
 \end{center}
 }
 \pagestyle{empty}
@@ -235,16 +237,16 @@
 
 %---------------------
 
-%\part{مفاهيم و تعاريف مقدماتي}
+\part{مفاهيم و تعاريف مقدماتي}
 \input{S1-temp}
-% \part{مدل‌هاي تبديل ماركوفي ناپارامتري}
+\part{سیستم‌های نوع محض لایه‌ای و ترجمه حذف وابستگی}
 \input{S2-temp}
 \input{S3-temp}
-%\part{نتايج و پيشنهادات آينده}
+\part{نتايج و پيشنهادات آينده}
 % \input{S4-temp}
-% \input{S5-temp}
+\input{S5-temp}
 \input{maraje-temp}
-% \input{appendix-temp}
+\input{appendix-temp}
 
 % \input{vaje_fars-eng-temp}
 
@@ -257,7 +259,7 @@ for \lr{Tiered Pure Type Systems} \cite{mull2023}
 is fully formalized and mechanically verified in the proof assistant
 \lr{Coq}.
 The translation functions, together with all intermediate lemmas—including the substitution lemma, preservation of reduction paths, and lemmas related to injectivity and image—are proved in a fully machine-checked manner.
-The main theorem of \lr{Mull}, stating that weak normalization implies strong normalization for all tiered pure type systems, is mechanically verified for the first time.
+The main theorem of \lr{Mull}, stating that weak normalization implies strong normalization for all tiered pure type systems with specific rules, is mechanically verified for the first time.
 
 As a result, an open and extensible library is developed, providing a solid foundation for extending this translation to more expressive dependent systems such as the \lr{Calculus of Constructions}.
 The results of this work constitute a significant step toward the proof of the
@@ -312,7 +314,7 @@ in partial fulfillment of the requirements for the degree of master of science i
 \end{center}
 
 \begin{center}
-Spring 2026
+Summer 2026
 \end{center}
 
 %\pagestyle{empty}

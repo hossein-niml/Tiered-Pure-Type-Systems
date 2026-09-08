@@ -19,6 +19,7 @@ Module Base := PTS Sig.
 Import Base.
 
 (* ================================================================= *)
+(* Retag *)
 
 Definition retag (x : var) (s : Sort) : var := x * (n + 2) + index_of s.
 
@@ -58,6 +59,7 @@ Proof.
   lia.
 Qed.
 
+(* ================================================================= *)
 (* Degree *)
 
 Fixpoint deg (t : term) : nat :=
@@ -204,10 +206,9 @@ Proof.
     | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
     | Γ0 M0 A0 B0 sd HM IHM Heq HB IHB ];
     intros s A B HeqM; try discriminate.
-  - (* weak: subject unchanged *) apply (IHM0 s A B HeqM).
-  - (* pi: this is the node that introduced it *)
-    injection HeqM as Hs HA' HB'. subst. exact HTagB.
-  - (* conv: subject unchanged *) apply (IHM s A B HeqM).
+  - apply (IHM0 s A B HeqM).
+  - injection HeqM as Hs HA' HB'. subst. exact HTagB.
+  - apply (IHM s A B HeqM).
 Qed.
 
 Lemma deg_typing_succ : forall Γ M N, Γ ⊢ M ∈ N -> deg N = deg M + 1.
@@ -987,21 +988,21 @@ Proof.
                   k <= index_of s - i - 2 ->
                   (exists s0', M0 = t_sort s0') \/ (i = 0 /\ M0 = t_fvar (sort_of 2) zero_var) ->
                   rho_subst_tel M0 N x i k = M0).
-        { induction k as [| k' IHk]; intros M0 Hkbound Hcase.
-          - simpl. destruct Hcase as [[s0' Heq] | [Hi0 Heq]]; subst M0.
-            + rewrite subst_sort. reflexivity.
-            + rewrite subst_var.
-              destruct (eq_var_dec zero_var (retag x (sort_of (i + 2)))) as [Heq2 | Hne2]; auto.
-              exfalso. apply (zero_var_retag_ne x (sort_of (i + 2))). symmetry. exact Heq2.
-          - simpl. destruct Hcase as [[s0' Heq] | [Hi0 Heq]]; subst M0.
-            + rewrite subst_sort. apply IHk; [lia | left; exists s0'; reflexivity].
-            + rewrite subst_var.
-              destruct (eq_var_dec zero_var (retag x (sort_of (k' + i + 2)))) as [Heq2 | Hne2].
-              * exfalso. apply (zero_var_retag_ne x (sort_of (k' + i + 2))). symmetry. exact Heq2.
-              * destruct (eq_var_dec zero_var (retag x (sort_of (S (k' + i + 2))))) as [Heq3 | Hne3].
-                -- exfalso. apply (zero_var_retag_ne x (sort_of (S (k' + i + 2)))). symmetry. exact Heq3.
-                -- apply IHk; [lia | right; split; [exact Hi0 | reflexivity]].
-        }
+    { induction k as [| k' IHk]; intros M0 Hkbound Hcase.
+      - simpl. destruct Hcase as [[s0' Heq] | [Hi0 Heq]]; subst M0.
+        + rewrite subst_sort. reflexivity.
+        + rewrite subst_var.
+          destruct (eq_var_dec zero_var (retag x (sort_of (i + 2)))) as [Heq2 | Hne2]; auto.
+          exfalso. apply (zero_var_retag_ne x (sort_of (i + 2))). symmetry. exact Heq2.
+      - simpl. destruct Hcase as [[s0' Heq] | [Hi0 Heq]]; subst M0.
+        + rewrite subst_sort. apply IHk; [lia | left; exists s0'; reflexivity].
+        + rewrite subst_var.
+          destruct (eq_var_dec zero_var (retag x (sort_of (k' + i + 2)))) as [Heq2 | Hne2].
+          * exfalso. apply (zero_var_retag_ne x (sort_of (k' + i + 2))). symmetry. exact Heq2.
+          * destruct (eq_var_dec zero_var (retag x (sort_of (S (k' + i + 2))))) as [Heq3 | Hne3].
+            -- exfalso. apply (zero_var_retag_ne x (sort_of (S (k' + i + 2)))). symmetry. exact Heq3.
+            -- apply IHk; [lia | right; split; [exact Hi0 | reflexivity]].
+    }
     symmetry. apply Hconst; auto.
     destruct i as [| i'].
       + right. split; auto.
