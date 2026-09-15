@@ -710,7 +710,7 @@ $(\mathcal{S},\mathcal{A},\mathcal{R})$
 \LeftLabel{$\quad (s,t) \in \mathcal{A}$}
 \UnaryInfC{$\vdash s:t$}
 \end{prooftree}
-\item قاعده شروع
+\item قاعده معرفی متغیر
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash A:s$}
 \LeftLabel{$\quad ^sx \notin \Gamma$}
@@ -723,7 +723,7 @@ $(\mathcal{S},\mathcal{A},\mathcal{R})$
 \LeftLabel{$\quad ^sx \notin \Gamma$}
 \BinaryInfC{$\Gamma,{}^sx:B \vdash M:A$}
 \end{prooftree}
-\item قاعده تولید
+\item قاعده تشکیل نوع تابع
 \begin{prooftree}
 \AxiomC{$\Gamma,^{s_1}x:A \vdash B:s_2$}
 \AxiomC{$\Gamma \vdash A:s_1$}
