@@ -1,0 +1,496 @@
+\documentclass[12pt, aspectratio=169]{beamer}
+
+\usetheme{metropolis}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{page number in head/foot}{
+  \usebeamerfont{page number in head/foot}
+  \usebeamercolor[fg]{page number in head/foot}
+  \LR{\insertframenumber\ /\ \inserttotalframenumber}
+}
+\setbeamertemplate{headline}{%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=3.5ex,dp=1.5ex,center]{section in head/foot}
+    {\bfseries\insertsectionhead}
+  \end{beamercolorbox}%
+}
+\setbeamerfont{title}{size=\Large}
+\setbeamertemplate{section in toc}{\inserttocsectionnumber.\quad\inserttocsection}
+\setbeamertemplate{title page}{
+  \centering
+  \vfill
+  {\usebeamerfont{title}\usebeamercolor[fg]{title}\inserttitle\par}
+  \vspace{1em}
+  {\usebeamerfont{author}\usebeamercolor[fg]{author}\insertauthor\par}
+  \vspace{0.5em}
+  {\usebeamerfont{institute}\usebeamercolor[fg]{institute}\insertinstitute\par}
+  \vspace{0.5em}
+  {\usebeamerfont{date}\usebeamercolor[fg]{date}\insertdate\par}
+  \vfill
+}
+
+%Packages-------------------------------------
+\usepackage[svgnames]{xcolor}
+\usepackage{amsmath, amsthm, amscd, amsfonts, amssymb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{mathtools}
+
+\usepackage{listings}
+
+\lstdefinelanguage{Coq}{
+  keywords={Inductive, Type, Definition, Fixpoint, Lemma, Theorem, Axiom, Proof, Qed, match, with, end, forall, exists},
+  morekeywords=[2]{base, arrow, term, sort, pts_typing},
+  sensitive=true,
+  morecomment=[s]{(*}{*)},
+  morestring=[b]"
+}
+
+\lstset{
+  language=Coq,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  keywordstyle=[2]\color{teal},
+  commentstyle=\color{gray},
+  frame=single,
+  columns=fullflexible
+}
+
+\usepackage{xepersian}
+\settextfont{XB Zar}
+\setlatintextfont{Times New Roman}
+
+\title{صوری‌سازی ترجمه حذف وابستگی\\ در سیستم‌های نوع محض لایه‌ای}
+
+\author{حسین مددی}
+
+\institute{
+  استاد راهنما\\
+  {\small دکتر مجید علی‌زاده}\\
+  {\hfil}\\
+  دفاع پایان‌نامه کارشناسی ارشد\\
+  دانشکده ریاضی، آمار و علوم‌ کامپیوتر\\
+  دانشکدگان علوم\\
+  دانشگاه تهران
+}
+
+\date{\small تابستان ۱۴۰۵}
+
+\begin{document}
+
+{
+\setbeamertemplate{headline}{}
+\maketitle
+
+\begin{frame}{فهرست مطالب}
+\tableofcontents
+\end{frame}
+}
+
+%==================================================
+\section{مقدمه و انگیزه}
+%==================================================
+
+\begin{frame}{سیستم نوع محض}
+
+\textbf{تعریف:} یک سیستم نوع محض با سه‌تایی $(\mathcal{S},\mathcal{A},\mathcal{R})$ مشخص می‌شود:
+
+\begin{itemize}
+  \item $\mathcal{S}$: مجموعه رده‌ها
+  \item $\mathcal{A} \subseteq \mathcal{S} \times \mathcal{S}$: مجموعه اصول
+  \item $\mathcal{R} \subseteq \mathcal{S} \times \mathcal{S} \times \mathcal{S}$: مجموعه قوانین
+\end{itemize}
+
+\vfil
+\begin{align*}
+&T ::= \mathcal{S} \mid V \mid \lambda V^T.T \mid \Pi V^T.T \mid TT\\ \\
+&(\lambda x^A.M)N \rightarrow_{\beta} M[N/x]
+\end{align*}
+
+\end{frame}
+
+\begin{frame}{مسئله اصلی}
+
+{\small
+  \begin{itemize}
+      \item \textbf{فرم نرمال ($\mathrm{NF}$):} عبارتی که قابل کاهش نباشد.
+      \begin{align*}
+        \lambda x^A.x
+      \end{align*}
+      \item \textbf{نرمال‌سازی ضعیف ($\mathrm{WN}$):} وجود مسیر کاهش به فرم نرمال برای هر عبارت نوع‌پذیر.
+      \begin{align*}
+        A \to \dots \to N
+      \end{align*}
+      \item \textbf{نرمال‌سازی قوی ($\mathrm{SN}$):} عدم وجود دنباله کاهش نامتناهی برای هر عبارت نوع‌پذیر.
+      \begin{align*}
+        \dots \to B \to \dots
+      \end{align*}
+  \end{itemize}
+}
+
+\textbf{مسئله نرمال‌سازی (حدس \lr{BGK})}\\
+در هر سیستم نوع محض؛
+نرمال‌سازی ضعیف
+\pmb{$\overset{?}{\impliedby}$}
+نرمال‌سازی قوی
+\hfil\\
+
+{\small این حدس بیش از سه دهه است که برای سیستم‌های وابسته باز مانده است.}
+
+\end{frame}
+
+\begin{frame}{چرا این مسئله دشوار است؟}
+
+در سیستم‌های نوع محض وابسته؛
+
+\begin{columns}
+
+\begin{column}{0.5\textwidth}
+\hfil{}\\
+\begin{itemize}
+  \item انواع به عبارات وابسته‌اند.
+  \item کاهش روی نوع اثر می‌گذارد.
+  \item رفتار محاسباتی و ساختار منطقی در هم تنیده می‌شود.
+  \item روش‌های کلاسیک اثبات نرمال‌سازی (کاهش‌پذیری، استدلال‌های ترتیبی) به‌سادگی قابل اعمال نیستند.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=4cm,
+    every node/.style={draw, circle, minimum size=1.5cm},
+    >={Latex}
+]
+
+\node (terms) {\lr{terms}};
+\node (types) [right of=terms] {\lr{types}};
+
+\draw[->] (terms) edge[loop above] (terms);
+\draw[->] (types) edge[loop above] (types);
+
+\draw[->] (terms) to[bend left=20] (types);
+\draw[->, red] (types) to[bend left=20] (terms);
+
+\end{tikzpicture}
+\end{center}
+
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+%==================================================
+\section{پیشینه پژوهش}
+%==================================================
+
+\begin{frame}{تلاش‌های پیشین}
+
+ایده کلی: برای اثبات نرمال‌سازی قوی یک سیستم وابسته، آن را به سیستمی ساده‌تر که نرمال‌سازی قوی آن شناخته‌شده است، \textbf{ترجمه} کنیم.
+
+{\small
+\begin{itemize}
+\item \lr{Harper} و همکاران (۱۹۹۳): ترجمه‌ای از $\lambda P$ به $\lambda_\to$
+\item \lr{Geuvers} و \lr{Nederhof} (۱۹۹۱): تعمیم به ترجمه‌ای از $\lambda C$ به $\lambda \omega$
+\item \lr{Barthe} و همکاران (۲۰۰۱): تعریف سیستم‌های نوع محض غیروابسته تعمیم‌یافته
+\end{itemize}
+}
+
+\vfil
+تمام این ترجمه‌ها، به بیانی دقیق‌تر، حذف قانون وابسته $(*,\Box)$ را در سیستم مربوطه انجام می‌دهند.\\
+\vfil
+\textbf{اما}: این روش‌ها به‌طور کامل به همه سیستم‌های نوع محض تعمیم داده نشده‌اند.
+
+\end{frame}
+
+%==================================================
+\section{کار \lr{Nathan Mull}}
+%==================================================
+
+\begin{frame}[t]{\lr{Nathan Mull}}
+
+\begin{columns}
+
+\begin{column}{0.7\textwidth}
+\begin{center}
+\frame{\includegraphics[scale=0.15]{mull-thesis.png}}
+\end{center}
+\end{column}
+
+\begin{column}{0.3\textwidth}
+\begin{center}
+\includegraphics[scale=0.15]{mull.jpeg}
+\end{center}
+\end{column}
+
+\end{columns}
+
+\vfil
+\lr{Nathan Mull}، در رساله دکتری خود (۲۰۲۳، دانشگاه شیکاگو)، این ایده را برای خانواده جدیدی از سیستم‌های نوع تعمیم داد.
+
+\end{frame}
+
+\begin{frame}{سیستم‌های نوع محض لایه‌ای}
+
+\textbf{ایده اصلی \lr{Mull}:} افزودن ساختاری صریح (\textbf{لایه}) برای کنترل وابستگی نوعی
+
+{\small
+  \begin{itemize}
+    \item هر متغیر و عبارت، درجه‌ای در $\{1,\dots,n\}$ می‌گیرد.
+    \item عبارات لایه بالاتر نمی‌توانند دلبخواه به لایه‌های پایین‌تر وابسته باشند.
+    \item این کنترل، امکان تعریف یک \textbf{ترجمه حذف وابستگی} کنترل‌شده را فراهم می‌کند.
+  \end{itemize}
+}
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.6cm, >={Latex}]
+  \node (s1) {$s_1$};
+  \node (s2) [right=of s1] {$s_2$};
+  \node (s3) [right=of s2] {$s_3$};
+  \node (dots) [right=of s3] {$\cdots$};
+  \node (sn) [right=of dots] {$s_n$};
+  \draw[->] (s1) -- (s2);
+  \draw[->] (s2) -- (s3);
+  \draw[->] (s3) -- (dots);
+  \draw[->] (dots) -- (sn);
+\end{tikzpicture}
+\end{center}
+
+\begin{align*}
+\mathrm{TPTS} \in \mathrm{WN} \pmb{\overset{?}{\implies}} \mathrm{TPTS} \in \mathrm{SN}
+\end{align*}
+
+\end{frame}
+
+\begin{frame}{تعریف سیستم نوع محض $n$-لایه‌ای}
+
+یک سیستم نوع محض، $n$-لایه‌ای است هرگاه:
+
+\begin{align*}
+\mathcal{S} &= \{ s_i \mid i \in [n] \}\\
+\mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \in [n-1] \}\\
+\mathcal{R} &\subset \{ (s,s',s') \mid (s,s') \in \mathcal{S} \times \mathcal{S} \}
+\end{align*}
+
+\vfil
+{\small
+\begin{itemize}
+  \item $n=0$: سیستم نوع محض تهی
+  \item $n=2$: معادل کل مکعب لامبدا (هر هشت راس)
+\end{itemize}
+}
+
+\end{frame}
+
+\begin{frame}{ترجمه حذف وابستگی \lr{Mull}}
+
+تابعی که هر سیستم نوع محض لایه‌ای را به \textbf{نسخه غیروابسته} آن نگاشت می‌کند.
+
+{\small
+\begin{itemize}
+  \item تابع ترجمه سطح نوع $\rho_i$: رده‌ها را به رده‌ای پایین‌تر نگاشت می‌کند.
+  \item تابع ترجمه سطح عبارت $\gamma$: تمام عبارات را به یک عبارت غیروابسته می‌برد.
+\end{itemize}
+}
+
+\end{frame}
+
+\begin{frame}{سه لم کلیدی ترجمه}
+
+هر دو ترجمه $\rho$ و $\gamma$ سه خاصیت کلیدی زیر را دارا هستند:
+
+{\small
+\begin{enumerate}
+  \item \textbf{با جانشینی جابه‌جا می‌شود:}
+  \begin{center}
+  $\rho_i(A[B/x]) = \rho_i(A)[\rho_i(B)/x]$    
+  \end{center}
+  \item \textbf{مسیر کاهش را حفظ می‌کند:}
+  \begin{center}
+  $A \twoheadrightarrow_\beta B \implies \rho_i(A) \twoheadrightarrow_\beta \rho_i(B)$
+  \end{center}
+  \item \textbf{نوع را خوش‌تعریف منتقل می‌کند:}
+  \begin{center}
+  $\Gamma \vdash_{\lambda S} A:B \implies \rho_i(\Gamma) \vdash_{\lambda S^*} \rho_i(A):\rho_i(B)$
+  \end{center}
+\end{enumerate}
+}
+
+\end{frame}
+
+\begin{frame}{نتیجه اصلی \lr{Mull}}
+
+\textbf{قضیه:} فرض کنید $\lambda S$ یک سیستم نوع محض $n$-لایه‌ای است که \textbf{تا مقدار $i$ کامل است} ($i<n$)؛ آنگاه:
+\begin{align*}
+\lambda S \in \mathrm{SN} \iff \lambda S^* \in \mathrm{SN}
+\end{align*}
+
+\vfil
+\textbf{نتیجه:}\\
+حدس \lr{BGK} برای خانواده‌ای مشخص از سیستم‌های نوع محض $n$-لایه‌ای برقرار است؛ و این اثبات را می‌توان در \textbf{حساب پئانو} انجام داد.
+
+\vfil
+{\small این نتیجه، یکی از بزرگ‌ترین پیشرفت‌های اخیر در مسیر اثبات حدس \lr{BGK} برای سیستم‌های وابسته است.}
+
+\end{frame}
+
+%==================================================
+\section{صوری‌سازی در \lr{Coq}}
+%==================================================
+
+\begin{frame}{هدف پایان‌نامه من}
+
+\textbf{صوری‌سازی کامل سیستم، ترجمه و اثبات نرمال‌سازی در \lr{Coq}}
+
+\begin{center}
+\frame{\includegraphics[scale=0.3]{trust.png}}
+\end{center}
+
+\begin{center}
+\includegraphics[scale=0.1]{coq.png}
+\end{center}
+
+\end{frame}
+
+\begin{frame}{آنچه در این پایان‌نامه صوری‌سازی شد}
+
+{\small
+  \begin{itemize}
+  \item تعریف کامل سیستم‌های نوع محض، مانند:
+    \begin{itemize}
+    \item نحو عبارات، جانشینی و کاهش $\beta$
+    \item نرمال‌سازی ضعیف و قوی، استنتاج نوع
+    \item خواص و لم‌های سیستم
+    \end{itemize}
+  \item تعریف کامل سیستم‌های نوع محض لایه‌ای، مانند:
+    \begin{itemize}
+    \item تابع درجه و لم طبقه‌بندی
+    \item توابع ترجمه سطح نوع ($\rho$) و سطح عبارت ($\gamma$)
+    \item لم‌های حفظ جانشینی، حفظ مسیر کاهش و حفظ نوع
+    \end{itemize}
+  \item قضیه اصلی: $\lambda S \in \mathrm{SN} \iff \lambda S^* \in \mathrm{SN}$
+  \end{itemize}
+}
+
+\end{frame}
+ 
+\begin{frame}{روش صوری‌سازی متغیرها: \lr{Locally Nameless}}
+
+{\small
+\begin{itemize}
+  \item متغیرهای \textbf{آزاد}: نام‌دار
+  \item متغیرهای \textbf{پابند}: اندیس \lr{de Bruijn}
+\end{itemize}
+}
+
+\begin{align*}
+\lambda x. \lambda y. (xyz) \overset{\text{\lr{locally nameless}}}\implies \lambda . \lambda . (1 0 z)
+\end{align*}
+
+\vfil
+\textbf{چرا؟}
+{\small
+\begin{itemize}
+  \item حذف نیاز به تبدیل $\alpha$؛ 
+  \item یکتایی نمایش هر عبارت
+  \item سازگاری با کتابخانه‌های مرسوم \lr{Coq}
+\end{itemize}
+}
+
+\end{frame}
+
+\begin{frame}[fragile]{نمونه‌ای از صوری‌سازی در \lr{Coq}}
+
+\begin{LTR}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+Inductive term : Type :=
+  | t_sort : Sort -> term
+  | t_bvar : Sort -> nat -> term
+  | t_fvar : Sort -> var -> term
+  | t_app  : term -> term -> term
+  | t_lam  : Sort -> term -> term -> term
+  | t_pi   : Sort -> term -> term -> term.
+
+Fixpoint deg (t : term) : nat :=
+  match t with
+  | t_sort s     => index_of s + 1
+  | t_bvar s _   => index_of s - 1
+  | t_fvar s _   => index_of s - 1
+  | t_app M _    => deg M
+  | t_lam _ _ M  => deg M
+  | t_pi  _ _ B  => deg B
+  end.
+\end{lstlisting}
+\end{LTR}
+
+\vfil
+{\small \emph{کد بالا نمونه‌ای گویا از سبک صوری‌سازی است؛ کد کامل در پیوست پایان‌نامه موجود است.}}
+
+\end{frame}
+
+\begin{frame}{محدودیت‌ها}
+
+\textbf{به دلیل محدودیت زمانی:}
+
+\begin{itemize}
+  \item برخی گام‌های اثبات لم‌های مربوط به ترجمه حذف وابستگی، به‌صورت \lr{Axiom} در \lr{Coq} فرض شده‌اند.
+  \item این موارد، طبیعی‌ترین نقطه آغاز برای ادامه این کار هستند.
+\end{itemize}
+
+\vfil
+{\small تمام تعاریف، نحو، کاهش، نرمال‌سازی و استنتاج نوع برای هر دو سیستم \lr{PTS} و \lr{TPTS}، به همراه قضیه اصلی، به‌طور کامل و بدون هیچ \lr{Axiom} ای اثبات شده‌اند.}
+
+\end{frame}
+
+\begin{frame}{دستاوردهای پایان‌نامه}
+
+\begin{itemize}
+  \item اولین صوری‌سازی کاملاً ماشینی قضیه اصلی \lr{Mull}
+  \item اثبات ماشینی تمام لم‌های واسطه (جانشینی، حفظ مسیر کاهش، حفظ نوع)
+  \item توسعه یک \textbf{کتابخانه باز و قابل گسترش} در \lr{Coq}
+  \item بستری برای تعمیم به سیستم‌های وابسته‌تر مانند \textbf{حساب ساختمان‌ها}
+  \item گامی مهم در مسیر اثبات حدس \lr{BGK} برای سیستم‌های وابسته
+\end{itemize}
+
+\end{frame}
+
+%==================================================
+\section{جمع‌بندی و کارهای آینده}
+%==================================================
+
+\begin{frame}{جمع‌بندی}
+
+\begin{itemize}
+  \item سیستم‌های نوع محض و تعمیم لایه‌ای آن‌ها به‌طور کامل در \lr{Coq} صوری‌سازی شدند.
+  \item نحو، جانشینی، کاهش $\beta$، نرمال‌سازی و استنتاج نوع برای هر دو سیستم اثبات شدند.
+  \item ترجمه حذف وابستگی \lr{Mull} و لم‌های اصلی آن صوری‌سازی شدند.
+  \item قضیه اصلی \lr{Mull} برای اولین بار به‌طور کاملاً ماشینی بررسی شد.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{پیشنهادات برای آینده}
+
+\begin{itemize}
+  \item بررسی مجموعه قوانین پیشنهادی \lr{Mull} برای تعمیم بیشتر ترجمه
+  \item صوری‌سازی امکان اجرای اثبات در حساب پئانو
+  \item صوری‌سازی حالت خاصی از حدس قوی \lr{BGK}
+  \item تکمیل و جایگزینی \lr{Axiom}های باقی‌مانده با اثبات‌های صوری کامل
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \centering
+  \vspace*{1.5cm}
+
+  \begin{beamercolorbox}[wd=0.9\paperwidth,center,sep=12pt,rounded=true,shadow=true]{block title}
+    \usebeamerfont{title}
+    {\huge سپاس از توجه شما!}
+  \end{beamercolorbox}
+
+  \vspace{1.2cm}
+\end{frame}
+
+\end{document}

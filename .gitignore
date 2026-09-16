@@ -31,3 +31,4 @@
 */*.ptd
 */*.synctex(busy)
 */*.xdv
+*/_minted
