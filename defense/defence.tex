@@ -34,8 +34,11 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning}
 \usepackage{mathtools}
-
+\usepackage{bussproofs}
+\usepackage{minted}
+\setminted[coq]{fontsize=\small, frame=single, breaklines=true, breakanywhere=true, breaksymbolleft={}}
 \usepackage{listings}
+\usepackage{bm}
 
 \lstdefinelanguage{Coq}{
   keywords={Inductive, Type, Definition, Fixpoint, Lemma, Theorem, Axiom, Proof, Qed, match, with, end, forall, exists},
@@ -56,8 +59,8 @@
 }
 
 \usepackage{xepersian}
-\settextfont{XB Zar}
-\setlatintextfont{Times New Roman}
+\settextfont{Vazir}
+\setlatintextfont{Fira Sans}
 
 \title{صوری‌سازی ترجمه حذف وابستگی\\ در سیستم‌های نوع محض لایه‌ای}
 
@@ -118,11 +121,11 @@
       \end{align*}
       \item \textbf{نرمال‌سازی ضعیف ($\mathrm{WN}$):} وجود مسیر کاهش به فرم نرمال برای هر عبارت نوع‌پذیر.
       \begin{align*}
-        A \to \dots \to N
+        M \rightarrow_{\beta} \dots \rightarrow_{\beta} N
       \end{align*}
       \item \textbf{نرمال‌سازی قوی ($\mathrm{SN}$):} عدم وجود دنباله کاهش نامتناهی برای هر عبارت نوع‌پذیر.
       \begin{align*}
-        \dots \to B \to \dots
+        M \rightarrow_{\beta} N \rightarrow_{\beta} \dots
       \end{align*}
   \end{itemize}
 }
@@ -134,51 +137,34 @@
 نرمال‌سازی قوی
 \hfil\\
 
-{\small این حدس بیش از سه دهه است که برای سیستم‌های وابسته باز مانده است.}
+{\scriptsize این حدس بیش از سه دهه است که برای سیستم‌های وابسته باز مانده است.}
 
 \end{frame}
 
 \begin{frame}{چرا این مسئله دشوار است؟}
+ 
+در سیستم‌های نوع محض وابسته،
+\textbf{نوع}
+یک عبارت، می‌تواند به
+\textbf{عبارت}
+دیگری وابسته باشد.
 
-در سیستم‌های نوع محض وابسته؛
-
-\begin{columns}
-
-\begin{column}{0.5\textwidth}
-\hfil{}\\
 \begin{itemize}
-  \item انواع به عبارات وابسته‌اند.
+  {\small
   \item کاهش روی نوع اثر می‌گذارد.
   \item رفتار محاسباتی و ساختار منطقی در هم تنیده می‌شود.
   \item روش‌های کلاسیک اثبات نرمال‌سازی (کاهش‌پذیری، استدلال‌های ترتیبی) به‌سادگی قابل اعمال نیستند.
+  }
 \end{itemize}
-\end{column}
 
-\begin{column}{0.5\textwidth}
-
-\begin{center}
-\begin{tikzpicture}[
-    node distance=4cm,
-    every node/.style={draw, circle, minimum size=1.5cm},
-    >={Latex}
-]
-
-\node (terms) {\lr{terms}};
-\node (types) [right of=terms] {\lr{types}};
-
-\draw[->] (terms) edge[loop above] (terms);
-\draw[->] (types) edge[loop above] (types);
-
-\draw[->] (terms) to[bend left=20] (types);
-\draw[->, red] (types) to[bend left=20] (terms);
-
-\end{tikzpicture}
-\end{center}
-
-\end{column}
-
-\end{columns}
-
+\hfil{}\\
+\textbf{مثال:} در استنتاج زیر، $P\,Q$ یک نوع است که به عبارت $Q$ وابسته است.
+\begin{prooftree}  
+\AxiomC{$\Gamma \vdash Q \;:\; A$}
+\AxiomC{$\Gamma \vdash P \;:\; \Pi x^A.s$}
+\BinaryInfC{$\Gamma \vdash P\,Q \;:\; s$}
+\end{prooftree}
+ 
 \end{frame}
 
 %==================================================
@@ -198,7 +184,7 @@
 }
 
 \vfil
-تمام این ترجمه‌ها، به بیانی دقیق‌تر، حذف قانون وابسته $(*,\Box)$ را در سیستم مربوطه انجام می‌دهند.\\
+تمام این ترجمه‌ها، حذف قانون وابسته را در سیستم مربوطه انجام می‌دهند.\\
 \vfil
 \textbf{اما}: این روش‌ها به‌طور کامل به همه سیستم‌های نوع محض تعمیم داده نشده‌اند.
 
@@ -233,33 +219,21 @@
 
 \begin{frame}{سیستم‌های نوع محض لایه‌ای}
 
-\textbf{ایده اصلی \lr{Mull}:} افزودن ساختاری صریح (\textbf{لایه}) برای کنترل وابستگی نوعی
+\textbf{ایده اصلی \lr{Mull}:}
 
 {\small
   \begin{itemize}
-    \item هر متغیر و عبارت، درجه‌ای در $\{1,\dots,n\}$ می‌گیرد.
-    \item عبارات لایه بالاتر نمی‌توانند دلبخواه به لایه‌های پایین‌تر وابسته باشند.
-    \item این کنترل، امکان تعریف یک \textbf{ترجمه حذف وابستگی} کنترل‌شده را فراهم می‌کند.
+    \item مرتب کردن $\mathcal{S}$ و محدود کردن $\mathcal{A}$
+    \begin{equation*}
+    s_1 \overset{\mathcal{A}}{\longrightarrow} s_2 \overset{\mathcal{A}}{\longrightarrow} s_3 \overset{\mathcal{A}}{\longrightarrow} \dots \overset{\mathcal{A}}{\longrightarrow} s_n
+    \end{equation*}
+    \item انتساب یک درجه‌ به هر عبارت
+    \begin{equation*}
+    \operatorname{deg}: \mathrm{T} \to \mathbb{N}
+    \end{equation*}
+    \item استفاده از این ساختار خوش‌تعریف، به منظور تعریف یک \textbf{ترجمه حذف وابستگی}
   \end{itemize}
 }
-
-\begin{center}
-\begin{tikzpicture}[node distance=1.6cm, >={Latex}]
-  \node (s1) {$s_1$};
-  \node (s2) [right=of s1] {$s_2$};
-  \node (s3) [right=of s2] {$s_3$};
-  \node (dots) [right=of s3] {$\cdots$};
-  \node (sn) [right=of dots] {$s_n$};
-  \draw[->] (s1) -- (s2);
-  \draw[->] (s2) -- (s3);
-  \draw[->] (s3) -- (dots);
-  \draw[->] (dots) -- (sn);
-\end{tikzpicture}
-\end{center}
-
-\begin{align*}
-\mathrm{TPTS} \in \mathrm{WN} \pmb{\overset{?}{\implies}} \mathrm{TPTS} \in \mathrm{SN}
-\end{align*}
 
 \end{frame}
 
@@ -268,8 +242,8 @@
 یک سیستم نوع محض، $n$-لایه‌ای است هرگاه:
 
 \begin{align*}
-\mathcal{S} &= \{ s_i \mid i \in [n] \}\\
-\mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \in [n-1] \}\\
+\mathcal{S} &= \{ s_i \mid i \in \{1,\dots,n\} \}\\
+\mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \in \{1,\dots,n{-}1\} \}\\
 \mathcal{R} &\subset \{ (s,s',s') \mid (s,s') \in \mathcal{S} \times \mathcal{S} \}
 \end{align*}
 
@@ -283,37 +257,72 @@
 
 \end{frame}
 
+\begin{frame}{وابستگی در سیستم نوع محض لایه‌ای}
+
+\textbf{قاعده تشکیل نوع تابع:}
+\begin{prooftree}
+\AxiomC{$\Gamma,x:A \vdash B:s_j$}
+\AxiomC{$\Gamma \vdash A:s_i$}
+\LeftLabel{$\quad (s_i,s_j,s_j) \in \mathcal{R}$}
+\BinaryInfC{$\Gamma \vdash (\Pi x^A.B):s_j$}
+\end{prooftree}
+
+در استنتاج فوق اگر
+$i < j$،
+آنگاه انواعی به وجود می‌آیند که به عباراتی از درجه پایین‌تر وابسته‌اند.
+
+\end{frame}
+
+\begin{frame}{نسخه غیروابسته سیستم نوع محض لایه‌ای}
+
+\textbf{نسخه غیروابسته} یک سیستم نوع محض لایه‌ای
+$\lambda S$،
+که با
+$\lambda S^*$
+نشان داده می‌شود، سیستمی با مشخصات زیر است:
+\begin{align*}
+S_{\lambda S^*} &= S_{\lambda S}\\
+\mathcal{A}_{\lambda S^*} &= \mathcal{A}_{\lambda S}\\
+\mathcal{R}_{\lambda S^*} &= \{(s_i,s_j,s_j) \in \mathcal{R}_{\lambda S} \mid (i \ge j)\}
+\end{align*}
+
+\end{frame}
+
 \begin{frame}{ترجمه حذف وابستگی \lr{Mull}}
 
-تابعی که هر سیستم نوع محض لایه‌ای را به \textbf{نسخه غیروابسته} آن نگاشت می‌کند.
-
-{\small
-\begin{itemize}
-  \item تابع ترجمه سطح نوع $\rho_i$: رده‌ها را به رده‌ای پایین‌تر نگاشت می‌کند.
-  \item تابع ترجمه سطح عبارت $\gamma$: تمام عبارات را به یک عبارت غیروابسته می‌برد.
-\end{itemize}
+{\Large
+\begin{equation*}
+\lambda S \xrightarrow{\hspace{0.5cm}\rho_i \;,\; \gamma\hspace{0.5cm}} \lambda S^*
+\end{equation*}
 }
+
+\begin{itemize}
+  \item \textbf{تابع ترجمه سطح نوع $\bm{\rho_i}$:} انواع را به رده‌ای پایین‌تر نگاشت می‌کند.
+  \item \textbf{تابع ترجمه سطح عبارت $\bm{\gamma}$:} عبارات را به یک عبارت غیروابسته تبدیل می‌کند.
+\end{itemize}
+
 
 \end{frame}
 
 \begin{frame}{سه لم کلیدی ترجمه}
 
-هر دو ترجمه $\rho$ و $\gamma$ سه خاصیت کلیدی زیر را دارا هستند:
-
 {\small
 \begin{enumerate}
-  \item \textbf{با جانشینی جابه‌جا می‌شود:}
-  \begin{center}
-  $\rho_i(A[B/x]) = \rho_i(A)[\rho_i(B)/x]$    
-  \end{center}
-  \item \textbf{مسیر کاهش را حفظ می‌کند:}
-  \begin{center}
-  $A \twoheadrightarrow_\beta B \implies \rho_i(A) \twoheadrightarrow_\beta \rho_i(B)$
-  \end{center}
-  \item \textbf{نوع را خوش‌تعریف منتقل می‌کند:}
-  \begin{center}
-  $\Gamma \vdash_{\lambda S} A:B \implies \rho_i(\Gamma) \vdash_{\lambda S^*} \rho_i(A):\rho_i(B)$
-  \end{center}
+  \item \textbf{با جانشینی جابه‌جا می‌شوند:}
+  \begin{align*}
+  \rho_i(A[B/x]) &= \rho_i(A)[\rho_i(B)/x]\\
+  \gamma(A[B/{}^{s_{j}}x]) &= \gamma(A) [\rho_{j-2}(B)/{}^{s_{j}}x] \dots [\rho_{0}(B)/{}^{s_{2}}x] [\gamma(B)/{}^{s_{1}}x]
+  \end{align*}
+  \item \textbf{مسیر کاهش را حفظ می‌کنند:}
+  \begin{align*}
+  A \twoheadrightarrow_\beta B &\implies \rho_i(A) \twoheadrightarrow_\beta \rho_i(B)\\
+  A \to_\beta B &\implies \gamma(A) \twoheadrightarrow^+_\beta \gamma(B)
+  \end{align*}
+  \item \textbf{نوع را خوش‌تعریف نگاشت می‌کنند:}
+  \begin{align*}
+  \Gamma \vdash_{\lambda S} A:B &\implies \rho_i(\Gamma) \; \vdash_{\lambda S^*} \; \rho_i(A):\rho_i(B)\\
+  \Gamma \vdash_{\lambda S} A:B &\implies \Delta,\; \rho_0(\Gamma) \; \vdash_{\lambda S^*} \; \gamma(A) : \rho_0(B)
+  \end{align*}
 \end{enumerate}
 }
 
@@ -321,17 +330,17 @@
 
 \begin{frame}{نتیجه اصلی \lr{Mull}}
 
-\textbf{قضیه:} فرض کنید $\lambda S$ یک سیستم نوع محض $n$-لایه‌ای است که \textbf{تا مقدار $i$ کامل است} ($i<n$)؛ آنگاه:
+\textbf{قضیه:} فرض کنید $\lambda S$ یک سیستم نوع محض لایه‌ای است که \textbf{کامل} است، آنگاه:
 \begin{align*}
 \lambda S \in \mathrm{SN} \iff \lambda S^* \in \mathrm{SN}
 \end{align*}
 
 \vfil
 \textbf{نتیجه:}\\
-حدس \lr{BGK} برای خانواده‌ای مشخص از سیستم‌های نوع محض $n$-لایه‌ای برقرار است؛ و این اثبات را می‌توان در \textbf{حساب پئانو} انجام داد.
+حدس \lr{BGK} برای خانواده‌ مشخصی از سیستم‌های نوع محض لایه‌ای برقرار است و این اثبات را می‌توان در \textbf{حساب پئانو} انجام داد.
 
 \vfil
-{\small این نتیجه، یکی از بزرگ‌ترین پیشرفت‌های اخیر در مسیر اثبات حدس \lr{BGK} برای سیستم‌های وابسته است.}
+{\scriptsize این نتیجه، یکی از بزرگ‌ترین پیشرفت‌های اخیر در مسیر اثبات حدس \lr{BGK} برای سیستم‌های وابسته است.}
 
 \end{frame}
 
@@ -352,58 +361,44 @@
 \end{center}
 
 \end{frame}
-
-\begin{frame}{آنچه در این پایان‌نامه صوری‌سازی شد}
-
-{\small
-  \begin{itemize}
-  \item تعریف کامل سیستم‌های نوع محض، مانند:
-    \begin{itemize}
-    \item نحو عبارات، جانشینی و کاهش $\beta$
-    \item نرمال‌سازی ضعیف و قوی، استنتاج نوع
-    \item خواص و لم‌های سیستم
-    \end{itemize}
-  \item تعریف کامل سیستم‌های نوع محض لایه‌ای، مانند:
-    \begin{itemize}
-    \item تابع درجه و لم طبقه‌بندی
-    \item توابع ترجمه سطح نوع ($\rho$) و سطح عبارت ($\gamma$)
-    \item لم‌های حفظ جانشینی، حفظ مسیر کاهش و حفظ نوع
-    \end{itemize}
-  \item قضیه اصلی: $\lambda S \in \mathrm{SN} \iff \lambda S^* \in \mathrm{SN}$
-  \end{itemize}
-}
-
-\end{frame}
  
-\begin{frame}{روش صوری‌سازی متغیرها: \lr{Locally Nameless}}
+\begin{frame}{روش صوری‌سازی}
 
+\begin{center}
 {\small
-\begin{itemize}
-  \item متغیرهای \textbf{آزاد}: نام‌دار
-  \item متغیرهای \textbf{پابند}: اندیس \lr{de Bruijn}
-\end{itemize}
+\begin{tabular}{ll}
+\hline
+\textbf{عبارت} & \textbf{روش} \\
+\hline
+$\lambda x.\,\lambda y.\,(x\;y\;z)$ & \lr{Named} \\
+$\lambda.\,\lambda.\,(1\;0\;2)$ & \lr{de Bruijn} \\
+$\lambda.\,\lambda.\,(1\;0\;z)$ & \lr{Locally Nameless}\\
+\hline
+\end{tabular}
 }
-
-\begin{align*}
-\lambda x. \lambda y. (xyz) \overset{\text{\lr{locally nameless}}}\implies \lambda . \lambda . (1 0 z)
-\end{align*}
+\end{center}
 
 \vfil
-\textbf{چرا؟}
+\textbf{چرا \lr{Locally Nameless}؟}
 {\small
 \begin{itemize}
-  \item حذف نیاز به تبدیل $\alpha$؛ 
-  \item یکتایی نمایش هر عبارت
-  \item سازگاری با کتابخانه‌های مرسوم \lr{Coq}
+  \item \textbf{نسبت به \lr{Named}:} بی‌نیاز شدن از تبدیل $\alpha$
+  {\small
+  \begin{align*}
+    \lambda x.\,\lambda y.\,(x\;y\;z) \equiv_{\alpha} \lambda r.\,\lambda y.\,(r\;y\;z)
+  \end{align*}
+  }
+  \item \textbf{نسبت به \lr{de Bruijn}:} خوانایی و راحتی بیشتر
+  \item سازگارتر با کتابخانه‌های مرسوم \lr{Coq}
 \end{itemize}
 }
 
 \end{frame}
 
-\begin{frame}[fragile]{نمونه‌ای از صوری‌سازی در \lr{Coq}}
-
-\begin{LTR}
-\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+\begin{frame}[fragile]{نمونه‌: صوری‌سازی نحو عبارات}
+\begin{latin}
+\setmonofont{DejaVu Sans Mono}
+\begin{minted}{coq}
 Inductive term : Type :=
   | t_sort : Sort -> term
   | t_bvar : Sort -> nat -> term
@@ -411,42 +406,165 @@ Inductive term : Type :=
   | t_app  : term -> term -> term
   | t_lam  : Sort -> term -> term -> term
   | t_pi   : Sort -> term -> term -> term.
+\end{minted}
+\end{latin}
+\end{frame}
 
-Fixpoint deg (t : term) : nat :=
-  match t with
-  | t_sort s     => index_of s + 1
-  | t_bvar s _   => index_of s - 1
-  | t_fvar s _   => index_of s - 1
-  | t_app M _    => deg M
-  | t_lam _ _ M  => deg M
-  | t_pi  _ _ B  => deg B
+\begin{frame}[fragile]{نمونه‌: صوری‌سازی لم تضعیف}
+\begin{latin}
+\setmonofont{DejaVu Sans Mono}
+\begin{minted}[fontsize=\scriptsize]{coq}
+Lemma thinning : forall Γ Δ M N, legal Δ -> Γ ⊆ Δ -> Γ ⊢ M ∈ N -> Δ ⊢ M ∈ N.
+Proof.
+  intros Γ Δ M N Hleg Hsub Htyp.
+  generalize dependent Δ.
+  induction Htyp as
+    [ s s' HA
+    | Γ0 x0 A0 s0 Hfresh0 HA0 IHA0
+    | Γ0 x0 B0 M0 A0 s0 Hfresh0 HM0 IHM0 HB0 IHB0
+    | Γ0 A0 B0 s1 s2 s3 L HA IHA HTagB HB IHB HR
+    | Γ0 A0 M0 B0 s1 s3 L HA IHA HTagM HM IHM HPi IHPi
+    | Γ0 M0 N0 A0 B0 s1a HM IHM HN IHN
+    | Γ0 M0 A0 B0 s HM IHM Heq HB IHB ];
+    intros Δ Hleg Hsub.
+  
+  (* continued! *)
+\end{minted}
+\end{latin}
+\end{frame}
+
+\begin{frame}[fragile]{نمونه‌: صوری‌سازی ترجمه سطح نوع}
+\begin{latin}
+\setmonofont{DejaVu Sans Mono}
+\begin{minted}[fontsize=\tiny]{coq}
+Fixpoint rho (i : nat) (M : term) : term :=
+  match M with
+  | t_sort s =>
+      match i with
+      | 0 => t_fvar (sort_of 2) zero_var
+      | _ => t_sort (sort_of i)
+      end
+  | t_bvar s0 k => t_bvar s0 k
+  | t_fvar s0 x => t_fvar (sort_of (i + 2)) (retag x (sort_of (i + 2)))
+  | t_pi s A B =>
+      match le_lt_dec (i + 1) (deg A) with
+      | left _  => rho_pi_tel rho A B i (deg A - 1 - i)
+      | right _ => rho i B
+      end
+  | t_lam s A M' =>
+      match le_lt_dec (i + 2) (deg A) with
+      | left _  => rho_lam_tel rho A M' i (deg A - 1 - (i + 1))
+      | right _ => rho i M'
+      end
+  | t_app M' N =>
+      match le_lt_dec (i + 1) (deg N) with
+      | left _  => rho_app_tel rho M' N i (deg N - 1 - i)
+      | right _ => rho i M'
+      end
   end.
-\end{lstlisting}
-\end{LTR}
+\end{minted}
+\end{latin}
+\end{frame}
 
-\vfil
-{\small \emph{کد بالا نمونه‌ای گویا از سبک صوری‌سازی است؛ کد کامل در پیوست پایان‌نامه موجود است.}}
+\begin{frame}[fragile]{نمونه‌: صوری‌سازی لم جابه‌جایی ترجمه سطح نوع با جانشینی}
+\begin{latin}
+\setmonofont{DejaVu Sans Mono}
+\begin{minted}[fontsize=\scriptsize]{coq}
+Lemma rho_commutes_substitution :
+  forall i, 0 <= i <= n ->
+  forall x s, x <> zero_var -> 1 <= index_of s <= n ->
+  forall M, deg M >= i + 1 -> only_tagged x s M ->
+  forall N, deg N = index_of s - 1 -> lc N ->
+  rho i (M ⁅ x ≔ N ⁆) = rho_subst M N x s i.
+Proof.
+  intros i.
+  induction i as [i IHouter] using
+    (well_founded_induction (Wf_nat.well_founded_ltof nat (fun i => n - i))).
+  intros Hi x s Hxnz Hx M.
+  induction M as [s0 | s_m m | sy y | D IHD C IHC | s1 C IHC D IHD | s1 C IHC D IHD]; intros Hdeg Honly N HdegN HlcN.
+
+  (* continued! *)
+\end{minted}
+\end{latin}
+\end{frame}
+
+\begin{frame}[fragile]{نمونه‌: صوری‌سازی قضیه اصلی}
+\begin{latin}
+\setmonofont{DejaVu Sans Mono}
+\begin{minted}[fontsize=\scriptsize]{coq}
+Theorem lambdaS_SN_iff_lambdaS_star_SN :
+  system_strongly_normalizing derivable <-> 
+  system_strongly_normalizing derivable_star.
+Proof.
+  split.
+  - (* λS SN -> λS∗ SN *)
+    intros HSN M HMstar.
+    apply HSN.
+    apply derivable_star_implies_derivable.
+    exact HMstar.
+  - (* λS∗ SN -> λS SN *)
+    intros HSNstar M HM.
+    apply sn_reflection.
+    apply HSNstar.
+    apply gamma_commutes_typing_derivable.
+    exact HM.
+Qed.
+\end{minted}
+\end{latin}
+\end{frame}
+
+\begin{frame}{آنچه در این پایان‌نامه صوری‌سازی شد}
+
+{\small
+  \begin{itemize}
+  \item \textbf{تعریف کامل سیستم‌های نوع محض}، مانند:
+    \begin{itemize}
+    \item نحو عبارات، جانشینی و کاهش $\beta$
+    \item نرمال‌سازی ضعیف و قوی، استنتاج نوع
+    \item خواص و لم‌های سیستم
+    \end{itemize}
+  \item \textbf{تعریف کامل سیستم‌های نوع محض لایه‌ای}، مانند:
+    \begin{itemize}
+    \item تابع درجه و لم طبقه‌بندی
+    \item توابع ترجمه سطح نوع ($\rho_i$) و سطح عبارت ($\gamma$)
+    \item لم‌های حفظ جانشینی، حفظ مسیر کاهش و حفظ نوع
+    \end{itemize}
+  \item \textbf{قضیه اصلی}: $\lambda S \in \mathrm{SN} \iff \lambda S^* \in \mathrm{SN}$
+  \end{itemize}
+}
 
 \end{frame}
 
-\begin{frame}{محدودیت‌ها}
+\begin{frame}[fragile]{محدودیت‌ها}
+به دلیل
+\textbf{محدودیت زمانی}،
+برخی گام‌های اثبات لم‌های مربوط به ترجمه حذف وابستگی، به‌صورت \lr{Axiom} در \lr{Coq} فرض شده‌اند.
 
-\textbf{به دلیل محدودیت زمانی:}
-
-\begin{itemize}
-  \item برخی گام‌های اثبات لم‌های مربوط به ترجمه حذف وابستگی، به‌صورت \lr{Axiom} در \lr{Coq} فرض شده‌اند.
-  \item این موارد، طبیعی‌ترین نقطه آغاز برای ادامه این کار هستند.
-\end{itemize}
-
-\vfil
-{\small تمام تعاریف، نحو، کاهش، نرمال‌سازی و استنتاج نوع برای هر دو سیستم \lr{PTS} و \lr{TPTS}، به همراه قضیه اصلی، به‌طور کامل و بدون هیچ \lr{Axiom} ای اثبات شده‌اند.}
+\begin{latin}
+\setmonofont{DejaVu Sans Mono}
+\begin{minted}[fontsize=\scriptsize]{coq}
+Axiom gamma_app_tel_commutes_subst : forall MG C B x s KC,
+  x <> zero_var -> 1 <= index_of s <= n ->
+  deg B = index_of s - 1 -> lc B -> only_tagged x s C ->
+  (gamma_subst_tel (gamma_app_tel MG C KC) B x (index_of s - 1))
+    ⁅ retag x (sort_of 1) ≔ gamma B ⁆
+  = gamma_app_tel
+      ((gamma_subst_tel MG B x (index_of s - 1))
+         ⁅ retag x (sort_of 1) ≔ gamma B ⁆)
+      (C ⁅ x ≔ B ⁆) KC.
+\end{minted}
+\end{latin}
 
 \end{frame}
+
+%==================================================
+\section{جمع‌بندی و کارهای آینده}
+%==================================================
 
 \begin{frame}{دستاوردهای پایان‌نامه}
 
 \begin{itemize}
-  \item اولین صوری‌سازی کاملاً ماشینی قضیه اصلی \lr{Mull}
+  \item \textbf{اولین} صوری‌سازی کاملاً ماشینی قضیه اصلی \lr{Mull}
   \item اثبات ماشینی تمام لم‌های واسطه (جانشینی، حفظ مسیر کاهش، حفظ نوع)
   \item توسعه یک \textbf{کتابخانه باز و قابل گسترش} در \lr{Coq}
   \item بستری برای تعمیم به سیستم‌های وابسته‌تر مانند \textbf{حساب ساختمان‌ها}
@@ -455,42 +573,29 @@ Fixpoint deg (t : term) : nat :=
 
 \end{frame}
 
-%==================================================
-\section{جمع‌بندی و کارهای آینده}
-%==================================================
-
-\begin{frame}{جمع‌بندی}
-
-\begin{itemize}
-  \item سیستم‌های نوع محض و تعمیم لایه‌ای آن‌ها به‌طور کامل در \lr{Coq} صوری‌سازی شدند.
-  \item نحو، جانشینی، کاهش $\beta$، نرمال‌سازی و استنتاج نوع برای هر دو سیستم اثبات شدند.
-  \item ترجمه حذف وابستگی \lr{Mull} و لم‌های اصلی آن صوری‌سازی شدند.
-  \item قضیه اصلی \lr{Mull} برای اولین بار به‌طور کاملاً ماشینی بررسی شد.
-\end{itemize}
-
-\end{frame}
-
 \begin{frame}{پیشنهادات برای آینده}
 
 \begin{itemize}
+  \item تکمیل و جایگزینی \lr{Axiom}های باقی‌مانده با اثبات‌های صوری کامل
   \item بررسی مجموعه قوانین پیشنهادی \lr{Mull} برای تعمیم بیشتر ترجمه
   \item صوری‌سازی امکان اجرای اثبات در حساب پئانو
-  \item صوری‌سازی حالت خاصی از حدس قوی \lr{BGK}
-  \item تکمیل و جایگزینی \lr{Axiom}های باقی‌مانده با اثبات‌های صوری کامل
 \end{itemize}
 
 \end{frame}
 
+{
+\setbeamertemplate{headline}{}
 \begin{frame}
   \centering
   \vspace*{1.5cm}
-
+ 
   \begin{beamercolorbox}[wd=0.9\paperwidth,center,sep=12pt,rounded=true,shadow=true]{block title}
     \usebeamerfont{title}
     {\huge سپاس از توجه شما!}
   \end{beamercolorbox}
-
+ 
   \vspace{1.2cm}
 \end{frame}
+}
 
 \end{document}
