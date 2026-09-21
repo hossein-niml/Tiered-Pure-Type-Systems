@@ -146,9 +146,9 @@
   \foreach \p in {A,B,C,D,A2,B2,C2,D2} \fill (\p) circle (1.2pt);
  
   % axis labels
-  \node[below, yshift=-2pt] at (1,0) {\textcolor{blue}{\RL{چندریختی}}};
-  \node[left, xshift=-2pt] at (0,1.3) {\textcolor{red!70!black}{\RL{اپراتورهای نوع}}};
-  \node[above left, xshift=-2pt] at (0.6,0.4) {\textcolor{green!45!black}{\RL{انواع وابسته}}};
+  \node[below, yshift=-2pt] at (1,0) {\textcolor{blue}{\RL{انواع وابسته}}};
+  \node[left, xshift=-2pt] at (0,1.3) {\textcolor{red!70!black}{\RL{چندریختی}}};
+  \node[above left, xshift=-2pt] at (0.6,0.4) {\textcolor{green!45!black}{\RL{اپراتورهای نوع}}};
  
 \end{tikzpicture}
 \end{center}
@@ -172,6 +172,31 @@
 \end{align*}
 
 \end{frame}
+
+
+\begin{frame}{بیان مکعب لامبدا به کمک سیستم‌های نوع محض}
+ 
+\begin{table}[h!]
+\centering
+\resizebox{!}{0.45\textheight}{%
+\begin{tabular}{c|c|c|c}
+%\hline
+$\mathcal{R}$&$\mathcal{A}$&$\mathcal{S}$&\\[0.1cm]
+\hline\hline
+$\{(*,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda \to$\\[0.3cm]
+$\{(*,*,*),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda 2$\\[0.3cm]
+$\{(*,*,*),(\Box,\Box,\Box)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda \underline{\omega}$\\[0.3cm]
+$\{(*,*,*),(*,\Box,\Box)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda P$\\[0.3cm]
+$\{(*,*,*),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda P2$\\[0.3cm]
+$\{(*,*,*),(\Box,\Box,\Box),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda \omega$\\[0.3cm]
+$\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda P\underline{\omega}$\\[0.3cm]
+$\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda C$\\[0.3cm]
+\end{tabular}%
+}
+\end{table}
+ 
+\end{frame}
+
 
 \begin{frame}{مسئله اصلی}
 
@@ -218,16 +243,73 @@
   \item روش‌های کلاسیک اثبات نرمال‌سازی (کاهش‌پذیری، استدلال‌های ترتیبی) به‌سادگی قابل اعمال نیستند.
   }
 \end{itemize}
-
-\hfil{}\\
-\textbf{مثال:} در استنتاج زیر، $P\,Q$ یک نوع است که به عبارت $Q$ وابسته است.
-\begin{prooftree}  
-\AxiomC{$\Gamma \vdash Q \;:\; A$}
-\AxiomC{$\Gamma \vdash P \;:\; \Pi x^A.s$}
-\BinaryInfC{$\Gamma \vdash P\,Q \;:\; s$}
-\end{prooftree}
  
 \end{frame}
+
+
+\begin{frame}{مثال ۱: وابستگی نوع به عبارت}
+ 
+{\footnotesize
+در $\lambda C$ تعریف می‌کنیم:
+\begin{align*}
+\mathrm{Bool} &:= \Pi x^{*}. \Pi y^{*}.* = * \to * \to * &&: \Box\\
+\mathrm{true} &:= \lambda x^*.\lambda y^*.x &&: \mathrm{Bool}\\
+\mathrm{false} &:= \lambda x^*.\lambda y^*.y &&: \mathrm{Bool}\\
+T_1 &:= \Pi \alpha^*.\alpha \to \alpha &&: *\\
+T_2 &:= \Pi \alpha^*.\alpha \to \alpha \to \alpha &&: *\\
+F &:= \lambda b^{\mathrm{Bool}}.\bigl(b\;T_1\;T_2\bigr) &&: \mathrm{Bool}\to *
+\end{align*}
+استنتاج زیر برای
+$X = \mathrm{true}$ و $X = \mathrm{false}$
+معتبر است:
+\begin{center}
+\begin{prooftree}
+\AxiomC{$\varnothing \vdash F \;:\; \mathrm{Bool}\to *$}
+\AxiomC{$\varnothing \vdash X \;:\; \mathrm{Bool}$}
+\LeftLabel{$(\mathrm{App})\quad$}
+\BinaryInfC{$\varnothing \vdash F\,X \;:\; *$}
+\end{prooftree}
+\end{center}
+
+\textbf{اما:}
+$F\,\mathrm{true} \twoheadrightarrow_\beta T_1$ و $F\,\mathrm{false} \twoheadrightarrow_\beta T_2$؛
+یعنی $F\,X$ که یک نوع است، به $X$ وابسته است.
+}
+
+\end{frame}
+
+
+\begin{frame}{مثال ۲: وابستگی نوع به عبارت}
+
+{\footnotesize
+فرض کنید نوع $A$ و همچنین متغیر $x$ و عبارت $Q$، هر دو از نوع $A$، موجود هستند؛
+
+آنگاه درخت استنتاج زیر در هر سیستمی از مکعب که شامل قانون $(*,\Box,\Box)$ باشد، معتبر است.
+}
+
+\begin{center}
+\footnotesize
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash Q \;:\; A$}
+\AxiomC{$\Gamma \vdash A \;:\;*$}
+\AxiomC{$\Gamma \vdash *\;:\;\Box$}
+\BinaryInfC{$\Gamma, x{:}A \vdash *\;:\;\Box$}
+\AxiomC{$\Gamma \vdash A\;:\;*$}
+\LeftLabel{$\quad (*,\Box,\Box) \in \mathcal{R}$}
+\BinaryInfC{$\Gamma \vdash (\Pi x^A.*) \;:\; \Box$}
+\AxiomC{$\Gamma \vdash A\;:\;*$}
+\UnaryInfC{$\Gamma, x{:}A \vdash A \;:\; *$}
+\BinaryInfC{$\Gamma \vdash (\lambda x^A.A) \;:\; (\Pi x^A.*)$}
+\BinaryInfC{$\Gamma \vdash A[Q/x] \;:\; *$}
+\end{prooftree}
+\end{center}
+
+{\footnotesize
+یعنی $A[Q/x]$ نوعی است که به عبارت $Q$ وابسته است.
+}
+
+\end{frame}
+
 
 %==================================================
 \section{پیشینه پژوهش}
@@ -662,10 +744,9 @@ Axiom gamma_app_tel_commutes_subst : forall MG C B x s KC,
 \begin{frame}{دستاوردهای پایان‌نامه}
 
 \begin{itemize}
-  \item \textbf{اولین} صوری‌سازی کاملاً ماشینی قضیه اصلی \lr{Mull}
-  \item اثبات ماشینی تمام لم‌های واسطه (جانشینی، حفظ مسیر کاهش، حفظ نوع)
+  \item \textbf{اولین} صوری‌سازی رساله دکتری \lr{Mull}
   \item توسعه یک \textbf{کتابخانه باز و قابل گسترش} در \lr{Coq} با بیش از ۶۰۰۰ خط کد
-  \item بستری برای تعمیم به سیستم‌های وابسته‌تر
+  \item بستری برای تعمیم به دیگر سیستم‌های وابسته
   \item گامی مهم در مسیر اثبات حدس \lr{BGK} برای سیستم‌های وابسته
 \end{itemize}
 
