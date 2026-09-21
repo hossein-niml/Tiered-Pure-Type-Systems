@@ -246,40 +246,7 @@ $\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box
  
 \end{frame}
 
-
-\begin{frame}{مثال ۱: وابستگی نوع به عبارت}
- 
-{\footnotesize
-در $\lambda C$ تعریف می‌کنیم:
-\begin{align*}
-\mathrm{Bool} &:= \Pi x^{*}. \Pi y^{*}.* = * \to * \to * &&: \Box\\
-\mathrm{true} &:= \lambda x^*.\lambda y^*.x &&: \mathrm{Bool}\\
-\mathrm{false} &:= \lambda x^*.\lambda y^*.y &&: \mathrm{Bool}\\
-T_1 &:= \Pi \alpha^*.\alpha \to \alpha &&: *\\
-T_2 &:= \Pi \alpha^*.\alpha \to \alpha \to \alpha &&: *\\
-F &:= \lambda b^{\mathrm{Bool}}.\bigl(b\;T_1\;T_2\bigr) &&: \mathrm{Bool}\to *
-\end{align*}
-استنتاج زیر برای
-$X = \mathrm{true}$ و $X = \mathrm{false}$
-معتبر است:
-\begin{center}
-\begin{prooftree}
-\AxiomC{$\varnothing \vdash F \;:\; \mathrm{Bool}\to *$}
-\AxiomC{$\varnothing \vdash X \;:\; \mathrm{Bool}$}
-\LeftLabel{$(\mathrm{App})\quad$}
-\BinaryInfC{$\varnothing \vdash F\,X \;:\; *$}
-\end{prooftree}
-\end{center}
-
-\textbf{اما:}
-$F\,\mathrm{true} \twoheadrightarrow_\beta T_1$ و $F\,\mathrm{false} \twoheadrightarrow_\beta T_2$؛
-یعنی $F\,X$ که یک نوع است، به $X$ وابسته است.
-}
-
-\end{frame}
-
-
-\begin{frame}{مثال ۲: وابستگی نوع به عبارت}
+\begin{frame}{مثال: وابستگی نوع به عبارت در مکعب لامبدا}
 
 {\footnotesize
 فرض کنید نوع $A$ و همچنین متغیر $x$ و عبارت $Q$، هر دو از نوع $A$، موجود هستند؛
@@ -300,12 +267,12 @@ $F\,\mathrm{true} \twoheadrightarrow_\beta T_1$ و $F\,\mathrm{false} \twoheadri
 \AxiomC{$\Gamma \vdash A\;:\;*$}
 \UnaryInfC{$\Gamma, x{:}A \vdash A \;:\; *$}
 \BinaryInfC{$\Gamma \vdash (\lambda x^A.A) \;:\; (\Pi x^A.*)$}
-\BinaryInfC{$\Gamma \vdash A[Q/x] \;:\; *$}
+\BinaryInfC{$\Gamma \vdash (\lambda x^A.A)\,Q \;:\; *$}
 \end{prooftree}
 \end{center}
 
 {\footnotesize
-یعنی $A[Q/x]$ نوعی است که به عبارت $Q$ وابسته است.
+یعنی $(\lambda x^A.A)\,Q \rightarrow_{\beta} A[Q/x]$ نوعی است که به عبارت $Q$ وابسته است.
 }
 
 \end{frame}
@@ -340,25 +307,23 @@ $F\,\mathrm{true} \twoheadrightarrow_\beta T_1$ و $F\,\mathrm{false} \twoheadri
 
 \begin{frame}[t]{\lr{Nathan Mull}}
 
-\begin{columns}
-
+\begin{columns}[T]
+ 
 \begin{column}{0.7\textwidth}
-\begin{center}
-\frame{\includegraphics[scale=0.15]{mull-thesis.png}}
-\end{center}
+\makebox[\linewidth][r]{\frame{\includegraphics[scale=0.15]{mull-thesis.png}}}
 \end{column}
-
+ 
 \begin{column}{0.3\textwidth}
-\begin{center}
-\includegraphics[scale=0.15]{mull.jpeg}
-\end{center}
+\makebox[\linewidth][l]{\includegraphics[scale=0.22]{mull.jpeg}}
 \end{column}
-
+ 
 \end{columns}
 
-\vfil
-\lr{Nathan Mull}، در رساله دکتری خود (۲۰۲۳، دانشگاه شیکاگو)، این ایده را برای خانواده جدیدی از سیستم‌های نوع تعمیم داد.
 
+\vfil
+{\small
+\lr{Nathan Mull} در رساله دکتری خود (دانشگاه شیکاگو ۲۰۲۳)، این ایده را به \textbf{خانواده جدیدی} از سیستم‌های نوع محض تعمیم داد.
+}
 \end{frame}
 
 \begin{frame}{سیستم‌های نوع محض لایه‌ای}
@@ -392,7 +357,6 @@ $F\,\mathrm{true} \twoheadrightarrow_\beta T_1$ و $F\,\mathrm{false} \twoheadri
 \begin{frame}{تعریف سیستم نوع محض $n$-لایه‌ای}
 
 یک سیستم نوع محض، $n$-لایه‌ای است هرگاه:
-
 \begin{align*}
 \mathcal{S} &= \{ s_i \mid i \in \{1,\dots,n\} \}\\
 \mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \in \{1,\dots,n{-}1\} \}\\
@@ -400,10 +364,10 @@ $F\,\mathrm{true} \twoheadrightarrow_\beta T_1$ و $F\,\mathrm{false} \twoheadri
 \end{align*}
 
 \vfil
-{\small
+{\scriptsize
 \begin{itemize}
-  \item $n=0$: سیستم نوع محض تهی
-  \item $n=2$: معادل کل مکعب لامبدا (هر هشت راس)
+  \item \textbf{تنها سیستم نوع محض ۰-لایه‌ای:} سیستم نوع محض تهی
+  \item \textbf{سیستم‌های نوع محض ۲-لایه‌ای که شامل قانون $(s_1, s_1, s_1)$ هستند:} کل مکعب لامبدا ($s_1 = *,\,s_2 = \Box$)
 \end{itemize}
 }
 
@@ -494,7 +458,7 @@ S_{\lambda S^*} &= S_{\lambda S}\\
 
 \vfil
 \textbf{نتیجه:}\\
-حدس \lr{BGK} برای خانواده‌ مشخصی از سیستم‌های نوع محض لایه‌ای برقرار است و این اثبات را می‌توان در \textbf{حساب پئانو} انجام داد.
+حدس \lr{BGK} برای \textbf{خانواده‌ مشخصی از سیستم‌های نوع محض لایه‌ای} برقرار است و این اثبات را می‌توان در \textbf{حساب پئانو} انجام داد.
 
 \vfil
 {\scriptsize این نتیجه، یکی از بزرگ‌ترین پیشرفت‌های اخیر در مسیر اثبات حدس \lr{BGK} برای سیستم‌های وابسته است.}
@@ -525,12 +489,12 @@ S_{\lambda S^*} &= S_{\lambda S}\\
 \end{frame}
 
 %==================================================
-\section{صوری‌سازی در \lr{Coq}}
+\section{صوری‌سازی}
 %==================================================
 
-\begin{frame}{هدف پایان‌نامه من}
+\begin{frame}{هدف پایان‌نامه}
 
-\textbf{صوری‌سازی کامل سیستم، ترجمه و اثبات نرمال‌سازی در \lr{Coq}}
+\textbf{صوری‌سازی سیستم، ترجمه و اثبات‌ها در اثبات‌یار \lr{Coq}}
 
 \begin{center}
 \frame{\includegraphics[scale=0.3]{trust.png}}
