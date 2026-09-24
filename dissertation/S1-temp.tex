@@ -26,7 +26,9 @@
 
 \section{حساب لامبدا بدون نوع}
 
-حساب لامبدا بدون نوع که نخستین بار توسط
+حساب لامبدا بدون نوع
+\footnote{\lr{Untyped Lambda Calculus}}
+که نخستین بار توسط
 \lr{Alonzo Church}
 در
 \cite{church1932}
@@ -56,7 +58,9 @@ M ::= V \mid \lambda V.M \mid MM
 
 \subsection*{متغیرهای آزاد و بسته}
 
-برای درک دقیق مفاهیم جانشینی و کاهش، معرفی متغیرهای آزاد و بسته ضروری است.
+برای درک دقیق مفاهیم جانشینی و کاهش، معرفی متغیرهای آزاد و بسته
+\footnote{\lr{Free and Bound Variables}}
+ضروری است.
 
 \begin{defn}[متغیرهای آزاد یک عبارت]
 برای یک عبارت
@@ -100,7 +104,9 @@ FV(MN)&=FV(M) \cup FV(N)
 
 \subsection*{جانشینی}
 
-جانشینی با نماد
+جانشینی
+\footnote{\lr{Substitution}}
+با نماد
 $M[N/x]$
 نشان داده می‌شود و معنای آن جایگزینی همه رخدادهای آزاد
 $x$
@@ -139,7 +145,7 @@ PQ[N/x]&=(P[N/x])(Q[N/x])\\
 \subsection*{تبدیل $\alpha$}
 
 تبدیل
-$\alpha$
+$\alpha$\footnote{\lr{Alpha Conversion}}
 به ما اجازه می‌دهد نام متغیرهای بسته را، بدون تغییر معنای عبارت، تغییر دهیم.
 
 \begin{defn}
@@ -159,7 +165,7 @@ $\alpha$
 
 \begin{defn}
 کاهش
-$\beta$
+$\beta$\footnote{\lr{Beta Reduction}}
 قاعده اصلی محاسبه در حساب لامبدا است و به صورت زیر تعریف می‌شود
 \begin{equation*}
 (\lambda x.M)N \rightarrow_{\beta} M[N/x]
@@ -197,7 +203,8 @@ MM \rightarrow_{\beta} MM \rightarrow_{\beta} MM \rightarrow_{\beta} \dots
 \subsection*{مسیرهای کاهش و فرم نرمال}\label{normalization}
 
 \begin{defn}
-یک مسیر کاهش، دنباله‌ای به شکل زیر است که می‌تواند متناهی یا نامتناهی باشد.
+یک مسیر کاهش\footnote{\lr{Reduction Path}}،
+دنباله‌ای به شکل زیر است که می‌تواند متناهی یا نامتناهی باشد.
 \begin{equation*}
 M_0 \rightarrow_{\beta} M_1 \rightarrow_{\beta} \dots \rightarrow_{\beta} M_n
 \end{equation*}
@@ -206,7 +213,8 @@ M_0 \rightarrow_{\beta} M_1 \rightarrow_{\beta} \dots \rightarrow_{\beta} M_n
 \begin{defn}
 عبارت
 $M$
-در فرم نرمال (یا یک فرم نرمال) است، اگر هیچ گامی از کاهش
+در فرم نرمال\footnote{\lr{Normal Form}}
+(یا یک فرم نرمال) است، اگر هیچ گامی از کاهش
 $\beta$
 بر آن قابل اعمال نباشد.
 یعنی
@@ -238,7 +246,7 @@ M \in \mathrm{NF} \iff \nexists N. M \rightarrow_{\beta} N
 
 \subsection*{نرمال‌سازی ضعیف و قوی}
 
-\begin{defn}[نرمال‌سازی ضعیف]
+\begin{defn}[نرمال‌سازی ضعیف\footnote{\lr{Weak Normalization}}]
 عبارت
 $M$
 دارای خاصیت نرمال‌سازی ضعیف است، اگر حداقل یک مسیر کاهش به یک فرم نرمال داشته باشد.
@@ -248,7 +256,7 @@ $M$
 \end{equation*}
 \end{defn}
 
-\begin{defn}[نرمال‌سازی قوی]
+\begin{defn}[نرمال‌سازی قوی\footnote{\lr{Strong Normalization}}]
 عبارت
 $M$
 دارای خاصیت نرمال‌سازی قوی است، اگر هیچ مسیر کاهش نامتناهی‌ای از آن آغاز نشود.
@@ -270,7 +278,8 @@ $M$
 
 \section{سیستم‌های کاهش انتزاعی}
 
-سیستم‌های کاهش انتزاعی که نخستین بار توسط
+سیستم‌های کاهش انتزاعی\footnote{\lr{Abstract Reduction Systems (ARS)}}
+که نخستین بار توسط
 \lr{Max Newman}
 در
 \cite{newman1942}
@@ -372,7 +381,7 @@ $a$
 
 \subsection*{همگرایی}
 
-\begin{defn}[همگرایی]
+\begin{defn}[همگرایی\footnote{\lr{Confluence}}]
 سیستم کاهش انتزاعی
 $(A,\rightarrow)$
 همگراست، هرگاه هر دو دنباله کاهش که از یک شی منشعب می‌شوند، دوباره به شی مشترکی برسند. یعنی
@@ -383,7 +392,7 @@ $(A,\rightarrow)$
 
 نتایجی مانند یکتایی فرم نرمال از قضیه پیش رو ثابت می‌شوند.
 
-\begin{thm}[قضیه چرچ-راسر]
+\begin{thm}[قضیه چرچ-راسر\footnote{\lr{Church-Rosser Theorem}}]
 سیستم کاهش انتزاعی
 $(A,\rightarrow)$
 همگراست، اگر و تنها اگر دارای خاصیت چرچ-راسر باشد؛ یعنی
@@ -392,7 +401,7 @@ $(A,\rightarrow)$
 \end{equation*}
 \end{thm}
 
-\begin{cor}[یکتایی فرم نرمال]
+\begin{cor}[یکتایی فرم نرمال\footnote{\lr{Normal Form Unicity}}]
 فرم نرمال یک شی، در صورت وجود، یکتاست. یعنی
 \begin{equation*}
 \forall M, N_1 \in \mathrm{NF}, N_2 \in \mathrm{NF}.\;(M \rightarrow^* N_1 \land M \rightarrow^* N_2 ) \implies N_1 = N_2
@@ -401,7 +410,7 @@ $(A,\rightarrow)$
 
 اثبات همگرایی معمولاً دشوار است، اما یک ویژگی محلی ساده‌تر وجود دارد.
 
-\begin{defn}[همگرایی محلی]
+\begin{defn}[همگرایی محلی\footnote{\lr{Local Confluence}}]
 سیستم کاهش انتزاعی
 $(A,\rightarrow)$
 همگرای محلی است اگر
@@ -410,18 +419,19 @@ $(A,\rightarrow)$
 \end{equation*}
 \end{defn}
 
-\begin{lmm}[لم نیومن]
+\begin{lmm}[لم نیومن\footnote{\lr{Newman's Lemma}}]
 اگر یک سیستم کاهش انتزاعی، همگرای محلی و دارای خاصیت نرمال‌سازی قوی باشد، آنگاه همگراست.
 \end{lmm}
 
 \section{حساب لامبدا نوع‌دار ساده}
 
-حساب لامبدا نوع‌دار ساده که نخستین بار توسط
+حساب لامبدا نوع‌دار ساده\footnote{\lr{Simply Typed Lambda Calculus (STLC)}}
+که نخستین بار توسط
 \lr{Alonzo Church}
 در
 \cite{church1940}
 به عنوان پایه‌ای برای منطق معرفی شد، یکی از مهم‌ترین و کلاسیک‌ترین سیستم‌های نوع است.
-این سیستم پایه بسیاری از زبان‌های تابعی، سیستم‌های نوع پیشرفته و بخش مهمی از نظریه انواع به شمار می‌رود.
+این سیستم، پایه بسیاری از زبان‌های تابعی، سیستم‌های نوع پیشرفته و بخش مهمی از نظریه انواع به شمار می‌رود.
 همچنین ساده‌ترین نمونه از «سیستم‌های نوع محض» است و مقدمه‌ای طبیعی برای ورود به مباحث بخش بعدی به حساب می‌آید.
 
 سیستم مذکور نشان می‌دهد که افزودن انواع، باعث تضمین نرمال‌سازی قوی می‌شود و از کاهش‌های نامتناهی جلوگیری می‌کند.
@@ -455,7 +465,7 @@ M ::= V \mid \lambda V^T.M \mid MM
 
 \subsection*{زمینه و قضاوت نوع}
 
-\begin{defn}[زمینه]\label{context}
+\begin{defn}[زمینه\footnote{\lr{Context}}]\label{context}
 یک زمینه مانند
 $\Gamma$،
 دنباله‌ای متناهی از مفروضات به شکل زیر است
@@ -469,7 +479,7 @@ x_1:A_1,\dots,x_n:A_n
 \end{itemize}
 \end{defn}
 
-\begin{defn}[قضاوت نوع]\label{type_judgment}
+\begin{defn}[قضاوت نوع\footnote{\lr{Type Judgment}}]\label{type_judgment}
 یک قضاوت نوع، گزاره‌ای به شکل زیر است
 \begin{equation*}
 \Gamma \vdash M:A
@@ -490,7 +500,7 @@ $A$
 است".
 \end{defn}
 
-\begin{defn}[قواعد استنتاج نوع]\label{type_rules_1}
+\begin{defn}[قواعد استنتاج نوع\footnote{\lr{Type Derivation Rules}}]\label{type_rules_1}
 قواعد استنتاج نوع در
 $STLC$
 شامل سه قاعده زیر است:
@@ -515,7 +525,7 @@ $STLC$
 \end{itemize}
 \end{defn}
 
-\begin{defn}[نوع‌پذیری]
+\begin{defn}[نوع‌پذیری\footnote{\lr{Typability}}]
 گوییم یک عبارت نوع‌پذیر یا قابل استنتاج است، هرگاه بتوان طبق قواعد استنتاج نوع
 \ref{type_rules_1}
 یک نوع برای آن یافت.
@@ -578,7 +588,8 @@ $M$
 
 \section{سیستم‌های نوع محض}
 
-سیستم‌های نوع محض که نخستین بار توسط
+سیستم‌های نوع محض\footnote{\lr{Pure Type Systems (PTS)}}
+که نخستین بار توسط
 \cite{berardi1988} و \cite{terlouw1989}
 معرفی شدند و سپس توسط
 \cite{barendregt1991}
@@ -587,7 +598,7 @@ $M$
 \lr{PTS}
 بیان کرد. این چارچوب به دلیل سادگی نحوی و هم‌چنین انعطاف بسیار بالا، نقش محوری در نظریه انواع دارد. از طرفی سیستمی که
 \lr{Mull}
-در \cite{mull2023}
+در \cite{types2022} و \cite{mull2023}
 معرفی می‌کند که اساس کار این پایان‌نامه است، نسخه‌ تغییر یافته همین سیستم است؛
 لذا آشنایی با این سیستم برای ما ضروری است.
 
@@ -598,9 +609,9 @@ $M$
 $(\mathcal{S},\mathcal{A},\mathcal{R})$
 مشخص می‌شود که در آن
 \begin{itemize}
-\item $\mathcal{S}=\{s_1,s_2,\dots\}$ مجموعه رده‌ها
-\item $\mathcal{A \subseteq S \times S}$ مجموعه اصول
-\item $\mathcal{R \subseteq S \times S \times S}$ مجموعه قوانین
+\item $\mathcal{S}=\{s_1,s_2,\dots\}$ مجموعه رده‌ها\footnote{\lr{Sorts}}
+\item $\mathcal{A \subseteq S \times S}$ مجموعه اصول\footnote{\lr{Axioms}}
+\item $\mathcal{R \subseteq S \times S \times S}$ مجموعه قوانین\footnote{\lr{Rules}}
 \end{itemize}
 هستند.
 \end{defn}
@@ -711,7 +722,8 @@ $(\mathcal{S},\mathcal{A},\mathcal{R})$
 
 \subsubsection{توصیف}
 
-مکعب لامبدا یک چارچوب مفهومی و هندسی برای دسته‌بندی خانواده‌ای از سیستم‌های نوع است. این مکعب نشان می‌دهد که چگونه با افزودن یا حذف برخی قابلیت‌های نوعی، می‌توان به سیستم‌های مختلفی از حساب لامبدا دست یافت.
+مکعب لامبدا\footnote{\lr{Lambda Cube}}
+یک چارچوب مفهومی و هندسی برای دسته‌بندی خانواده‌ای از سیستم‌های نوع است. این مکعب نشان می‌دهد که چگونه با افزودن یا حذف برخی قابلیت‌های نوعی، می‌توان به سیستم‌های مختلفی از حساب لامبدا دست یافت.
 
 \begin{figure}[h!]
 \centering
@@ -723,16 +735,15 @@ $(\mathcal{S},\mathcal{A},\mathcal{R})$
 مکعب لامبدا دارای سه بُعد مستقل است که هر بُعد متناظر با افزودن یک قابلیت به سیستم پایه است:
 
 \begin{enumerate}
-\item \textbf{چندریختی}\\
-این بُعد نشان‌دهنده امکان کمی‌سازی روی انواع است؛ به بیان دیگر، اجازه می‌دهد توابعی تعریف شوند که برای همه انواع معتبر باشند.
-وجود این قابلیت منجر به سیستم‌هایی مانند
+\item \textbf{چندریختی}\footnote{\lr{Polymorphism}}\\
+این بُعد نشان‌دهنده امکان کمی‌سازی روی انواع است؛ به بیان دیگر، اجازه می‌دهد توابعی تعریف شوند که برای همه انواع معتبر باشند. وجود این قابلیت منجر به سیستم‌هایی مانند
 $\lambda2$
 می‌شود.
-\item \textbf{اپراتورهای نوع}\\
+\item \textbf{اپراتورهای نوع}\footnote{\lr{Type Operators}}\\
 این بُعد امکان تعریف توابعی را فراهم می‌کند که روی انواع عمل می‌کنند، نه روی عبارات. در این حالت، انواع می‌توانند به‌عنوان ورودی توابع به‌کار روند و این امر منجر به سیستم‌هایی مانند
 $\lambda \omega$
 می‌شود.
-\item \textbf{انواع وابسته}\\
+\item \textbf{انواع وابسته}\footnote{\lr{Dependent Types}}\\
 این بُعد اجازه می‌دهد نوع یک عبارت به مقدار یک عبارت دیگر وابسته باشد. به این ترتیب می‌توان انواعی تعریف کرد که اطلاعاتی درباره مقدار عبارات در خود جای می‌دهند؛ این قابلیت، پایه سیستم‌هایی مانند حساب ساختمان‌هاست.
 \end{enumerate}
 
@@ -752,31 +763,18 @@ $(\mathcal{S},\mathcal{A},\mathcal{R})$
 %\hline
 $\mathcal{R}$&$\mathcal{A}$&$\mathcal{S}$&\\[0.1cm]
 \hline\hline
-$\{(*,*,*)\}$&$\{(*:\Box)\}$&$\{(*,\Box)\}$&$\lambda \to$\\[0.3cm]
-$\{(*,*,*),(\Box,*,*)\}$&$\{(*:\Box)\}$&$\{(*,\Box)\}$&$\lambda 2$\\[0.3cm]
-$\{(*,*,*),(*,\Box,\Box)\}$&$\{(*:\Box)\}$&$\{(*,\Box)\}$&$\lambda \underline{\omega}$\\[0.3cm]
-$\{(*,*,*),(\Box,\Box,\Box)\}$&$\{(*:\Box)\}$&$\{(*,\Box)\}$&$\lambda P$\\[0.3cm]
-$\{(*,*,*),(\Box,\Box,\Box),(\Box,*,*)\}$&$\{(*:\Box)\}$&$\{(*,\Box)\}$&$\lambda P2$\\[0.3cm]
-$\{(*,*,*),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*:\Box)\}$&$\{(*,\Box)\}$&$\lambda \omega$\\[0.3cm]
-$\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box)\}$&$\{(*:\Box)\}$&$\{(*,\Box)\}$&$\lambda P\underline{\omega}$\\[0.3cm]
-$\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*:\Box)\}$&$\{(*,\Box)\}$&$\lambda C$\\[0.3cm]
+$\{(*,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda \to$\\[0.3cm]
+$\{(*,*,*),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda 2$\\[0.3cm]
+$\{(*,*,*),(\Box,\Box,\Box)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda \underline{\omega}$\\[0.3cm]
+$\{(*,*,*),(*,\Box,\Box)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda P$\\[0.3cm]
+$\{(*,*,*),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda P2$\\[0.3cm]
+$\{(*,*,*),(\Box,\Box,\Box),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda \omega$\\[0.3cm]
+$\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda P\underline{\omega}$\\[0.3cm]
+$\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*,\Box)\}$&$\{*,\Box\}$&$\lambda C$\\[0.3cm]
 \end{tabular}
 \caption{جدول بیان سیستم‌های نوع در مکعب لامبدا به کمک سیستم‌های نوع محض}
 \label{lambda_cube_pts}
 \end{table}
-
-
-\subsection*{اهمیت}
-
-در ادامه این پایان‌نامه، سیستم‌های نوع محض نقطه آغاز برای تعریف «سیستم‌های نوع محض لایه‌ای» 
-سپس معرفی ترجمهٔ حذف وابستگی \lr{Mull} هستند.
-در واقع:
-\begin{itemize}
-\item \lr{TPTS} گسترشی ساختاریافته از \lr{PTS} است.
-\item قواعد نوع \lr{TPTS} نسخه تقویت‌شده همین قواعد‌اند.
-\item اثبات‌های نرمال‌سازی وابسته به ساختار \lr{PTS} بیان می‌شوند.
-\end{itemize}
-در نتیجه، این بخش چارچوب مفهومی لازم برای تعریف سیستم‌های لایه‌ای و صوری‌سازی آن‌ها در \lr{Coq} را فراهم می‌کند.
 
 \subsection*{خواص فرانظری سیستم‌های نوع محض}
 
@@ -798,7 +796,7 @@ $\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box),(\Box,*,*)\}$&$\{(*:\Box)\}$&$\{(*,\Bo
 اگر یک سیستم نوع محض، دارای خاصیت نرمال‌سازی ضعیف باشد، آنگاه دارای خاصیت نرمال‌سازی قوی نیز است.
 \end{conj}
 
-\begin{lmm}[تولید]\label{generation}
+\begin{lmm}[تولید\footnote{\lr{Generation}}]\label{generation}
 \hfill
 \begin{itemize}
 
@@ -921,7 +919,7 @@ $\Gamma \vdash N:A$
 \end{equation*}
 \end{lmm}
 
-\begin{lmm}[صحت نوع]
+\begin{lmm}[صحت نوع\footnote{\lr{Type Correctness}}]
 نوع هر عبارت نوع‌پذیر، یا رده است و یا خود دارای نوع رده است.
 به بیان دیگر؛
 برای هر زمینه
@@ -938,7 +936,7 @@ $s$
 $\Gamma \vdash A:s$.
 \end{lmm}
 
-\begin{lmm}[تضعیف]\label{thinning}
+\begin{lmm}[تضعیف\footnote{\lr{Thinning}}]\label{thinning}
 برای هر زمینه
 $\Gamma$ و $\Delta$
 و عبارات
@@ -951,7 +949,7 @@ $\Gamma \vdash M : A$
 $\Delta \vdash M : A$.
 \end{lmm}
 
-\begin{lmm}[جابه‌جایی]
+\begin{lmm}[جابه‌جایی\footnote{\lr{Permutation}}]
 برای هر زمینه
 $\Gamma$ و $\Delta$
 و متغیرهای
