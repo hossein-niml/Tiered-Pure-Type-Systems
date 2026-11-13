@@ -1,0 +1,934 @@
+%#########################################################################################
+%#------- PREAMBLE ----------------------------------------------------------------------#
+%#########################################################################################
+
+\documentclass[11pt,twocolumn,a4paper,twoside]{article}
+
+\usepackage{amsmath, amsthm, amscd, amsfonts, amssymb, mathtools}
+
+%\usepackage[top=15mm, bottom=15mm, left=15mm, right=15mm, paperwidth=19cm,paperheight=26.5cm]{geometry}
+%\usepackage[top=15mm, bottom=15mm, outer=15mm, inner=15mm, paperwidth=20cm,paperheight=26.5cm]{geometry}
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={210mm,297mm},
+ left=23mm,
+ right=23mm,
+ top=30mm,
+ bottom=25mm,
+ }
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{wasysym}
+\usepackage{framed}
+\usepackage{xcolor}
+\usepackage[hyphens]{url}
+\usepackage{flushend}
+\usepackage[a4,center,noinfo]{crop}
+%\usepackage[compact]{titlesec}
+%\usepackage[rawfloats=true]{floatrow}
+\usepackage{balance}
+%\usepackage{multicol}
+%\usepackage{scrextend}
+%\deffootnote[0.5em]{1em}{1em}{\scriptsize\thefootnotemark\enskip}
+
+\usepackage{manyfoot}
+\usepackage{bussproofs}
+
+\makeatletter
+\def\@makefnmark{\hbox{\@textsuperscript{\@thefnmark}}}
+\renewcommand\@makefntext[1]{%
+\let\@textsuperscript\relax    \parindent 1em%
+    \noindent
+    \hb@xt@0.8em{\hss\@makefnmark}\ {\scriptsize #1}}
+\makeatother
+
+
+\usepackage{fancyhdr}
+
+\usepackage{atbegshi}
+\usepackage{textpos}
+\usepackage{rotating}
+%\usepackage{eso-pic}
+%\usepackage{background}
+
+%\usepackage{marginnote}
+
+\usepackage{tikz}
+%%%%%%%%%%%%%%
+\usetikzlibrary{decorations.pathreplacing, positioning, arrows.meta}
+%%%%%%%%%%%%%%%
+\usepackage{enumitem}
+%\setlength{\parskip}{0em} % تنظیم فاصله بین پاراگراف‌ها
+%\setlength{\parindent}{0em}
+
+\usepackage[documentdirection=righttoleft]{xepersian}
+\settextfont[Scale=1]{XB Yagut}
+% \setdigitfont[Scale=1]{XB Yagut}
+
+%\settextfont[Scale=1]{B Lotus}
+%\setdigitfont[Scale=1]{B Lotus}
+\setlatintextfont[Scale=0.9]{Times New Roman}
+%\settextfont{Times New Roman}
+\defpersianfont\Titre[Scale=1]{XB Titre}
+\defpersianfont\Zar[Scale=1]{XB Zar}
+\defpersianfont\Niloofar[Scale=0.9]{XB Niloofar}
+
+\usepackage{perpage}
+\MakePerPage[1]{footnote}
+
+\linespread{1.48}
+\setlength{\columnsep}{6.5mm}
+
+\newcommand{\keyword}[1]{\textbf{واژه‌های کلیدی:} #1}
+
+
+\pagestyle{fancyplain}% <- use fancyplain instead fancy
+\fancyhf{}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% The paper headers
+\fancyhead[LO,RE]{\thepage \vspace{2mm}}
+\fancyhead[RO]{
+صوری‌سازی ترجمه حذف وابستگی در سیستم‌های نوع محض لایه‌ای / حسین مددی و مجید علی‌زاده
+\vspace{2mm}
+}% odd page header and number to right top
+\fancyhead[LE]{فصلنامه علمی، علوم رایانشی، سال دهم، شماره 36، بهار 1404
+\vspace{2mm}
+}%Even page header and number at left top
+\fancyfoot[L,R,C]{}
+\renewcommand{\headrulewidth}{0.4pt}% disable the underline of the header part
+\fancypagestyle{firstpage}{%
+  \lhead{\LR{\scriptsize DOR: 20.1001.1.2538161.1404.10.1.1.7}\\
+  \vspace{-2mm}\noindent\rule{0.45\linewidth}{0.4pt}\\
+  \LR{\scriptsize DOI: 10.22034/csj.2025.526411.1097}\\
+  {\scriptsize
+بهار 1404، دوره 10، شماره 1، پیاپی 36
+  }
+  }
+  \rhead{}
+  \lfoot{\thepage}
+  \renewcommand{\headrulewidth}{0pt}% disable the underline of the header part
+}
+
+\theoremstyle{definition}
+\newtheorem{definition}{تعریف}[section]
+\renewcommand{\thedefinition}{\thesection.\arabic{definition}}
+
+
+\theoremstyle{theorem}
+%\newtheorem{theorem}[definition]{قضیه}
+\newtheorem{theorem}{قضیه}[section]
+\renewcommand{\thetheorem}{\thesection.\arabic{theorem}}
+
+
+\theoremstyle{definition}
+%\newtheorem{lemma}[definition]{لم}
+\newtheorem{lemma}{لم}[section]
+\renewcommand{\thelemma}{\thesection.\arabic{lemma}}
+
+
+\theoremstyle{definition}
+%\newtheorem{proposition}[definition]{گزاره}
+\newtheorem{proposition}{گزاره}[section]
+\renewcommand{\theproposition}{\thesection.\arabic{proposition}}
+
+
+\theoremstyle{definition}
+%\newtheorem{corollary}[definition]{نتیجه}
+\newtheorem{corollary}{نتیجه}[section]
+\renewcommand{\thecorollary}{\thesection.\arabic{corollary}}
+
+
+\theoremstyle{definition}
+%\newtheorem{remark}[definition]{ملاحظه}
+\newtheorem{remark}{ملاحظه}[section]
+\renewcommand{\theremark}{\thesection.\arabic{remark}}
+%\theoremstyle{definition}
+%\newtheorem{example}[definition]{مثال}
+
+\theoremstyle{definition}
+\newtheorem{example}{مثال}[section]
+\renewcommand{\theexample}{\thesection.\arabic{example}}
+
+
+
+\newcommand{\bk}{\mathbf{K}}
+\newcommand{\cf}{\mathbf{CFE}}
+\newcommand{\atom}{\mathbf{Atom}}
+\newcommand{\agt}{\mathbf{Agt}}
+\newcommand{\act}{\mathbf{Act}}
+\newcommand{\norm}{\mathbf{Norm}}
+\newcommand{\ec}{\mathbf{EC}}
+\newcommand{\bG}{\mathbf{Goal}}
+\newcommand{\hp}{\mathbf{HP}}
+\newcommand{\mm}{\mathbf{Imm}}
+\newcommand{\nq}{\mathbf{Inq}}
+\newcommand{\cha}{\mathbf{CHA}}
+\newcommand{\guilt}{\mathbf{Guilt}}
+\newcommand{\shame}{\mathbf{Shame}}
+\newcommand{\adv}{\mathbf{Advantage}}
+\newcommand{\envy}{\mathbf{Envy}}
+\newcommand{\regret}{\mathbf{Regret}}
+\newcommand{\Social}{\mathbf{Social}}
+
+\newcommand{\resizedalign}[1]{%
+  \[
+  \resizebox{\columnwidth}{!}{$
+    \begin{aligned}
+      #1
+    \end{aligned}
+  $}
+  \]
+}
+
+\newcommand{\filename}[1]{\lr{\texttt{#1}}}
+\newcommand{\varname}[1]{\lr{\ttfamily\footnotesize{#1}}}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinelanguage{Rocq}{
+    morekeywords={
+        Module, Type, End, Parameter, Import,
+        Require, Include, Axiom, forall,
+        Prop, nat, Type, exists
+    },
+    sensitive=true,
+    morecomment=[n]{(*}{*)},
+    morestring=[b]"
+}
+
+\lstdefinestyle{Rocqstyle}{
+    language=Rocq,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue!70!black},
+    commentstyle=\color{gray},
+    numbers=none,
+    frame=none,
+    breaklines=true,
+    breakatwhitespace=false,
+    showstringspaces=false,
+    tabsize=2,
+    captionpos=b,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+%\makeatletter
+%\renewcommand{\@seccntformat}[1]{\csname the#1\endcsname.\quad}
+%\makeatother
+
+%#########################################################################################
+%#------- DOCUMENT ----------------------------------------------------------------------#
+%#########################################################################################
+
+
+
+\begin{document}
+\setcounter{page}{1}
+\thispagestyle{firstpage}
+    
+%====================================
+%    TITLE SECTION                  |
+%====================================
+\begingroup
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\twocolumn[%
+\begin{flushleft}
+\vspace{2mm}
+\fbox{%
+    \parbox{3.5cm}{%
+    \centering
+    \small{
+    \vspace{2.5mm}
+    \Zar{\textbf{
+نوع مقاله: پژوهشی
+}}
+     \vspace{2.5mm}
+    }}%
+   }
+   \hfill
+   \fbox{%
+    \parbox{3.5cm}{%
+    \centering
+    \scriptsize{\Zar
+    \vspace{2mm}
+دریافت مقاله: 27/11/۱۴۰۳  
+\\
+\vspace{3mm}
+پذیرش مقاله: 11/03/1404 
+     \vspace{2mm}
+    }}%
+   }
+\end{flushleft}
+   \vspace{0.5cm}
+    \begin{minipage}{\textwidth}
+    \begin{flushright}
+
+    %------------------------
+    % Title
+    %------------------------
+    {\LARGE\textbf{\Titre
+صوری‌سازی ترجمه حذف وابستگی در سیستم‌های نوع محض لایه‌ای
+		}\par}
+	\vspace{0.3cm}
+	
+	%------------------------
+	% AUTHORS
+	%------------------------
+	
+	%.................
+	\Niloofar{
+    {\normalsize \textbf{
+ حسین مددی
+\footnotemark
+    }\par}
+    %\vspace{0.1cm}
+    {\small 
+کارشناسی ارشد، دانشکده ریاضی، آمار و علوم کامپیوتر، دانشکدگان علوم، دانشگاه تهران، تهران، ایران
+    \par}
+    %\vspace{0.1cm}
+    {\small
+پست الکترونیکی: 
+    \lr{hossein.madadi@ut.ac.ir}
+    \par}
+    \vspace{0.2cm}
+    %.................
+    {\normalsize \textbf{
+ مجید علی‌زاده
+    }\par}
+    %\vspace{0.1cm}
+    {\small 
+دانشیار، دانشکده ریاضی، آمار و علوم کامپیوتر، دانشکدگان علوم، دانشگاه تهران، تهران، ایران
+    \par}
+    %\vspace{0.1cm}
+    {\small
+پست الکترونیکی: 
+    \lr{majidalizadeh@ut.ac.ir}
+    \par}
+    \vspace{0.2cm}
+}
+\end{flushright}
+\end{minipage}
+\vspace{1.5\baselineskip}
+]
+\footnotetext{نویسنده مسئول}
+\addtocounter{footnote}{-1}
+\endgroup
+
+\makeatletter
+\def\@makefnmark{\hbox{\scriptsize\@textsuperscript{\@thefnmark}}}
+\renewcommand\@makefntext[1]{%
+\let\@textsuperscript\relax    \parindent 1em%
+    \noindent
+    \hb@xt@0.8em{\hss\@makefnmark-}\ {\scriptsize #1}}
+\makeatother
+
+%====================================
+%    ABSTRACT                       |
+%====================================
+%====================================
+%    ABSTRACT                       |
+%====================================
+\section*{$\overline{\text{
+چکیده
+}}$}
+
+حدس \lr{BGK} \LTRfootnote{Barendregt–Geuvers–Klop} بیان می‌کند که در هر سیستم نوع محض، نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی است. این حدس برای سیستم‌های غیروابسته اثبات شده است، اما برای سیستم‌های وابسته همچنان بدون اثبات باقی مانده است. اخیراً با معرفی سیستم‌های نوع محض لایه‌ای و ترجمه‌ای که وابستگی‌های آن را حذف می‌کند، پیشرفت مهمی در مسیر اثبات این حدس حاصل شده است. در این پژوهش، سیستم مذکور، ترجمه‌ی سیستم و نتایج مرتبط با آن در اثبات‌یار \lr{Rocq} صوری‌سازی شد. نتایج بنیادی نظریه، از جمله لم جانشینی، لم‌های تولید، صحت نوع و ویژگی‌های ساختاری سیستم‌های لایه‌ای، به‌طور ماشینی اثبات گردید. قضیه اصلی، یعنی هم‌ارزی نرمال‌سازی قوی در یک سیستم لایه‌ای با نسخه ترجمه شده آن، نیز در این چارچوب بیان شد. حاصل کار، کتابخانه‌ای گسترش‌پذیر است که می‌تواند مبنای تعمیم اثبات به دیگر سیستم‌های وابسته‌ باشد.
+
+~\keyword{نظریه انواع، سیستم‌های نوع محض لایه‌ای، نرمال‌سازی قوی، اثبات ماشینی، \lr{Rocq}. }
+
+%====================================
+%    INTRODUCTION                   |
+%====================================
+\section{$\overline{\text{
+مقدمه
+}}$}
+سیستم‌های نوع محض \LTRfootnote{Pure Type Systems} چارچوبی یکپارچه برای توصیف خانواده بزرگی از سیستم‌های نوع، از حساب لامبدا نوع‌دار ساده \LTRfootnote{Simply Typed Lambda Calculus} تا حساب ساختمان‌ها \LTRfootnote{Calculus of Constructions}، را فراهم می‌کند \cite{barendregt, barendregt1991}.
+یکی از پرسش‌های بنیادی درباره این سیستم‌ها، رابطه نرمال‌سازی ضعیف و قوی است. حدس \lr{BGK} ادعا می‌کند که اگر هر عبارت نوع‌پذیر در یک سیستم نوع محض، دارای خاصیت نرمال‌سازی ضعیف باشد، آنگاه خاصیت نرمال‌سازی قوی را هم دارد \cite{geuvers1993}.
+این حدس برای خانواده‌ای از سیستم‌های نوع محض غیروابسته اثبات شده است \cite{barthe2001}، اما برای سیستم‌های نوع محض وابسته، باز مانده است.
+
+یک راهبرد کلاسیک برای اثبات نرمال‌سازی، ارائه ترجمه‌ای است که نوع‌پذیری \LTRfootnote{Typeability} و مسیرهای کاهش \LTRfootnote{Reduction Paths} را حفظ کند و سیستم را به سیستمی ساده‌تر نگاشت کند.
+در \cite{harper1993} چنین ترجمه‌ای از $\lambda P$ به $\lambda_\rightarrow$ ارائه شد و در \cite{geuvers1991} به ترجمه‌ای از $\lambda C$ به $\lambda \omega$ تعمیم داده شد.
+\lr{Nathan Mull} در رساله دکتری خود \cite{types2022,mull2023} این ایده را به «سیستم‌های نوع محض لایه‌ای» \LTRfootnote{Tiered Pure Type Systems} تعمیم و نشان داد که نرمال‌سازی قوی یک سیستم نوع محض لایه‌ای کامل، با نرمال‌سازی قوی نسخه غیروابسته آن هم‌ارز است.
+ترکیب این نتیجه با \cite{barthe2001} حالتی خاص از حدس \lr{BGK} را برای سیستم‌های نوع محض با قوانین وابسته ثابت می‌کند.
+
+اثبات \lr{Mull} بر خانواده‌ای از توابع ترجمه استوار است که کاربرد آن‌ها باید به طور دقیق با درجه عبارات هماهنگ شود. چنین محاسباتی در اثبات کاغذی مستعد خطای ظریف‌اند و بررسی ماشینی آن‌ها ارزشمند است.
+مشارکت‌های این مقاله:
+\begin{itemize}[noitemsep, topsep=0pt]
+    \item[-] توسعه سیستم‌های نوع محض و نوع محض لایه‌ای، با نمایش بی‌نام محلی \LTRfootnote{Locally Nameless} در \lr{Rocq}.
+    \item[-] سازگارسازی نمایش بی‌نام محلی با نیازهای ترجمه لایه‌ای.
+    \item[-] اثبات ماشینی لم‌ها؛ مانند لم تضعیف و لم‌های سه‌گانه ترجمه‌ها.
+    \item[-] صوری‌سازی قضیه اصلی به‌صورت هم‌ارزی نرمال‌سازی قوی دو سیستم.
+\end{itemize}
+
+\section{$\overline{\text{
+ مفاهیم   
+}}$}
+
+\subsection{سیستم‌های نوع محض}
+
+\begin{definition}\label{pts_signature}
+یک سیستم‌ نوع محض با سه‌تایی $(\mathcal{S},\mathcal{A},\mathcal{R})$ مشخص می‌شود، که $\mathcal{S}$ مجموعه رده‌ها، $\mathcal{A} \subseteq \mathcal{S} \times \mathcal{S}$ مجموعه اصول و $\mathcal{R} \subseteq \mathcal{S} \times \mathcal{S} \times \mathcal{S}$ مجموعه قوانین هستند.
+\end{definition}
+
+\begin{definition}
+نحو عبارات در سیستم‌های نوع محض به صورت استقرایی زیر تعریف می‌شود که در آن $V$ مجموعه متغیرها است:    
+\vspace{-5pt}
+\begin{equation*}
+T ::= \mathcal{S} \mid V \mid \lambda V^T.T \mid \Pi V^T.T \mid TT
+\end{equation*}
+\end{definition}
+
+\begin{remark}
+در این مقاله، مطابق با
+\cite{mull2023}،
+متغیرها را با رده خودشان نشانه‌گذاری می‌شوند.
+\end{remark}
+
+\begin{definition}
+برای هر
+$s \in \mathcal{S}$، 
+$V_s$
+را مجموعه شمارا متغیرهای مربوط به رده
+$s$
+در نظر می‌گیریم.
+$^sv_i$
+به معنای
+$i$
+مین متغیر در
+$V_s$
+است و
+$V = \bigcup_{s \in \mathcal{S}}V_s$.
+\end{definition}
+
+\begin{definition}
+مجموعه متغیرهای آزاد عبارت $M$ که با
+$\operatorname{FV}(M)$
+نشان داده می‌شود، به صورت بازگشتی زیر تعریف می‌گردد:
+\vspace{-5pt}
+\begin{align*}
+\operatorname{FV}(s)&= \emptyset &(s \in \mathcal{S})\\
+\operatorname{FV}(x)&=\{x\} &(x \in V)\\
+\operatorname{FV}(\lambda x.M)&=\operatorname{FV}(M)-\{x\}\\
+\operatorname{FV}(\Pi x.M)&=\operatorname{FV}(M)-\{x\}\\
+\operatorname{FV}(MN)&=\operatorname{FV}(M) \cup \operatorname{FV}(N)
+\end{align*}
+\end{definition}
+
+\begin{definition}
+تغییر نام متغیر آزاد $x$ به $y$ به صورت زیر تعریف می‌شود:
+\vspace{-5pt}
+\begin{align*}
+s[y/x]^r &= s\\
+z[y/x]^r &=
+\begin{cases*}
+y &$z = x$\\
+z &\text{\lr{o.w}}
+\end{cases*}\\
+(\Pi z^A.B)[y/x]^r &=
+\begin{cases*}
+\Pi z^{A[y/x]^r}.B &$z = x$\\
+\Pi z^{A[y/x]^r}.B[y/x]^r &\text{\lr{o.w}}
+\end{cases*}\\
+(\lambda z^A.B)[y/x]^r &=
+\begin{cases*}
+\lambda z^{A[y/x]^r}.B &$z = x$\\
+\lambda z^{A[y/x]^r}.B[y/x]^r &\text{\lr{o.w}}
+\end{cases*}\\
+(MN)[y/x]^r &= (M[y/x]^r)(N[y/x]^r)
+\end{align*}
+\end{definition}
+
+\begin{definition}
+جانشینی $x$ با عبارت $N$ به صورت زیر تعریف می‌شود:
+\vspace{-5pt}
+\begin{align*}
+s[N/x] &= s\\
+y[N/x] &=
+\begin{cases*}
+N &$y=x$\\
+y &\text{\lr{o.w}}
+\end{cases*}\\
+(\Pi y^A.B)[N/x] &= \Pi z^{A[N/x]}.B[z/y]^r[N/x] &{\scriptstyle(z \notin \operatorname{FV}(N) \cup \operatorname{FV}(B))}\\
+(\lambda y^A.B)[N/x] &= \lambda z^{A[N/x]}.B[z/y]^r[N/x] &{\scriptstyle(z \notin \operatorname{FV}(N) \cup \operatorname{FV}(B))}\\
+(PQ)[N/x]&=(P[N/x])(Q[N/x])\\
+\end{align*}
+\end{definition}
+
+\begin{definition}
+رابطه کاهش $\beta \subseteq \mathrm{T} \times \mathrm{T}$ به فرم
+$(\lambda x^A.M)N \rightarrow_{\beta} M[N/x]$
+تعریف می‌شود.
+همچنین $\twoheadrightarrow^{+}_{\beta}$، $\twoheadrightarrow_{\beta}$ و $=_{\beta}$ به ترتیب بستار تعدی، بازتابی-تعدی و هم‌ارزی آن هستند.
+\end{definition}
+
+\begin{definition}
+عبارت $M$،
+\begin{itemize}[noitemsep, topsep=0pt]
+\item[-] یک فرم نرمال است، هرگاه هیچ گام کاهش $\beta$ بر آن قابل اعمال نباشد.
+\item[-] دارای نرمال‌سازی ضعیف است، هرگاه حداقل یک مسیر کاهش به یک فرم نرمال داشته باشد.
+\item[-] دارای نرمال‌سازی قوی است، هرگاه در هیچ دنباله کاهش نامتناهی ظاهر نشود.
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+قواعد استنتاج نوع در یک سیستم نوع محض عبارت‌اند از:
+
+\begin{itemize}[noitemsep, topsep=0pt]
+\item قاعده اصل
+\vspace{-5pt}
+\begin{prooftree}
+\AxiomC{}
+\LeftLabel{{\scriptsize$\quad (s,t) \in \mathcal{A}$}}
+\UnaryInfC{$\vdash s:t$}
+\end{prooftree}
+\item قاعده معرفی متغیر
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash A:s$}
+\LeftLabel{{\scriptsize$\quad ^sx \notin \Gamma$}}
+\UnaryInfC{$\Gamma,{}^sx:A \vdash ^sx:A$}
+\end{prooftree}
+\item قاعده تضعیف
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash B:s$}
+\AxiomC{$\Gamma \vdash M:A$}
+\LeftLabel{{\scriptsize$\quad ^sx \notin \Gamma$}}
+\BinaryInfC{$\Gamma,{}^sx:B \vdash M:A$}
+\end{prooftree}
+\item قاعده تشکیل نوع تابع
+\begin{prooftree}
+\AxiomC{$\Gamma,^{s_1}x:A \vdash B:s_2$}
+\AxiomC{$\Gamma \vdash A:s_1$}
+\LeftLabel{{\scriptsize $\quad (s_1,s_2,s_3) \in \mathcal{R}$}}
+\BinaryInfC{$\Gamma \vdash (\Pi ^{s_1}x^A.B):s_3$}
+\end{prooftree}
+\item قاعده انتزاع
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash \Pi ^sx^A.B:s$}
+\AxiomC{$\Gamma,{}^sx:A \vdash M:B$}
+\BinaryInfC{$\Gamma \vdash (\lambda {}^sx^A.M):(\Pi {}^sx^A.B)$}
+\end{prooftree}
+\item قاعده کاربرد
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash N:A$}
+\AxiomC{$\Gamma \vdash M:(\Pi {}^sx^A.B)$}
+\BinaryInfC{$\Gamma \vdash MN:B[N/{}^sx]$}
+\end{prooftree}
+\item قاعده تبدیل
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash B:s$}
+\AxiomC{$A \equiv_\beta B$}
+\AxiomC{$\Gamma \vdash M:A$}
+\TrinaryInfC{$\Gamma \vdash M:B$}
+\end{prooftree}
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+در یک سیستم نوع محض، عبارت $M$ نوع‌پذیر یا قابل استنتاج است، هرگاه طبق قواعد استنتاج نوع بتوان یک نوع برای آن یافت.
+\end{definition}
+
+\begin{definition}
+یک سیستم نوع محض دارای خاصیت نرمال‌سازی ضعیف (قوی) است هرگاه هر عبارت نوع‌پذیر در آن چنین باشد.
+\end{definition}
+
+\subsection{سیستم‌های نوع محض لایه‌ای}
+
+\begin{definition}\label{tpts_signature}
+یک سیستم نوع محض، \lr{n}-لایه‌ای است، هرگاه مشخصه آن به فرم زیر باشد:
+\vspace{-5pt}
+\begin{align*}
+\mathcal{S} &= \{ s_i \mid i \in \{1,\dots,n\} \}\\
+\mathcal{A} &= \{ (s_i,s_{i+1}) \mid i \in \{1,\dots,n{-}1\} \}\\
+\mathcal{R} &\subset \{ (s,s',s') \mid (s,s') \in \mathcal{S} \times \mathcal{S} \}
+\end{align*}
+\end{definition}
+
+\begin{definition}
+درجه هر عبارت در سیستم‌های نوع محض لایه‌ای، با تابع $\operatorname{deg}: \mathrm{T} \to \mathbb{N}$ به صورت زیر محاسبه می‌شود:
+\vspace{-5pt}
+\begin{align*}
+\operatorname{deg}(s_i) &= i + 1\\
+\operatorname{deg}(^{s_i}x) &= i - 1\\
+\operatorname{deg}(\Pi x^A.B) &= \operatorname{deg}(B)\\
+\operatorname{deg}(\lambda x^A.M) &= \operatorname{deg}(M)\\
+\operatorname{deg}(MN) &= \operatorname{deg}(M)
+\end{align*}
+همچنین می‌نویسیم:
+\vspace{-5pt}
+\begin{align*}
+\mathrm{T}_j &= \{M \in \mathrm{T} \mid \operatorname{deg}(M) = j\}\\
+\mathrm{T}_{\ge j} &= \{M \in \mathrm{T} \mid \operatorname{deg}(M) \ge j\}
+\end{align*}
+\end{definition}
+
+\begin{definition}
+یک سیستم نوع محض لایه‌ای،
+$(i,j)$-کامل \LTRfootnote{$(i,j)-\text{\lr{full}}$}
+است، اگر قوانین آن شامل
+\vspace{-5pt}
+\begin{equation*}
+\{(s_l,s_k) \mid (l \le i) \land (l \le k \le j)\}
+\end{equation*}
+باشد؛ و کامل است، هرگاه به ازای هر
+$(s_i,s_j) \in \mathcal{R}_{\lambda S}$،
+این سیستم
+$(j,i)$-کامل باشد.
+\end{definition}
+
+\subsection{ترجمه حذف وابستگی}
+
+\begin{definition}
+نسخه غیروابسته یک سیستم نوع محض لایه‌ای
+$\lambda S$،
+که با
+$\lambda S^*$
+نشان داده می‌شود، سیستمی با مشخصه زیر است:
+\vspace{-5pt}
+\begin{align*}
+S_{\lambda S^*} &= S_{\lambda S}\\
+\mathcal{A}_{\lambda S^*} &= \mathcal{A}_{\lambda S}\\
+\mathcal{R}_{\lambda S^*} &= \{(s_i,s_j,s_j) \in \mathcal{R}_{\lambda S} \mid (i \ge j)\}
+\end{align*}
+\end{definition}
+
+می‌خواهیم یک ترجمه از سیستم نوع محض لایه‌ای
+$\lambda S$
+به نسخه غیروابسته آن، یعنی
+$\lambda S^*$
+ارائه کنیم، به طوری که خواص حفظ نوع و حفظ مسیرهای کاهش نامتناهی را دارا باشد. الزامات روی ساختار غیروابسته کاملاً قوی خواهند بود.
+
+\begin{definition}[ترجمه سطح نوع\LTRfootnote{Type-Level Translation}]
+\hfil{}\\
+برای هر
+$0 \le i \le n$،
+تابع
+$\rho_i : \mathrm{T}_{\ge i+1} \to \mathrm{T}_{i+1}$
+به صورت استقرایی زیر تعریف می‌شود:
+\vspace{-5pt}
+\begin{align*}
+\rho_i(s_j) &= 
+    \begin{cases}
+        0 &i = 0\\
+        s_i &\text{\lr{o.w}}
+    \end{cases}\\
+\rho_i({}^{s_j}x) &= {}^{s_{i+2}}x \quad (j \ge i+2)\\
+\rho_i(\Pi x^A.B) &= \Pi x^{\rho_{\operatorname{deg} A-1}(A)} \dots \Pi x^{\rho_{i}(A)}.\rho_i(B)\\
+\rho_i(\lambda x^A.M) &= \lambda x^{\rho_{\operatorname{deg} A-1}(A)} \dots \lambda x^{\rho_{i+1}(A)}.\rho_i(M)\\
+\rho_i(MN) &= \rho_i(M) \rho_{\operatorname{deg} N-1}(N) \dots \rho_i(N)
+\end{align*}
+که در آن
+\lr{0}
+یک متغیر منحصر به فرد است.
+
+تعریف هر ترجمه محدود به مواردی است که برای آن‌ها عباراتی در دامنه مورد نظر وجود دارد. برای مثال، پایه‌ای‌ترین ترجمه
+$\rho_n : \mathrm{T}_{\ge n+1} \to \mathrm{T}_{n+1}$
+فقط بر روی
+$\{s_n\}$
+با ضابطه
+$\rho_n(s_n) = s_n$
+تعریف می‌شود و بقیه حالات نادیده گرفته می‌شوند. این ترجمه‌ها به زمینه‌ها نیز به شرح زیر گسترش می‌یابند:
+\vspace{-5pt}
+\resizedalign{
+\rho_i(\varnothing) &= (0 : s_1)\\
+\rho_i(\Gamma,{}^{s_{j}}x:A) &= \rho_i(\Gamma),{}^{s_{j}}x:\rho_{j-1}(A),\dots,{}^{s_{i+1}}x:\rho_{i}(A) \quad{\scriptstyle (j \ge i+1)}
+}
+\end{definition}
+
+\begin{lemma}
+برای هر
+$0 \le i \le n$
+و هر
+$1 \le j \le n$
+و هر عبارت
+$A$ و $B$،
+اگر
+$A \in \mathrm{T}_{\ge i+1}$ و $\operatorname{deg} B = j-1$، آنگاه
+\vspace{-5pt}
+\resizedalign{
+\rho_i(A[B/{}^{s_j}x]) = \rho_i(A)[\rho_{j-2}(B)/{}^{s_j}x] \dots [\rho_{i}(B)/{}^{s_{i+2}}x]
+}
+\end{lemma}
+
+\begin{lemma}
+برای هر
+$0 \le i \le n$
+و هر عبارت
+$A$ و $B$،
+اگر
+$A \in \mathrm{T}_{\ge i+1}$ و $A \twoheadrightarrow_\beta B$، آنگاه
+\vspace{-5pt}
+\begin{equation*}
+\rho_i(A) \twoheadrightarrow_\beta \rho_i(B)
+\end{equation*}
+\end{lemma}
+
+\begin{lemma}
+برای هر
+$0 \le i \le n$،
+اگر
+$\Gamma$ یک زمینه و
+$A$ و $B$ عباراتی باشند که
+$A \in \mathrm{T}_{\ge i+1}$ و $\Gamma \vdash_{\lambda S} A : B$، آنگاه
+\vspace{-5pt}
+\begin{equation*}
+\rho_{i+1}(\Gamma) \vdash_{\lambda S^*} \rho_i(A) : \rho_{i+1}(B)
+\end{equation*}
+\end{lemma}
+
+\begin{definition}[ترجمه سطح عبارت\LTRfootnote{Term-Level Translation}]
+تابع
+$\gamma : \mathrm{T} \to \mathrm{T}$
+به صورت استقرایی زیر تعریف می‌شود:
+\vspace{-5pt}
+\[
+\resizebox{\columnwidth}{!}{$
+\begin{aligned}
+\gamma(s_i) &= \bullet\\
+\gamma({}^{s_i}x) &= {}^{s_1}x\\
+\gamma(\Pi x^A.B) &= \operatorname{prod}(\Pi x^{\rho_{deg A - 1}(A)} \dots \Pi x^{\rho_{0}(A)}.0) \\ &\gamma(A) (\lambda x^{\rho_{deg A - 1}(A)} \dots \lambda x^{\rho_{0}(A)}.\gamma(B))\\
+\gamma(\lambda x^A.M) &= (\lambda z^0.\lambda x^{\rho_{deg A - 1}(A)} \dots \lambda x^{\rho_{0}(A)}.\gamma(M)) \gamma(A)\\
+\gamma(MN) &= \gamma(M) \rho_{degN-1}(N) \dots \rho_{0}(N) \gamma(N)
+\end{aligned}
+$}
+\]
+که در آن
+$\{\operatorname{prod}, \bullet, z\}$
+متغیرهای منحصر به فردی هستند.
+\end{definition}
+
+سه لمی که در بخش قبل بررسی کردیم، برای ترجمه سطح عبارت نیز قابل بیان هستند.
+
+\begin{lemma}\label{preserve_type}
+برای هر عبارت
+$A$ و $B$،
+اگر $\Gamma \vdash_{\lambda S} A:B$، آنگاه
+\vspace{-5pt}
+\begin{align*}
+\Delta \; := \; 0 : s_1,\; \bullet : 0,\; &\operatorname{prod} : \Pi A^{s_1}.0 \to A \to 0\\
+\Delta, \; \rho_0(\Gamma) \; &\vdash_{\lambda S^*} \; \gamma(A) : \rho_0(B)
+\end{align*}
+\end{lemma}
+
+\begin{lemma}
+برای هر
+$1 \le j \le n$،
+و هر عبارت
+$A$ و $B$ که $\operatorname{deg}(B) = j-1$، داریم:
+\vspace{-5pt}
+\resizedalign{
+\gamma(A[B/{}^{s_{j}}x]) = \gamma(A) [\rho_{j-2}(B)/{}^{s_{j}}x] \dots [\rho_{0}(B)/{}^{s_{2}}x] [\gamma(B)/{}^{s_{1}}x]
+}
+\end{lemma}
+
+\begin{lemma}\label{preserve_reduction}
+برای هر عبارت
+$A$ و $B$، اگر $A \to_\beta B$، آنگاه
+\vspace{-5pt}
+\begin{equation*}
+\gamma(A) \twoheadrightarrow^+_\beta \gamma(B)
+\end{equation*}
+\end{lemma}
+
+\begin{theorem}
+فرض کنید
+$\lambda S$
+یک سیستم نوع محض
+$n$-لایه‌ای
+است که تا یک مقدار
+$i$
+کامل است ($i<n$).
+$\lambda S$ دارای خاصیت نرمال‌سازی قوی است، اگر و تنها اگر $\lambda S^*$ چنین باشد.
+\end{theorem}
+
+\begin{proof}
+از آنجایی که همه عبارات قابل استنتاج
+$\lambda S^*$، در $\lambda S$ نیز استنتاج می‌شوند،
+اگر $\lambda S$ دارای خاصیت نرمال‌سازی قوی باشد آنگاه $\lambda S^*$ نیز دارای این خاصیت خواهد بود.\\
+حال فرض کنید
+$\lambda S$ دارای خاصیت نرمال‌سازی قوی نباشد. پس یک دنباله کاهش نامتناهی مانند
+\vspace{-5pt}
+\begin{equation*}
+M_1 \to_\beta M_2 \to_\beta \dots
+\end{equation*}
+در آن وجود دارد.
+طبق لم‌های \ref{preserve_type} و \ref{preserve_reduction}، می‌توان گفت دنباله کاهش نامتناهی
+\vspace{-5pt}
+\begin{equation*}
+\gamma(M_1) \twoheadrightarrow^+_\beta \gamma(M_2) \twoheadrightarrow^+_\beta \dots
+\end{equation*}
+در
+$\lambda S^*$
+یافت می‌شود، که با فرض آنکه
+$\lambda S^*$
+دارای خاصیت نرمال‌سازی قوی است، در تناقض است.
+\end{proof}
+
+\section{$\overline{\text{
+صوری‌سازی
+}}$}
+
+فایل‌های صوری‌سازی در \cite{thesis-code} در دسترس هستند. در این بخش به توضیح نکات و تصمیمات اتخاذ شده می‌پردازیم. مطالعه کد اصلی در کنار این بخش، مفید خواهد بود.
+
+\subsection{رویکرد و معماری}
+
+در این پژوهش، به‌منظور صوری‌سازی تعاریف و نتایج مربوط به ترجمه حذف وابستگی در سیستم‌های نوع محض لایه‌ای، از اثبات‌یار
+\lr{Rocq} \LTRfootnote{The Rocq Prover, version 9.2}
+استفاده شده است. رویکرد اتخاذشده مبتنی بر تفکیک مشخصات سیستم‌های نوع از تعاریف و اثبات‌های مربوط به آن‌ها است. به این منظور، از سازوکار ماژول‌ها \LTRfootnote{Modules} در
+\lr{Rocq}
+استفاده شده تا مشخصات هر سیستم نوع به‌صورت مستقل تعریف شده و تعاریف و قضایای متناظر با آن به‌صورت پارامتری توسعه یابند.
+
+ساختار پیاده‌سازی از چهار فایل اصلی تشکیل شده است که در دو گروه مشخصات و صوری‌سازی سازمان‌دهی شده‌اند.
+فایل‌های \filename{PTSSignature.v} و \filename{TPTSSignature.v}
+مشخصات سیستم‌های نوع محض و سیستم‌های نوع محض لایه‌ای را تعریف می‌کنند. در مقابل، فایل‌های \filename{PTS.v} و \filename{TPTS.v}
+شامل تعاریف صوری، لم‌ها و اثبات‌های مربوط به این ساختارها هستند.
+
+در فایل \filename{PTSSignature.v}،
+مشخصه عمومی یک سیستم نوع محض با استفاده از یک نوع ماژولی \LTRfootnote{Module Type} تعریف شده است.
+به این ترتیب، مشخصات یک سیستم نوع محض بدون وابستگی به نمونه مشخصی از آن بیان می‌شود.
+سپس در فایل \filename{PTS.v}،
+با دریافت یک نمونه از مشخصه مذکور به‌عنوان پارامتر ورودی، تعاریف و لم‌های عمومی سیستم نوع محض توسعه داده شده‌اند. استفاده از این ساختار پارامتری موجب می‌شود که نتایج صوری‌سازی‌شده مستقل از انتخاب یک سیستم نوع محض خاص باشند و برای هر نمونه سازگار با مشخصه تعریف‌شده قابل استفاده باشند.
+
+در مرحله بعد، به‌منظور مدل‌سازی سیستم‌های نوع محض لایه‌ای، مشخصه جدیدی در فایل
+\filename{TPTSSignature.v}
+تعریف شده است. این مشخصه با استفاده از مشخصه سیستم نوع محض توسعه یافته و علاوه بر ساختارهای پایه، شامل پارامترها و قیود مربوط به سیستم‌های نوع محض لایه‌ای است.
+این مشخصات، شرایط صوری لازم برای مدل‌سازی سیستم نوع محض لایه‌ای را فراهم می‌کنند.
+در نهایت، فایل \filename{TPTS.v} به صوری‌سازی سیستم نوع محض لایه‌ای اختصاص یافته است.
+در این فایل، علاوه بر دریافت مشخصه سیستم نوع محض لایه‌ای، از ماژول صوری‌سازی‌شده سیستم نوع محض،
+یعنی \filename{PTS.v}،
+استفاده مجدد شده است. بدین منظور، یک نمونه از ماژول
+\filename{PTS}
+بر اساس مشخصه ورودی ساخته شده و تعاریف و لم‌های آن در توسعه ساختار لایه‌ای مورد استفاده قرار گرفته‌اند. پس از آن، تعاریف مربوط به ترجمه حذف وابستگی، لم‌های موردنیاز و قضایای مرتبط با صحت این ترجمه صوری‌سازی و اثبات شده‌اند.
+
+این معماری با تفکیک مشخصات از پیاده‌سازی و استفاده مجدد از تعاریف و نتایج عمومی، از تکرار بخش‌های مشترک میان دو سیستم جلوگیری کرده و امکان سازمان‌دهی مستقل و توسعه‌پذیر اثبات‌ها را فراهم می‌کند. ساختار وابستگی میان فایل‌های پروژه در شکل (۱) نشان داده شده است.
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}[
+        scale=0.75,
+        transform shape,
+        file/.style={
+            draw,
+            rounded corners=2pt,
+            minimum width=3.2cm,
+            minimum height=0.8cm,
+            align=center,
+            font=\small
+        },
+        dependency/.style={
+            -{Stealth},
+            thick
+        }
+    ]
+
+    \node[file] (sig) {
+        \filename{PTSSignature.v}
+    };
+
+    \node[file, below left=1.3cm and 0.3cm of sig] (pts) {
+        \filename{PTS.v}
+    };
+
+    \node[file, below right=1.3cm and 0.3cm of sig] (tptssig) {
+        \filename{TPTSSignature.v}
+    };
+
+    \node[file, below=2.6cm of sig] (tpts) {
+        \filename{TPTS.v}
+    };
+
+    \draw[dependency] (sig) -- (pts);
+    \draw[dependency] (sig) -- (tptssig);
+    \draw[dependency] (pts) -- (tpts);
+    \draw[dependency] (tptssig) -- (tpts);
+
+    \end{tikzpicture}
+    \caption{ساختار وابستگی فایل‌های صوری‌سازی}
+    \label{fig:formalization-architecture}
+\end{figure}
+
+\subsection{صوری‌سازی مشخصه سیستم‌ها}
+
+به‌منظور صوری‌سازی مشخصه سیستم نوع محض معرفی‌شده در تعریف \ref{pts_signature}، از سازوکار نوع‌های ماژولی استفاده شده است:
+
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:pts-signature}
+]
+(* Source: PTSSignature.v *)
+Module Type PTS_SIGNATURE.
+  Parameter Sort : Type.
+  Parameter A : Sort -> Sort -> Prop.
+  Parameter R : Sort -> Sort -> Sort -> Prop.
+End PTS_SIGNATURE.
+\end{lstlisting}
+\end{latin}
+
+در این مشخصه پارامتر \varname{Sort} مجموعه رده‌های سیستم را مشخص می‌کند. همچنین رابطه دوتایی \varname{A} و رابطه سه‌تایی \varname{R} به ترتیب متناظر با روابط $\mathcal{A}$ و $\mathcal{R}$ در تعریف ریاضی سیستم نوع محض هستند. استفاده از نوع \varname{Prop} برای این دو پارامتر بیانگر آن است که این مولفه‌ها به صورت گزاره‌ای و رابطه‌ای تعریف شده‌اند.
+
+استفاده از \varname{Module Type} امکان تعریف مشخصه سیستم نوع محض را بدون تعیین یک نمونه مشخص از آن فراهم می‌کند. در نتیجه، ماژول‌های بعدی می‌توانند با دریافت یک نمونه سازگار با این مشخصه، تعاریف و نتایج عمومی مربوط به سیستم نوع محض را توسعه دهند.
+
+به طور مشابه، به‌منظور صوری‌سازی مشخصه سیستم نوع محض لایه‌ای معرفی‌شده در تعریف \ref{tpts_signature}، از سازوکار نوع‌های ماژولی استفاده شده است:
+
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:tpts-signature}
+]
+(* Source: TPTSSignature.v *)
+Module Type TPTS_SIGNATURE <: PTS_SIGNATURE.
+  Include PTS_SIGNATURE.
+  Parameter n : nat.
+  Parameter index_of : Sort -> nat.
+  Axiom n_range : n > 0.
+  Axiom index_range : forall x, 
+    0 < index_of x /\ index_of x < n + 1.
+  Axiom index_inj : forall x y, 
+    index_of x = index_of y -> x = y.
+  Axiom index_surj : forall i : nat, 
+    0 < i /\ i < n + 1 -> 
+    exists x : Sort, index_of x = i.
+  Axiom A_spec : forall x y, 
+    A x y <-> index_of x < n /\ 
+              index_of y = S (index_of x).
+  Axiom R_shape : forall x y z, 
+    R x y z -> y = z.
+End TPTS_SIGNATURE.
+\end{lstlisting}
+\end{latin}
+
+این مشخصه، از مشخصه سیستم نوع محض ارث‌بری می‌کند و به این معناست که نمونه‌ای از مشخصه سیستم‌های نوع محض است. به منظور پیاده‌سازی مشخصه یک سیستم نوع محض لایه‌ای، نیاز به دو پارامتر جدید داریم؛ پارامتر \varname{n} که بیانگر تعداد لایه‌های سیستم است و پارامتر \varname{index-of} که نحوه اندیس‌گذاری رده‌ها را معین می‌کند. مقادیر این دو پارامتر جدید، توسط قیودی مدیریت می‌شوند:
+\begin{itemize}[noitemsep, topsep=0pt]
+    \item[-] \varname{n-range}: تعداد لایه‌ها باید بیشتر از صفر باشد.
+    \item[-] \varname{index-range}: اندیس هر رده، حداقل ۱ و حداکثر \varname{n} است.
+    \item[-] \varname{index-inj}: تابع اندیس‌گذار، یک‌به‌یک است.
+    \item[-] \varname{index-surj}: تابع اندیس‌گذار، پوشاست.
+\end{itemize}
+
+حال که توانستیم اندیس‌گذاری را به مشخصه اضافه کنیم، با دو قید دیگر، مشخصه سیستم مدنظر \lr{Mull} را تکمیل می‌کنیم. قید \varname{A-spec} بیانگر آن است که رابطه $\mathcal{A}$ بین اندیس‌های متوالی برقرار است و قید \varname{R-spec} به معنای یکسان بودن رده دوم و سوم در رابطه $\mathcal{R}$ است.
+
+\subsection{صوری‌سازی سیستم‌های نوع محض}
+
+%====================================
+%    REFERENCES                     |
+%====================================
+
+
+\begin{latin}
+\bibliographystyle{ieeetr}
+ \renewcommand{\refname}{\rl{{$\overline{\text{
+مراجع
+}}$}
+ \hfill}}
+ {\linespread{1} \small %\footnotesize
+ \nocite{*}
+\bibliography{references}
+}
+\end{latin}
+\clearpage
+\end{document}
