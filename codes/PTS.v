@@ -21,12 +21,12 @@ Definition var := nat.
 Definition eq_var_dec : forall x y : var, {x = y} + {x <> y} := Nat.eq_dec.
 
 Inductive term : Type :=
-    | t_sort : Sort -> term
-    | t_bvar : Sort -> nat -> term
-    | t_fvar : Sort -> var -> term
-    | t_app  : term -> term -> term
-    | t_lam  : Sort -> term -> term -> term
-    | t_pi   : Sort -> term -> term -> term.
+  | t_sort : Sort -> term
+  | t_bvar : Sort -> nat -> term
+  | t_fvar : Sort -> var -> term
+  | t_app  : term -> term -> term
+  | t_lam  : Sort -> term -> term -> term
+  | t_pi   : Sort -> term -> term -> term.
 
 (* ================================================================= *)
 (** * Free variables *)

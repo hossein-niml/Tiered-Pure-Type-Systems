@@ -94,17 +94,17 @@
 صوری‌سازی ترجمه حذف وابستگی در سیستم‌های نوع محض لایه‌ای / حسین مددی و مجید علی‌زاده
 \vspace{2mm}
 }% odd page header and number to right top
-\fancyhead[LE]{فصلنامه علمی، علوم رایانشی، سال دهم، شماره 36، بهار 1404
+\fancyhead[LE]{فصلنامه علمی، علوم رایانشی، سال یازدهم، شماره 43، زمستان 1405
 \vspace{2mm}
 }%Even page header and number at left top
 \fancyfoot[L,R,C]{}
 \renewcommand{\headrulewidth}{0.4pt}% disable the underline of the header part
 \fancypagestyle{firstpage}{%
-  \lhead{\LR{\scriptsize DOR: 20.1001.1.2538161.1404.10.1.1.7}\\
+  \lhead{\LR{\scriptsize DOR: X}\\
   \vspace{-2mm}\noindent\rule{0.45\linewidth}{0.4pt}\\
-  \LR{\scriptsize DOI: 10.22034/csj.2025.526411.1097}\\
+  \LR{\scriptsize DOI: Y}\\
   {\scriptsize
-بهار 1404، دوره 10، شماره 1، پیاپی 36
+زمستان 1405، دوره 11، شماره 4، پیاپی 43
   }
   }
   \rhead{}
@@ -184,7 +184,7 @@
 }
 
 \newcommand{\filename}[1]{\lr{\texttt{#1}}}
-\newcommand{\varname}[1]{\lr{\ttfamily\footnotesize{#1}}}
+\newcommand{\varname}[1]{\lr{\texttt{\footnotesize\detokenize{#1}}}}
 
 \usepackage{listings}
 \usepackage{xcolor}
@@ -193,7 +193,8 @@
     morekeywords={
         Module, Type, End, Parameter, Import,
         Require, Include, Axiom, forall,
-        Prop, nat, Type, exists
+        Prop, nat, Type, exists,
+        Definition, Theorem, Qed, Proof, Fixpoint, with, match, Inductive
     },
     sensitive=true,
     morecomment=[n]{(*}{*)},
@@ -214,6 +215,12 @@
     captionpos=b,
     columns=fullflexible,
     keepspaces=true
+}
+
+\usepackage{caption}
+\captionsetup{
+    font=small,
+    labelfont=bf
 }
 
 %\makeatletter
@@ -256,10 +263,10 @@
     \centering
     \scriptsize{\Zar
     \vspace{2mm}
-دریافت مقاله: 27/11/۱۴۰۳  
+دریافت مقاله: 
 \\
 \vspace{3mm}
-پذیرش مقاله: 11/03/1404 
+پذیرش مقاله: 
      \vspace{2mm}
     }}%
    }
@@ -383,7 +390,7 @@ T ::= \mathcal{S} \mid V \mid \lambda V^T.T \mid \Pi V^T.T \mid TT
 \end{equation*}
 \end{definition}
 
-\begin{remark}
+\begin{remark}\label{sort_tag}
 در این مقاله، مطابق با
 \cite{mull2023}،
 متغیرها را با رده خودشان نشانه‌گذاری می‌شوند.
@@ -536,6 +543,42 @@ $(\lambda x^A.M)N \rightarrow_{\beta} M[N/x]$
 یک سیستم نوع محض دارای خاصیت نرمال‌سازی ضعیف (قوی) است هرگاه هر عبارت نوع‌پذیر در آن چنین باشد.
 \end{definition}
 
+\subsection{مکعب لامبدا}
+
+مکعب لامبدا\LTRfootnote{Lambda Cube} یک چارچوب مفهومی و هندسی برای دسته‌بندی خانواده‌ای از سیستم‌های نوع است. این مکعب نشان می‌دهد که چگونه با افزودن یا حذف برخی قابلیت‌های نوعی، می‌توان به سیستم‌های مختلفی از حساب لامبدا\LTRfootnote{Lambda Calculus} دست یافت. شکل \ref{fig:lambda-cube} شامل همه رئوس مکعب لامبداست.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\columnwidth]{lambda_cube.png}
+    \caption{مکعب لامبدا}
+    \label{fig:lambda-cube}
+\end{figure}
+
+حال با معرفی کامل سیستم‌های نوع محض، بسیاری از سیستم‌های مشهور تنها با انتخاب مناسب
+$(\mathcal{S},\mathcal{A},\mathcal{R})$
+قابل بیان‌اند. همان‌طور که در جدول \ref{tab:lambda-cube} مشاهده می‌شود، هر هشت راس مکعب لامبدا را می‌توان به کمک سیستم‌های نوع محض تعریف کرد.
+
+\begin{table}[ht]
+\centering
+\caption{بیان مکعب لامبدا به کمک سیستم‌های نوع محض}
+\label{tab:lambda-cube}
+\renewcommand{\arraystretch}{1.5}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{c|c|c|c}
+$\mathcal{R}$ & $\mathcal{A}$ & $\mathcal{S}$ & سیستم نوع \\
+\hline\hline
+$\{(*,*,*)\}$ & $\{(*,\Box)\}$ & $\{*,\Box\}$ & $\lambda \to$ \\
+$\{(*,*,*),(\Box,*,*)\}$ & $\{(*,\Box)\}$ & $\{*,\Box\}$ & $\lambda 2$ \\
+$\{(*,*,*),(\Box,\Box,\Box)\}$ & $\{(*,\Box)\}$ & $\{*,\Box\}$ & $\lambda \underline{\omega}$ \\
+$\{(*,*,*),(*,\Box,\Box)\}$ & $\{(*,\Box)\}$ & $\{*,\Box\}$ & $\lambda P$ \\
+$\{(*,*,*),(*,\Box,\Box),(\Box,*,*)\}$ & $\{(*,\Box)\}$ & $\{*,\Box\}$ & $\lambda P2$ \\
+$\{(*,*,*),(\Box,\Box,\Box),(\Box,*,*)\}$ & $\{(*,\Box)\}$ & $\{*,\Box\}$ & $\lambda \omega$ \\
+$\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box)\}$ & $\{(*,\Box)\}$ & $\{*,\Box\}$ & $\lambda P\underline{\omega}$ \\
+$\{(*,*,*),(\Box,\Box,\Box),(*,\Box,\Box),(\Box,*,*)\}$ & $\{(*,\Box)\}$ & $\{*,\Box\}$ & $\lambda C$
+\end{tabular}%
+}
+\end{table}
+
 \subsection{سیستم‌های نوع محض لایه‌ای}
 
 \begin{definition}\label{tpts_signature}
@@ -547,6 +590,14 @@ $(\lambda x^A.M)N \rightarrow_{\beta} M[N/x]$
 \mathcal{R} &\subset \{ (s,s',s') \mid (s,s') \in \mathcal{S} \times \mathcal{S} \}
 \end{align*}
 \end{definition}
+
+\begin{remark}
+\hfil
+\begin{itemize}[noitemsep, topsep=0pt]
+  \item[-] سیستم نوع محض صفر-لایه‌ای $\equiv$ سیستم نوع محض تهی ($\mathcal{S}=\mathcal{A}=\mathcal{R}=\emptyset$)
+  \item[-] سیستم‌های نوع محض ۲-لایه‌ای که شامل قانون $(s_1, s_1, s_1)$ هستند $\equiv$ کل مکعب لامبدا
+\end{itemize}
+\end{remark}
 
 \begin{definition}
 درجه هر عبارت در سیستم‌های نوع محض لایه‌ای، با تابع $\operatorname{deg}: \mathrm{T} \to \mathbb{N}$ به صورت زیر محاسبه می‌شود:
@@ -575,14 +626,14 @@ $(i,j)$-کامل \LTRfootnote{$(i,j)-\text{\lr{full}}$}
 \{(s_l,s_k) \mid (l \le i) \land (l \le k \le j)\}
 \end{equation*}
 باشد؛ و کامل است، هرگاه به ازای هر
-$(s_i,s_j) \in \mathcal{R}_{\lambda S}$،
+$(s_i,s_j) \in \mathcal{R}$،
 این سیستم
 $(j,i)$-کامل باشد.
 \end{definition}
 
 \subsection{ترجمه حذف وابستگی}
 
-\begin{definition}
+\begin{definition}\label{non_dependent}
 نسخه غیروابسته یک سیستم نوع محض لایه‌ای
 $\lambda S$،
 که با
@@ -602,7 +653,7 @@ $\lambda S$
 $\lambda S^*$
 ارائه کنیم، به طوری که خواص حفظ نوع و حفظ مسیرهای کاهش نامتناهی را دارا باشد. الزامات روی ساختار غیروابسته کاملاً قوی خواهند بود.
 
-\begin{definition}[ترجمه سطح نوع\LTRfootnote{Type-Level Translation}]
+\begin{definition}[ترجمه سطح نوع\LTRfootnote{Type-Level Translation}]\label{rho_def}
 \hfil{}\\
 برای هر
 $0 \le i \le n$،
@@ -680,7 +731,7 @@ $A \in \mathrm{T}_{\ge i+1}$ و $\Gamma \vdash_{\lambda S} A : B$، آنگاه
 \end{equation*}
 \end{lemma}
 
-\begin{definition}[ترجمه سطح عبارت\LTRfootnote{Term-Level Translation}]
+\begin{definition}[ترجمه سطح عبارت\LTRfootnote{Term-Level Translation}]\label{gamma_def}
 تابع
 $\gamma : \mathrm{T} \to \mathrm{T}$
 به صورت استقرایی زیر تعریف می‌شود:
@@ -734,7 +785,7 @@ $A$ و $B$، اگر $A \to_\beta B$، آنگاه
 \end{equation*}
 \end{lemma}
 
-\begin{theorem}
+\begin{theorem}\label{main_theorem}
 فرض کنید
 $\lambda S$
 یک سیستم نوع محض
@@ -767,6 +818,49 @@ $\lambda S^*$
 $\lambda S^*$
 دارای خاصیت نرمال‌سازی قوی است، در تناقض است.
 \end{proof}
+
+تنها سیستم جالب‌توجهی که این قضیه بر آن قابل اعمال است، سیستم
+$n$-لایه‌ای
+با قوانین زیر است:
+\vspace{-5pt}
+\resizedalign{
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}    
+}
+و همچنین هر زیرسیستمی از آن که دارای همین قوانین غیروابسته باشد.
+قضیه
+\ref{main_theorem}
+بیان می‌کند که خاصیت نرمال‌سازی قوی برای این سیستم، معادل همین خاصیت برای سیستم با قوانین زیر است:
+\vspace{-5pt}
+\begin{equation*}
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_2,s_2)\}
+\end{equation*}
+هرچند می‌توان این نتیجه را به‌صورت صوری نیز اثبات کرد، بررسی اجمالی این روش نشان می‌دهد که از دیدگاه فرا‌نظری، این روش ضعیف است و می‌توان آن را در حساب پئانو \LTRfootnote{Peano Arithmetic} اجرا کرد.
+از این‌ رو، با ترکیب این نتیجه با نتیجه‌ی
+\cite{barthe2001}،
+به حالت خاصی از حدس
+\lr{BGK}
+دست می‌یابیم.
+
+\begin{corollary}\label{cor}
+در سیستم نوع محض
+$n$-لایه‌ای
+با قوانین
+\vspace{-5pt}
+\resizedalign{
+\{(s_k,s_1) \mid k \in [n]\} \cup \{(s_1,s_k) \mid k \in [n]\} \cup \{(s_2,s_k) \mid k \in [n]\}    
+}
+نرمال‌سازی ضعیف مستلزم نرمال‌سازی قوی است. همچنین، این اثبات را می‌توان در حساب پئانو انجام داد.
+\end{corollary}
+
+\begin{definition}
+اصول موضوعه پئانو، اعداد طبیعی را به صورت زیر مشخص می‌کند:
+\begin{itemize}[noitemsep, topsep=0pt]
+    \item[-] صفر یک عدد طبیعی است.
+    \item[-] اگر $a$ یک عدد طبیعی باشد، تالی آن ($S(a)$) نیز عددی طبیعی است.
+    \item[-] اگر تالی دو عدد طبیعی برابر باشد، خود آن اعداد نیز با هم برابرند.
+    \item[-] (اصل استقرا): اگر مجموعه اعداد $\mathrm{S}$ شامل صفر و تالی هر عدد موجود در $\mathrm{S}$ باشد، آنگاه همه اعداد در $\mathrm{S}$ هستند.
+\end{itemize}
+\end{definition}
 
 \section{$\overline{\text{
 صوری‌سازی
@@ -902,17 +996,291 @@ End TPTS_SIGNATURE.
 \end{lstlisting}
 \end{latin}
 
-این مشخصه، از مشخصه سیستم نوع محض ارث‌بری می‌کند و به این معناست که نمونه‌ای از مشخصه سیستم‌های نوع محض است. به منظور پیاده‌سازی مشخصه یک سیستم نوع محض لایه‌ای، نیاز به دو پارامتر جدید داریم؛ پارامتر \varname{n} که بیانگر تعداد لایه‌های سیستم است و پارامتر \varname{index-of} که نحوه اندیس‌گذاری رده‌ها را معین می‌کند. مقادیر این دو پارامتر جدید، توسط قیودی مدیریت می‌شوند:
+این مشخصه، از مشخصه سیستم نوع محض ارث‌بری می‌کند و به این معناست که نمونه‌ای از مشخصه سیستم‌های نوع محض است. به منظور پیاده‌سازی مشخصه یک سیستم نوع محض لایه‌ای، نیاز به دو پارامتر جدید داریم؛ پارامتر \varname{n} که بیانگر تعداد لایه‌های سیستم است و پارامتر \varname{index_of} که نحوه اندیس‌گذاری رده‌ها را معین می‌کند. مقادیر این دو پارامتر جدید، توسط قیودی مدیریت می‌شوند:
 \begin{itemize}[noitemsep, topsep=0pt]
-    \item[-] \varname{n-range}: تعداد لایه‌ها باید بیشتر از صفر باشد.
-    \item[-] \varname{index-range}: اندیس هر رده، حداقل ۱ و حداکثر \varname{n} است.
-    \item[-] \varname{index-inj}: تابع اندیس‌گذار، یک‌به‌یک است.
-    \item[-] \varname{index-surj}: تابع اندیس‌گذار، پوشاست.
+    \item[-] \varname{n_range}: تعداد لایه‌ها باید بیشتر از صفر باشد.
+    \item[-] \varname{index_range}: اندیس هر رده، حداقل ۱ و حداکثر \varname{n} است.
+    \item[-] \varname{index_inj}: تابع اندیس‌گذار، یک‌به‌یک است.
+    \item[-] \varname{index_surj}: تابع اندیس‌گذار، پوشاست.
 \end{itemize}
 
-حال که توانستیم اندیس‌گذاری را به مشخصه اضافه کنیم، با دو قید دیگر، مشخصه سیستم مدنظر \lr{Mull} را تکمیل می‌کنیم. قید \varname{A-spec} بیانگر آن است که رابطه $\mathcal{A}$ بین اندیس‌های متوالی برقرار است و قید \varname{R-spec} به معنای یکسان بودن رده دوم و سوم در رابطه $\mathcal{R}$ است.
+حال که توانستیم اندیس‌گذاری را به مشخصه اضافه کنیم، با دو قید دیگر، مشخصه سیستم مدنظر \lr{Mull} را تکمیل می‌کنیم. قید \varname{A_spec} بیانگر آن است که رابطه $\mathcal{A}$ بین اندیس‌های متوالی برقرار است و قید \varname{R_shape} به معنای یکسان بودن رده دوم و سوم در رابطه $\mathcal{R}$ است.
 
 \subsection{صوری‌سازی سیستم‌های نوع محض}
+
+پس از تعریف مشخصه سیستم نوع محض، در گام بعدی ساختار عمومی این سیستم در قالب یک ماژول تعریف می‌شود:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:pts}
+]
+(* Source: PTS.v *)
+Module PTS (Sig : PTS_SIGNATURE).
+Import Sig.
+\end{lstlisting}
+\end{latin}
+
+ماژول \varname{PTS} با دریافت یک پارامتر از نوع \varname{PTS_SIGNATURE} تعریف شده است و سپس با استفاده از \varname{Import Sig}، مؤلفه‌های معرفی‌شده در این مشخصه، از جمله مجموعه رده‌ها و روابط مربوط به آن، درون ماژول در دسترس قرار می‌گیرند. به این ترتیب، تعریف سیستم نوع محض مستقل از یک نمونه خاص از مشخصه آن انجام می‌شود و امکان استفاده مجدد از این تعریف برای سیستم‌های مختلفی که با مشخصه مذکور سازگارند، فراهم می‌شود.
+
+برای بازنمایی نحو عبارات و مدیریت متغیرهای مقید، از روش بی‌نام محلی استفاده شده است. در این روش، متغیرهای آزاد با استفاده از نام یا شناسه مشخص و متغیرهای مقید با استفاده از اندیس‌های دبروین\LTRfootnote{de Bruijn indices} نمایش داده می‌شوند. به این ترتیب، تغییر نام متغیرهای مقید تأثیری بر نمایش صوری عبارت نخواهد داشت. در نتیجه، مسائلی مانند تغییر نام متغیرهای مقید و برخورد نام متغیرها \LTRfootnote{Variable Capture} ساده‌تر مدیریت می‌شوند. مطابق این روش، در تعریف نوع استقرایی \varname{term}، سازنده‌های \varname{t_bvar} و \varname{t_fvar} به ترتیب برای نمایش متغیرهای مقید و آزاد در نظر گرفته شده اند:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:term}
+]
+(* Source: PTS.v *)
+Inductive term : Type :=
+  | t_sort : Sort -> term
+  | t_bvar : Sort -> nat -> term
+  | t_fvar : Sort -> var -> term
+  | t_app  : term -> term -> term
+  | t_lam  : Sort -> term -> term -> term
+  | t_pi   : Sort -> term -> term -> term.
+\end{lstlisting}
+\end{latin}
+
+در این تعریف، شناسه متغیرها با استفاده از اعداد طبیعی نمایش داده می‌شود و رده هر رخداد متغیر، اعم از آزاد یا مقید، به‌صورت برچسبی صریح در ساختار آن ذخیره می‌شود. همچنین، مقیدکننده‌ها (\varname{t_lam} و \varname{t_pi}) رده دامنه خود را نگهداری می‌کنند. این برچسب‌گذاری، متناظر با ملاحظه \ref{sort_tag} انجام شده و اطلاعات لازم برای محاسبه درجه عبارت را فراهم می‌کند.
+
+\subsection{صوری‌سازی سیستم‌های نوع محض لایه‌ای}
+
+مشابه سیستم‌ نوع محض، سیستم نوع محض لایه‌ای نیز در قالب یک ماژول تعریف می‌شود:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:tpts}
+]
+(* Source: TPTS.v *)
+Module TPTS (Sig : TPTS_SIGNATURE).
+Import Sig.
+Module Base := PTS Sig.
+Import Base.
+\end{lstlisting}
+\end{latin}
+
+در این قسمت، ابتدا مؤلفه‌های مشخصه سیستم نوع محض لایه‌ای در دسترس ماژول قرار می‌گیرند. سپس، با استفاده از دستور \varname{Module Base := PTS Sig}، نمونه‌ای از ماژول عمومی سیستم نوع محض با دریافت مشخصه \varname{Sig} ایجاد می‌شود. این نمونه شامل تعاریف و نتایج صوری‌سازی‌شده مربوط به سیستم نوع محض است که با استفاده از دستور \varname{Import Base} در ادامه پیاده‌سازی سیستم نوع محض لایه‌ای قابل استفاده خواهند بود. به این ترتیب، از آنجا که سیستم نوع محض لایه‌ای، ساختار پایه یک سیستم نوع محض را نیز داراست، تعاریف و نتایج مربوط به سیستم پایه بدون نیاز به بازتعریف در صوری‌سازی \varname{TPTS} مورد استفاده قرار می‌گیرند.
+
+برچسب‌گذاری متغیرها با رده، در تعریف تابع درجه استفاده می‌شود:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:tpts}
+]
+(* Source: TPTS.v *)
+Fixpoint deg (t : term) : nat :=
+  match t with
+  | t_sort s     => index_of s + 1
+  | t_bvar s _   => index_of s - 1
+  | t_fvar s _   => index_of s - 1
+  | t_app M _    => deg M
+  | t_lam _ _ M  => deg M
+  | t_pi  _ _ B  => deg B
+  end.
+\end{lstlisting}
+\end{latin}
+
+برای ادامه کار، \lr{Mull} یک سیستم نوع محض لایه‌ای کامل را، ثابت فرض می‌کند. ما نیز این فرض را صوری‌سازی می‌کنیم (\varname{is_full}):
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:full}
+]
+(* Source: TPTS.v *)
+Definition full_with (i j : nat) : Prop :=
+  forall l k : Sort, index_of l <= i ->
+  index_of l <= index_of k -> 
+  index_of k <= j -> R l k k.
+Definition full : Prop :=
+  forall s1 s2 s3, R s1 s2 s3 -> 
+  full_with (index_of s2) (index_of s1).
+Axiom is_full : full.
+\end{lstlisting}
+\end{latin}
+
+همانطور که در تعریف \ref{non_dependent} دیدیم، نسخه غیروابسته یک سیستم نوع محض لایه‌ای، فقط در مجموعه $\mathcal{R}$ با آن متفاوت است. به منظور صوری‌سازی این نسخه، باید توجه کنیم که مجموعه مذکور صرفا در قاعده تشکیل نوع تابع (از مجموعه قواعد استنتاج نوع) کاربرد دارد؛ بنابراین کافی است قواعد استنتاج نوع را به کمک $\mathcal{R}^*$ بازتعریف کنیم تا نسخه غیروابسته یک سیستم نوع محض لایه‌ای، صوری‌سازی شود:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:typing-star}
+]
+(* Source: TPTS.v *)
+Definition R_star (s s' s'' : Sort) : Prop :=
+  R s s' s'' /\ index_of s' <= index_of s.
+
+Inductive typing_star : 
+  context -> term -> term -> Prop :=
+  ...
+  | typing_star_pi : forall G A B s1 s2 s3 L,
+      G |-* A : t_sort s1 ->
+      ... ->
+      R_star s1 s2 s3 ->
+      G |-* (t_pi s1 A B) : (t_sort s3)
+\end{lstlisting}
+\end{latin}
+
+حال با توجه به آنکه دو مجموعه قواعد استنتاج نوع داریم (اصلی و غیروابسته)، نیاز به دو محمول مجزا برای نوع‌پذیری داریم:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:derivable}
+]
+(* Source: TPTS.v *)
+Definition derivable (M : term) : Prop := 
+  exists C N, C |- M : N.
+Definition derivable_star (M : term) : Prop :=
+  exists C N, C |-* M : N.
+\end{lstlisting}
+\end{latin}
+اکنون خاصیت نرمال‌سازی قوی سیستم را طوری تعریف می‌کنیم که محمول نوع‌پذیری را در ورودی بپذیرد:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:sn}
+]
+(* Source: TPTS.v *)
+Definition system_strongly_normalizing 
+  (P : term -> Prop) : Prop :=
+  forall M, P M -> strongly_normalizing M.
+\end{lstlisting}
+\end{latin}
+
+در ادامه به تابع ترجمه سطح نوع با نام \varname{rho} می‌پردازیم. این تابع را به صورت بازگشتی بر حسب ساختار عبارت ورودی تعریف می‌کنیم. به تعریف این تابع در حالتی که ورودی یک عبارت $\Pi$ است دقت کنید:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:rho}
+]
+(* Source: TPTS.v *)
+Fixpoint rho (i : nat) (M : term) : term :=
+  match M with
+  ...
+  | t_pi s A B =>
+      match le_lt_dec (i + 1) (deg A) with
+      | left _  => 
+        rho_pi_tel rho A B i (deg A - 1 - i)
+      | right _ => 
+        rho i B
+      end
+  ...
+  end.
+\end{lstlisting}
+\end{latin}
+مطابق تعریف \ref{rho_def}، خروجی در این حالت یک زنجیره از عبارت $\Pi$ است. ایده پیاده‌سازی چنین است که ابتدا وجود این زنجیره را بررسی می‌کنیم؛ اگر $\operatorname{deg}A \ge i + 1$ باشد، زنجیره به کمک تابع \varname{rho_pi_tel} تشکیل می‌شود، در غیر این صورت زنجیره تشکیل نشده و فقط $\rho_i(B)$ در خروجی باقی می‌ماند. این ایده از روشی که \lr{Mull} در اثبات لم‌های مربوط به این ترجمه استفاده می‌کند، الهام گرفته شده است. برای باقی حالات که احتمال تشکیل زنجیره‌ای از عبارات وجود دارد، از همین ایده استفاده شده است.
+
+برای تعریف تابع ترجمه سطح عبارت به نام \varname{gamma} نیز از توابع زنجیره‌ساز استفاده شده است. برای مثال در حالتی که ورودی یک کاربرد است، متناظر با تعریف \ref{gamma_def}، داریم:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:rho}
+]
+(* Source: TPTS.v *)
+Fixpoint gamma (M : term) : term :=
+  match M with
+  ...
+  | t_app M' N =>
+      t_app
+      (gamma_app_tel (gamma M') N (deg N - 1)) 
+      (gamma N)
+  ...
+  end.
+\end{lstlisting}
+\end{latin}
+تفاوت این تابع با تابع ترجمه سطح نوع، این است که در اینجا همواره زنجیره تشکیل می‌شود و شرطی برای تشکیل آن نداریم.
+
+پس از صوری‌سازی لم‌های ترجمه‌ها، می‌توانیم قضیه اصلی را بیان و اثبات کنیم:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:main-thm}
+]
+(* Source: TPTS.v *)
+Theorem lambdaS_SN_iff_lambdaS_star_SN :
+  system_strongly_normalizing derivable <-> 
+  system_strongly_normalizing derivable_star.
+Proof.
+  split.
+  - intros HSN M HMstar. apply HSN.
+    apply derivable_star_implies_derivable.
+    exact HMstar.
+  - intros HSNstar M HM. apply sn_reflection.
+    apply HSNstar.
+    apply gamma_commutes_typing_derivable.
+    exact HM.
+Qed.
+\end{lstlisting}
+\end{latin}
+سمت چپ به این معناست که سیستم تحت قواعد استنتاج نوع اصلی (\varname{derivable}) دارای خاصیت نرمال‌سازی قوی است و سمت راست به این معناست که سیستم تحت قواعد استنتاج نوع غیروابسته (\varname{derivable_star}) دارای این خاصیت است. به منظور اثبات، از روش \lr{Mull} که در اثبات قضیه \ref{main_theorem} بررسی شد، استفاده شده است.
+
+\subsection{خلاصه آماری}
+به‌منظور ارائه تصویری کمّی از پیاده‌سازی انجام‌شده، آمار مربوط به کدهای صوری‌سازی‌ در جدول \ref{tab:codes} ارائه شده است. این آمار شامل تعداد خطوط کد، تعاریف و نتایج اثبات‌شده در هر یک از فایل‌های اصلی پژوهش است.
+
+\begin{table}[ht]
+\centering
+\caption{گزارش آماری صوری‌سازی}
+\label{tab:codes}
+\renewcommand{\arraystretch}{1.5}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{c|c|c|c}
+تعداد لم‌ها و قضایا & تعداد تعاریف & تعداد خطوط & فایل \\
+\hline\hline
+۰ & ۰ & ۵ & \filename{PTSSignature.v} \\
+۰ & ۰ & ۱۲ & \filename{TPTSSignature.v} \\
+۱۱۵ & ۶۰ & ۳۰۷۲ & \filename{PTS.v} \\
+۱۵۰ & ۳۵ & ۲۷۴۹ & \filename{TPTS.v} \\
+\hline
+\textbf{۲۶۵} & \textbf{۹۵} & \textbf{۵۸۳۸} & \textbf{مجموع}
+\end{tabular}%
+}
+\end{table}
+
+
+\section{$\overline{\text{
+نتیجه‌گیری و جمع‌بندی
+}}$}
+
+\subsection{جمع‌بندی}
+
+در این مقاله، صوری‌سازی ترجمه حذف‌ وابستگی در سیستم‌های نوع محض لایه‌ای و اثبات ماشینی نتیجه اصلی مربوط به آن در محیط \lr{Rocq} ارائه شد. برای این منظور، ابتدا ساختار سیستم‌های نوع محض و نوع محض لایه‌ای با استفاده از روش نمایش بی‌نام محلی پیاده‌سازی شد. همچنین، با طراحی ساختاری ماژولار، امکان استفاده مجدد از تعاریف و نتایج سیستم نوع محض در پیاده‌سازی سیستم نوع محض لایه‌ای فراهم شد.
+
+یکی از جنبه‌های اصلی این صوری‌سازی، سازگارکردن روش نمایش بی‌نام محلی با نیازهای ترجمه لایه‌ای بود. در این راستا، سازوکارهای لازم برای مدیریت برچسب رده متغیرها و عملیات مربوط به عبارات توسعه داده شد و خواص موردنیاز برای تعریف و بررسی ترجمه‌ها به‌صورت ماشینی اثبات شدند. از جمله این نتایج می‌توان به لم تضعیف و لم‌های اصلی مربوط به ترجمه در سطح نوع و سطح عبارت اشاره کرد.
+
+در نهایت، با صوری‌سازی سیستم نوع محض لایه‌ای غیروابسته و استفاده از نتایج اثبات‌شده درباره ترجمه‌ها، قضیه اصلی \lr{Mull} در محیط \lr{Rocq} اثبات شد. این قضیه هم‌ارزی خاصیت نرمال‌سازی قوی را در سیستم نوع محض لایه‌ای اصلی و نسخه غیروابسته آن نشان می‌دهد.
+
+به این ترتیب، نتایج این پژوهش علاوه بر فراهم‌کردن یک اثبات صوری از قضیه اصلی، چارچوبی صوری برای مطالعه ساختار سیستم‌های نوع محض لایه‌ای و ترجمه‌های مرتبط با آن ارائه می‌کند.
+
+\subsection{پیشنهادات}
+
+\lr{Mull}
+در جمع‌بندی رساله خود
+\cite{mull2023}،
+تعمیم ترجمه
+\lr{Geuvers–Nederhof} \cite{geuvers1991}
+به سیستم‌های ناپیش‌گویانه\LTRfootnote{Impredicative} رده بالاتر را «یک آزمایش ناموفق در تعمیم‌دهی» می‌نامد.
+به گفته او، تمام تلاش‌ها برای تضعیف شرایط بخش غیروابسته سیستم پایه، معمولا به دلیل عدم بسته بودن تحت جانشینی یا تساوی
+$\beta$
+با شکست مواجه شده‌اند. او این احتمال را مطرح می‌کند که شاید بتوان با تعدیلی جزئی در روش اثبات، همان نتیجه را برای سیستم‌های
+$n$-لایه‌ای
+با مجموعه قوانین
+\[
+\{(s_1, s_k) \mid k \in [n]\} \cup \{(s_i, s_j) \mid 1 \le i \le j \le n\}
+\]
+به دست آورد؛ چرا که این مجموعه قوانین، نقش نتیجه \lr{Geuvers–Nederhof}
+را بهتر بازتاب می‌دهد. این پرسش، به‌عنوان یک مسئله باز، هنوز
+پاسخ داده نشده است و می‌تواند موضوع پژوهش‌های آتی باشد.
+
+بر این اساس، برای پژوهشی آتی پیشنهاد می‌شود:
+
+\begin{itemize}[noitemsep, topsep=0pt]
+  \item[-] بررسی دقیق‌تر مجموعه قوانین پیشنهادی \lr{Mull}
+    و تلاش برای یافتن تعدیلی در اثبات ترجمه حذف‌ وابستگی که
+    بتواند نتیجه اصلی پژوهش را برای این مجموعه قوانین نیز اثبات کند.
+  \item[-] بررسی این که آیا استدلال فرانظری \lr{Mull} درباره قابل‌انجام
+    بودن اثبات قضیه \ref{main_theorem} در حساب پئانو، می‌تواند به‌طور دقیق و صوری تنظیم
+    و اثبات شود؛ و در صورت امکان، صوری‌سازی این استدلال در \lr{Rocq}.
+  \item[-] صوری‌سازی کامل نتیجه \ref{cor}
+    در \lr{Rocq}، به‌عنوان یک حالت خاص از حدس
+    \lr{BGK}، به‌ویژه با تکیه بر صوری‌سازی موجود در این مقاله از سیستم‌های نوع محض و نوع محض لایه‌ای.
+\end{itemize}
+
 
 %====================================
 %    REFERENCES                     |
