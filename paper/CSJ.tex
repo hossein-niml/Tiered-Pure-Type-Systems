@@ -194,7 +194,8 @@
         Module, Type, End, Parameter, Import,
         Require, Include, Axiom, forall,
         Prop, nat, Type, exists,
-        Definition, Theorem, Qed, Proof, Fixpoint, with, match, Inductive
+        Definition, Theorem, Qed, Proof, Fixpoint, with, match, Inductive,
+        end
     },
     sensitive=true,
     morecomment=[n]{(*}{*)},
@@ -450,10 +451,10 @@ z &\text{\lr{o.w}}
 \end{align*}
 \end{definition}
 
-\begin{definition}
+\begin{definition}\label{subst}
 جانشینی $x$ با عبارت $N$ به صورت زیر تعریف می‌شود:
 \vspace{-5pt}
-\begin{align*}
+\resizedalign{
 s[N/x] &= s\\
 y[N/x] &=
 \begin{cases*}
@@ -463,7 +464,7 @@ y &\text{\lr{o.w}}
 (\Pi y^A.B)[N/x] &= \Pi z^{A[N/x]}.B[z/y]^r[N/x] &{\scriptstyle(z \notin \operatorname{FV}(N) \cup \operatorname{FV}(B))}\\
 (\lambda y^A.B)[N/x] &= \lambda z^{A[N/x]}.B[z/y]^r[N/x] &{\scriptstyle(z \notin \operatorname{FV}(N) \cup \operatorname{FV}(B))}\\
 (PQ)[N/x]&=(P[N/x])(Q[N/x])\\
-\end{align*}
+}
 \end{definition}
 
 \begin{definition}
@@ -482,7 +483,7 @@ $(\lambda x^A.M)N \rightarrow_{\beta} M[N/x]$
 \end{itemize}
 \end{definition}
 
-\begin{definition}
+\begin{definition}\label{typing}
 قواعد استنتاج نوع در یک سیستم نوع محض عبارت‌اند از:
 
 \begin{itemize}[noitemsep, topsep=0pt]
@@ -507,12 +508,18 @@ $(\lambda x^A.M)N \rightarrow_{\beta} M[N/x]$
 \BinaryInfC{$\Gamma,{}^sx:B \vdash M:A$}
 \end{prooftree}
 \item قاعده تشکیل نوع تابع
-\begin{prooftree}
-\AxiomC{$\Gamma,^{s_1}x:A \vdash B:s_2$}
-\AxiomC{$\Gamma \vdash A:s_1$}
-\LeftLabel{{\scriptsize $\quad (s_1,s_2,s_3) \in \mathcal{R}$}}
-\BinaryInfC{$\Gamma \vdash (\Pi ^{s_1}x^A.B):s_3$}
-\end{prooftree}
+\begin{center}
+\resizebox{0.85\columnwidth}{!}{%
+  \vbox{%
+    \begin{prooftree}
+      \AxiomC{$\Gamma,^{s_1}x:A \vdash B:s_2$}
+      \AxiomC{$\Gamma \vdash A:s_1$}
+      \LeftLabel{{\scriptsize $\quad (s_1,s_2,s_3) \in \mathcal{R}$}}
+      \BinaryInfC{$\Gamma \vdash (\Pi ^{s_1}x^A.B):s_3$}
+    \end{prooftree}
+  }%
+}
+\end{center}
 \item قاعده انتزاع
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash \Pi ^sx^A.B:s$}
@@ -1041,6 +1048,55 @@ Inductive term : Type :=
 
 در این تعریف، شناسه متغیرها با استفاده از اعداد طبیعی نمایش داده می‌شود و رده هر رخداد متغیر، اعم از آزاد یا مقید، به‌صورت برچسبی صریح در ساختار آن ذخیره می‌شود. همچنین، مقیدکننده‌ها (\varname{t_lam} و \varname{t_pi}) رده دامنه خود را نگهداری می‌کنند. این برچسب‌گذاری، متناظر با ملاحظه \ref{sort_tag} انجام شده و اطلاعات لازم برای محاسبه درجه عبارت را فراهم می‌کند.
 
+انتخاب روش بی‌نام محلی برای صوری‌سازی متغیرها، آورده‌های فراوانی در ادامه کار داشته است. یکی از مهم‌ترین آن‌ها، تعریف جانشینی است که به دلیل آن که نگران برخورد متغیرها نیستیم، بسیار ساده‌تر از تعریف \ref{subst} نوشته می‌شود:
+
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:term}
+]
+(* Source: PTS.v *)
+Fixpoint subst_term (x : var) (N : term) 
+                    (t : term) : term :=
+  match t with
+  | t_sort s => t_sort s
+  | t_bvar s n => t_bvar s n
+  | t_fvar s y => if eq_var_dec y x then N else t_fvar s y
+  | t_app P Q => t_app P[x := N] Q[x := N]
+  | t_pi s A B => t_pi s A[x := N] B[x := N]
+  | t_lam s A M => t_lam s A[x := N] M[x := N]
+  end
+\end{lstlisting}
+\end{latin}
+
+حال که از روش بی‌نام محلی استفاده کرده‌ایم و متغیرها و دامنه عبارات $\lambda$ و $\Pi$ را با رده‌ برچسب‌گذاری کرده‌ایم، قاعده تشکیل نوع تابع از مجموعه قواعد استنتاج نوع، ارزش بررسی به‌خصوصی دارد:
+\begin{latin}
+\begin{lstlisting}[
+    style=Rocqstyle,
+    label={lst:term}
+]
+(* Source: PTS.v *)
+Inductive typing : 
+  context -> term -> term -> Prop :=
+  ...
+  | typing_pi : forall C A B s1 s2 s3 L,
+      C |- A : t_sort s1 ->
+      bvar_tag_ok 0 s1 B ->
+      (forall x, ~ In x L ->
+         C ++ [(x, (s1, A))] |- 
+          (open_var B s1 x) : t_sort s2) ->
+      R s1 s2 s3 ->
+      C |- (t_pi s1 A B) : (t_sort s3)
+  
+\end{lstlisting}
+\end{latin}
+
+تفاوت‌هایی که با تعریف \ref{typing} مشهود است:
+\begin{itemize}[noitemsep, topsep=0pt]
+  \item[-] در اینجا نیاز به بررسی سازگاری رده برچسب‌گذاری شده و رده عبارت \varname{B} داریم. شرط \varname{bvar_tag_ok 0 s1 B} این مورد را تضمین می‌کند.
+  \item[-] برای جلوگیری از وابستگی قاعده به نام مشخصی برای متغیر مقید، از مجموعه متناهی \varname{L} استفاده شده است. این مجموعه شامل نام‌هایی است که نباید برای بازکردن متغیر مقید انتخاب شوند. بنابراین، شرط نوع‌گذاری بدنه برای هر متغیر خارج از \varname{L} بررسی می‌شود. این سازوکار امکان انتخاب نام تازه برای متغیر مقید را فراهم کرده و با رویکرد نمایش بی‌نام محلی سازگار است.
+\end{itemize}
+
 \subsection{صوری‌سازی سیستم‌های نوع محض لایه‌ای}
 
 مشابه سیستم‌ نوع محض، سیستم نوع محض لایه‌ای نیز در قالب یک ماژول تعریف می‌شود:
@@ -1096,7 +1152,7 @@ Axiom is_full : full.
 \end{lstlisting}
 \end{latin}
 
-همانطور که در تعریف \ref{non_dependent} دیدیم، نسخه غیروابسته یک سیستم نوع محض لایه‌ای، فقط در مجموعه $\mathcal{R}$ با آن متفاوت است. به منظور صوری‌سازی این نسخه، باید توجه کنیم که مجموعه مذکور صرفا در قاعده تشکیل نوع تابع (از مجموعه قواعد استنتاج نوع) کاربرد دارد؛ بنابراین کافی است قواعد استنتاج نوع را به کمک $\mathcal{R}^*$ بازتعریف کنیم تا نسخه غیروابسته یک سیستم نوع محض لایه‌ای، صوری‌سازی شود:
+همانطور که در تعریف \ref{non_dependent} دیدیم، نسخه غیروابسته یک سیستم نوع محض لایه‌ای، فقط در مجموعه $\mathcal{R}$ با آن متفاوت است. به منظور صوری‌سازی این نسخه، باید توجه کنیم که مجموعه مذکور صرفا در قاعده تشکیل نوع تابع، از مجموعه قواعد استنتاج نوع در تعریف \ref{typing}، کاربرد دارد؛ بنابراین کافی است قواعد استنتاج نوع را به کمک $\mathcal{R}^*$ بازتعریف کنیم تا نسخه غیروابسته یک سیستم نوع محض لایه‌ای، صوری‌سازی شود:
 \begin{latin}
 \begin{lstlisting}[
     style=Rocqstyle,
@@ -1109,11 +1165,11 @@ Definition R_star (s s' s'' : Sort) : Prop :=
 Inductive typing_star : 
   context -> term -> term -> Prop :=
   ...
-  | typing_star_pi : forall G A B s1 s2 s3 L,
-      G |-* A : t_sort s1 ->
+  | typing_star_pi : forall C A B s1 s2 s3 L,
+      C |-* A : t_sort s1 ->
       ... ->
       R_star s1 s2 s3 ->
-      G |-* (t_pi s1 A B) : (t_sort s3)
+      C |-* (t_pi s1 A B) : (t_sort s3)
 \end{lstlisting}
 \end{latin}
 
